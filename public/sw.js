@@ -2,12 +2,21 @@
 // Strategie reseau d'abord, avec repli sur le cache, pour ne jamais
 // afficher une page perimee tant que la connexion repond.
 
-const CACHE = "couture-v2";
+const CACHE = "couture-v3";
 const PAGE_HORS_LIGNE = "/hors-ligne";
 
 const PRECACHE = [PAGE_HORS_LIGNE, "/icon-192.png", "/icon-512.png"];
 
 const IDENTIFIANT = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
+
+/*
+ * Next.js ne recharge pas la page quand on navigue dans l'application : il ne
+ * demande que les donnees. Le HTML des ecrans non ouverts directement n'est
+ * donc jamais telecharge. Le client demande explicitement leur mise en cache
+ * au demarrage (message "rechauffer"), sinon ces ecrans seraient introuvables
+ * hors connexion.
+ */
+const OPTIONS_MATCH = { ignoreVary: true };
 
 /**
  * Les pages de detail affichent des donnees lues en local : leur contenu ne
@@ -35,6 +44,27 @@ self.addEventListener("activate", (evenement) => {
   );
 });
 
+self.addEventListener("message", (evenement) => {
+  if (evenement.data?.type !== "rechauffer") return;
+
+  const routes = evenement.data.routes ?? [];
+
+  evenement.waitUntil(
+    caches.open(CACHE).then((cache) =>
+      Promise.all(
+        routes.map(async (route) => {
+          try {
+            const reponse = await fetch(route, { credentials: "same-origin" });
+            if (reponse.ok) await cache.put(route, reponse);
+          } catch {
+            // Sans reseau, il n'y a rien a rechauffer.
+          }
+        })
+      )
+    )
+  );
+});
+
 function estCachable(requete) {
   const url = new URL(requete.url);
 
@@ -44,6 +74,15 @@ function estCachable(requete) {
   if (url.pathname.includes("hmr") || url.pathname.startsWith("/__next")) return false;
 
   return true;
+}
+
+async function mettreEnCache(requete, reponse, navigation) {
+  const cache = await caches.open(CACHE);
+  await cache.put(requete, reponse.clone());
+
+  if (navigation) {
+    await cache.put(cleModele(requete.url), reponse.clone());
+  }
 }
 
 self.addEventListener("fetch", (evenement) => {
@@ -57,25 +96,27 @@ self.addEventListener("fetch", (evenement) => {
     fetch(request)
       .then((reponse) => {
         if (reponse.ok) {
-          const copie = reponse.clone();
-          caches.open(CACHE).then((cache) => {
-            cache.put(request, copie.clone());
-            if (navigation) cache.put(cleModele(request.url), copie);
-          });
+          evenement.waitUntil(mettreEnCache(request, reponse.clone(), navigation));
         }
         return reponse;
       })
       .catch(async () => {
         const cache = await caches.open(CACHE);
 
-        const exact = await cache.match(request);
+        const exact = await cache.match(request, OPTIONS_MATCH);
         if (exact) return exact;
 
         if (navigation) {
-          const modele = await cache.match(cleModele(request.url));
+          const chemin = new URL(request.url).pathname;
+
+          // Meme page, sans les parametres d'adresse.
+          const sansParametres = await cache.match(chemin, OPTIONS_MATCH);
+          if (sansParametres) return sansParametres;
+
+          const modele = await cache.match(cleModele(request.url), OPTIONS_MATCH);
           if (modele) return modele;
 
-          const repli = await cache.match(PAGE_HORS_LIGNE);
+          const repli = await cache.match(PAGE_HORS_LIGNE, OPTIONS_MATCH);
           if (repli) return repli;
         }
 
