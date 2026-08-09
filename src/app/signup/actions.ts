@@ -30,6 +30,18 @@ export async function signup(formData: FormData) {
     redirect(`/signup?error=${encodeURIComponent(error.message)}`);
   }
 
+  // Face a une adresse deja inscrite, Supabase repond comme a une inscription
+  // reussie pour ne pas reveler qui possede un compte, mais ne cree rien et
+  // renvoie une liste d'identites vide. Sans ce test, l'utilisateur attendrait
+  // indefiniment un mail qui ne partira jamais.
+  if (data.user && data.user.identities?.length === 0) {
+    redirect(
+      `/login?error=${encodeURIComponent(
+        "Un compte existe deja avec cet email. Connecte-toi ou utilise une autre adresse."
+      )}`
+    );
+  }
+
   // Confirmation email active : pas encore de session, il faut passer par le lien recu.
   if (!data.session) {
     redirect("/signup/verifier-email");
