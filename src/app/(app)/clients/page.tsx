@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { ClientsEnAttente } from "./en-attente";
 
 export default async function ClientsPage({
   searchParams,
@@ -38,6 +39,8 @@ export default async function ClientsPage({
           className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-base"
         />
       </form>
+
+      <ClientsEnAttente />
 
       <ul className="mt-4 flex flex-col gap-2">
         {clients?.map((client) => (

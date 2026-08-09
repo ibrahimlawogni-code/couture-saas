@@ -1,9 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useFileAttente } from "@/lib/offline/use-file-attente";
 
-export function ServiceWorker() {
-  const [horsLigne, setHorsLigne] = useState(false);
+export function BarreEtatReseau() {
+  const router = useRouter();
+  const { horsLigne, enAttente, echecs } = useFileAttente();
 
   useEffect(() => {
     if ("serviceWorker" in navigator) {
@@ -11,23 +14,40 @@ export function ServiceWorker() {
         // Un echec d'enregistrement ne doit pas casser l'application.
       });
     }
-
-    const majEtat = () => setHorsLigne(!navigator.onLine);
-    majEtat();
-
-    window.addEventListener("online", majEtat);
-    window.addEventListener("offline", majEtat);
-    return () => {
-      window.removeEventListener("online", majEtat);
-      window.removeEventListener("offline", majEtat);
-    };
   }, []);
 
-  if (!horsLigne) return null;
+  // La file qui se vide signifie que le serveur a de nouvelles donnees.
+  useEffect(() => {
+    if (!horsLigne && enAttente.length === 0) router.refresh();
+  }, [horsLigne, enAttente.length, router]);
 
-  return (
-    <p className="fixed inset-x-0 top-0 z-50 bg-amber-500 py-2 text-center text-sm font-medium text-white">
-      Hors connexion
-    </p>
-  );
+  if (echecs.length > 0) {
+    return (
+      <p className="fixed inset-x-0 top-0 z-50 bg-red-600 py-2 text-center text-sm font-medium text-white">
+        {echecs.length} enregistrement{echecs.length > 1 ? "s" : ""} n&apos;
+        {echecs.length > 1 ? "ont" : "a"} pas pu etre envoye
+        {echecs.length > 1 ? "s" : ""}
+      </p>
+    );
+  }
+
+  if (horsLigne) {
+    return (
+      <p className="fixed inset-x-0 top-0 z-50 bg-amber-500 py-2 text-center text-sm font-medium text-white">
+        Hors connexion
+        {enAttente.length > 0 && ` · ${enAttente.length} en attente d'envoi`}
+      </p>
+    );
+  }
+
+  if (enAttente.length > 0) {
+    return (
+      <p className="fixed inset-x-0 top-0 z-50 bg-blue-600 py-2 text-center text-sm font-medium text-white">
+        Envoi en cours · {enAttente.length} restant
+        {enAttente.length > 1 ? "s" : ""}
+      </p>
+    );
+  }
+
+  return null;
 }

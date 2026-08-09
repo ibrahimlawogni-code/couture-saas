@@ -10,6 +10,7 @@ import {
   type Statut,
 } from "@/lib/commandes";
 import { avancerDepuisTableauAction } from "./actions";
+import { CommandesEnAttente } from "./en-attente";
 
 const LIVREES_AFFICHEES = 20;
 
@@ -83,7 +84,11 @@ export default async function CommandesPage() {
                   </span>
                 </div>
 
-                <ul className="mt-2 flex flex-col gap-2">
+                <div className="mt-2">
+                  {statut === "recu" && <CommandesEnAttente />}
+                </div>
+
+                <ul className="flex flex-col gap-2">
                   {cartes.map((commande) => {
                     const client = commande.clients as { nom: string } | null;
                     const niveau = priorite(
