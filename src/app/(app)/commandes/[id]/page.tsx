@@ -18,6 +18,7 @@ import {
   messageRecapitulatif,
 } from "@/lib/whatsapp";
 import { ajouterPaiementAction, avancerStatutAction } from "./actions";
+import { BoutonRecu } from "./recu";
 
 const BUCKET = "commandes";
 const HEURE_EN_SECONDES = 3600;
@@ -258,6 +259,24 @@ export default async function CommandeDetailPage({
             ))}
           </ul>
         )}
+
+        <div className="mt-3 border-t border-zinc-100 pt-3">
+          <BoutonRecu
+            donnees={{
+              atelier: nomAtelier,
+              client: nomClient,
+              modele: commande.nom_modele,
+              prixTotal: Number(commande.prix_total),
+              dateLivraison: commande.date_livraison,
+              versements:
+                paiements?.map((paiement) => ({
+                  date: paiement.created_at,
+                  montant: Number(paiement.montant),
+                  type: paiement.type,
+                })) ?? [],
+            }}
+          />
+        </div>
       </section>
 
       {photos.length > 0 && (
