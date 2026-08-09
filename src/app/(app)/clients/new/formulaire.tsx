@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { enregistrer } from "@/lib/offline/enregistrer";
+import { useHydratation } from "@/lib/hydratation";
 
 export function FormulaireClient({ atelierId }: { atelierId: string }) {
   const router = useRouter();
+  const pret = useHydratation();
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
 
@@ -97,10 +99,10 @@ export function FormulaireClient({ atelierId }: { atelierId: string }) {
 
       <button
         type="submit"
-        disabled={envoi}
+        disabled={!pret || envoi}
         className="mt-2 rounded-xl bg-zinc-900 px-4 py-4 text-base font-medium text-white active:bg-zinc-700 disabled:opacity-60"
       >
-        {envoi ? "Enregistrement..." : "Enregistrer"}
+        {!pret ? "Chargement..." : envoi ? "Enregistrement..." : "Enregistrer"}
       </button>
     </form>
   );

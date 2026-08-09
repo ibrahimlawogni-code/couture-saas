@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { enregistrer } from "@/lib/offline/enregistrer";
 import { cheminPhoto, compresserPhoto } from "@/lib/offline/photo";
 import { useFileAttente } from "@/lib/offline/use-file-attente";
+import { useHydratation } from "@/lib/hydratation";
 import type { PhotoEnAttente } from "@/lib/offline/db";
 
 type ClientOption = { id: string; nom: string };
@@ -24,6 +25,7 @@ export function FormulaireCommande({
 }) {
   const router = useRouter();
   const { enAttente } = useFileAttente();
+  const pret = useHydratation();
   const [envoi, setEnvoi] = useState(false);
 
   // Un client cree hors ligne doit pouvoir recevoir une commande
@@ -266,10 +268,14 @@ export function FormulaireCommande({
 
       <button
         type="submit"
-        disabled={envoi}
+        disabled={!pret || envoi}
         className="mt-2 rounded-xl bg-zinc-900 px-4 py-4 text-base font-medium text-white active:bg-zinc-700 disabled:opacity-60"
       >
-        {envoi ? "Enregistrement..." : "Enregistrer la commande"}
+        {!pret
+          ? "Chargement..."
+          : envoi
+            ? "Enregistrement..."
+            : "Enregistrer la commande"}
       </button>
     </form>
   );

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { enregistrer } from "@/lib/offline/enregistrer";
+import { useHydratation } from "@/lib/hydratation";
 
 const CHAMPS_STANDARDS: { cle: string; label: string }[] = [
   { cle: "poitrine", label: "Poitrine (cm)" },
@@ -22,6 +23,7 @@ export function FormulaireMesure({
   utilisateurId: string;
 }) {
   const router = useRouter();
+  const pret = useHydratation();
   const [envoi, setEnvoi] = useState(false);
 
   async function soumettre(evenement: React.FormEvent<HTMLFormElement>) {
@@ -115,10 +117,10 @@ export function FormulaireMesure({
 
       <button
         type="submit"
-        disabled={envoi}
+        disabled={!pret || envoi}
         className="mt-2 rounded-xl bg-zinc-900 px-4 py-4 text-base font-medium text-white active:bg-zinc-700 disabled:opacity-60"
       >
-        {envoi ? "Enregistrement..." : "Enregistrer"}
+        {!pret ? "Chargement..." : envoi ? "Enregistrement..." : "Enregistrer"}
       </button>
     </form>
   );
