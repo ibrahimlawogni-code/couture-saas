@@ -2,15 +2,25 @@
 // Strategie reseau d'abord, avec repli sur le cache, pour ne jamais
 // afficher une page perimee tant que la connexion repond.
 
-const CACHE = "couture-v1";
+const CACHE = "couture-v2";
 const PAGE_HORS_LIGNE = "/hors-ligne";
 
 const PRECACHE = [PAGE_HORS_LIGNE, "/icon-192.png", "/icon-512.png"];
 
+const IDENTIFIANT = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
+
+/**
+ * Les pages de detail affichent des donnees lues en local : leur contenu ne
+ * depend plus de l'identifiant present dans l'adresse. On les met donc en
+ * cache par modele d'adresse, ce qui rend consultable hors reseau une fiche
+ * jamais ouverte auparavant.
+ */
+function cleModele(url) {
+  return new URL(url).pathname.replace(IDENTIFIANT, ":id");
+}
+
 self.addEventListener("install", (evenement) => {
-  evenement.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(PRECACHE))
-  );
+  evenement.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(PRECACHE)));
   self.skipWaiting();
 });
 
@@ -41,21 +51,31 @@ self.addEventListener("fetch", (evenement) => {
 
   if (!estCachable(request)) return;
 
+  const navigation = request.mode === "navigate";
+
   evenement.respondWith(
     fetch(request)
       .then((reponse) => {
         if (reponse.ok) {
           const copie = reponse.clone();
-          caches.open(CACHE).then((cache) => cache.put(request, copie));
+          caches.open(CACHE).then((cache) => {
+            cache.put(request, copie.clone());
+            if (navigation) cache.put(cleModele(request.url), copie);
+          });
         }
         return reponse;
       })
       .catch(async () => {
-        const enCache = await caches.match(request);
-        if (enCache) return enCache;
+        const cache = await caches.open(CACHE);
 
-        if (request.mode === "navigate") {
-          const repli = await caches.match(PAGE_HORS_LIGNE);
+        const exact = await cache.match(request);
+        if (exact) return exact;
+
+        if (navigation) {
+          const modele = await cache.match(cleModele(request.url));
+          if (modele) return modele;
+
+          const repli = await cache.match(PAGE_HORS_LIGNE);
           if (repli) return repli;
         }
 

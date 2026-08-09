@@ -84,6 +84,7 @@ export function FormulaireCommande({
       "commandes",
       {
         id: commandeId,
+        created_at: new Date().toISOString(),
         atelier_id: atelierId,
         client_id: clientId,
         mesure_id: mesureId,
@@ -101,6 +102,7 @@ export function FormulaireCommande({
     if (acompte > 0) {
       await enregistrer("paiements", {
         id: crypto.randomUUID(),
+        created_at: new Date().toISOString(),
         commande_id: commandeId,
         montant: acompte,
         type: "acompte",

@@ -29,6 +29,9 @@ export function FormulaireClient({ atelierId }: { atelierId: string }) {
 
     const { enFile } = await enregistrer("clients", {
       id,
+      // Date posee ici : une saisie hors ligne doit garder l'heure a
+      // laquelle elle a ete faite, pas celle de son envoi.
+      created_at: new Date().toISOString(),
       atelier_id: atelierId,
       nom,
       telephone: String(formulaire.get("telephone") ?? "").trim() || null,

@@ -46,6 +46,7 @@ export function FormulaireMesure({
 
     await enregistrer("mesures", {
       id: crypto.randomUUID(),
+      created_at: new Date().toISOString(),
       client_id: clientId,
       libelle: String(formulaire.get("libelle") ?? "Mesures").trim() || "Mesures",
       valeurs,
