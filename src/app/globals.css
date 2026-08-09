@@ -1,8 +1,15 @@
 @import "tailwindcss";
 
+/*
+ * L'interface est concue en clair (fonds blancs, texte sombre). On le declare
+ * au navigateur : sans color-scheme, un telephone en mode sombre dessine ses
+ * propres elements (oeil du mot de passe, selecteur de date) en version
+ * sombre, donc invisibles sur nos champs clairs.
+ */
 :root {
+  color-scheme: light;
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #18181b;
 }
 
 @theme inline {
@@ -12,27 +19,30 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
 
-/*
- * Les champs de saisie ont une largeur intrinseque minimale (une vingtaine
- * de caracteres) que le navigateur refuse de reduire. Dans une grille a deux
- * colonnes sur petit ecran, cela fait deborder la page horizontalement.
- */
 input,
 select,
 textarea {
+  /*
+   * Couleurs explicites : sans elles, un champ herite du texte de la page et
+   * devient illisible des que le systeme passe en mode sombre.
+   */
+  background-color: #ffffff;
+  color: #18181b;
+
+  /*
+   * Les champs ont une largeur intrinseque minimale (une vingtaine de
+   * caracteres) que le navigateur refuse de reduire. Dans une grille a deux
+   * colonnes sur petit ecran, cela fait deborder la page horizontalement.
+   */
   min-width: 0;
 }
 
+::placeholder {
+  color: #a1a1aa;
+}
