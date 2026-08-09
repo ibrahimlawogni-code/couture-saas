@@ -2,7 +2,7 @@
 // Strategie reseau d'abord, avec repli sur le cache, pour ne jamais
 // afficher une page perimee tant que la connexion repond.
 
-const CACHE = "couture-v3";
+const CACHE = "couture-v4";
 const PAGE_HORS_LIGNE = "/hors-ligne";
 
 const PRECACHE = [PAGE_HORS_LIGNE, "/icon-192.png", "/icon-512.png"];
@@ -44,27 +44,6 @@ self.addEventListener("activate", (evenement) => {
   );
 });
 
-self.addEventListener("message", (evenement) => {
-  if (evenement.data?.type !== "rechauffer") return;
-
-  const routes = evenement.data.routes ?? [];
-
-  evenement.waitUntil(
-    caches.open(CACHE).then((cache) =>
-      Promise.all(
-        routes.map(async (route) => {
-          try {
-            const reponse = await fetch(route, { credentials: "same-origin" });
-            if (reponse.ok) await cache.put(route, reponse);
-          } catch {
-            // Sans reseau, il n'y a rien a rechauffer.
-          }
-        })
-      )
-    )
-  );
-});
-
 function estCachable(requete) {
   const url = new URL(requete.url);
 
@@ -76,11 +55,13 @@ function estCachable(requete) {
   return true;
 }
 
-async function mettreEnCache(requete, reponse, navigation) {
+async function mettreEnCache(requete, reponse) {
   const cache = await caches.open(CACHE);
   await cache.put(requete, reponse.clone());
 
-  if (navigation) {
+  // Toute page HTML est aussi rangee sous son modele d'adresse, qu'elle ait
+  // ete ouverte directement ou simplement prechargee par l'application.
+  if (reponse.headers.get("content-type")?.includes("text/html")) {
     await cache.put(cleModele(requete.url), reponse.clone());
   }
 }
@@ -96,7 +77,7 @@ self.addEventListener("fetch", (evenement) => {
     fetch(request)
       .then((reponse) => {
         if (reponse.ok) {
-          evenement.waitUntil(mettreEnCache(request, reponse.clone(), navigation));
+          evenement.waitUntil(mettreEnCache(request, reponse.clone()));
         }
         return reponse;
       })

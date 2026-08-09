@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "./actions";
 import { NavigationPrincipale } from "./navigation";
+import { Prechargement } from "./prechargement";
 
 export default async function AppLayout({
   children,
@@ -48,6 +49,7 @@ export default async function AppLayout({
       <main className="flex flex-1 flex-col pb-20">{children}</main>
 
       <NavigationPrincipale />
+      <Prechargement />
     </div>
   );
 }

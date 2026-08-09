@@ -4,8 +4,6 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useFileAttente } from "@/lib/offline/use-file-attente";
 
-const ROUTES_PRINCIPALES = ["/commandes", "/clients", "/finances"];
-
 export function BarreEtatReseau() {
   const router = useRouter();
   const { horsLigne, enAttente, echecs } = useFileAttente();
@@ -13,21 +11,9 @@ export function BarreEtatReseau() {
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
 
-    navigator.serviceWorker
-      .register("/sw.js")
-      .then(() => navigator.serviceWorker.ready)
-      .then((enregistrement) => {
-        // Next.js ne recharge pas la page quand on navigue dans l'application :
-        // sans cette demande, le HTML des ecrans jamais ouverts directement
-        // n'existerait nulle part hors connexion.
-        enregistrement.active?.postMessage({
-          type: "rechauffer",
-          routes: ROUTES_PRINCIPALES,
-        });
-      })
-      .catch(() => {
-        // Un echec d'enregistrement ne doit pas casser l'application.
-      });
+    navigator.serviceWorker.register("/sw.js").catch(() => {
+      // Un echec d'enregistrement ne doit pas casser l'application.
+    });
   }, []);
 
   // La file qui se vide signifie que le serveur a de nouvelles donnees.
