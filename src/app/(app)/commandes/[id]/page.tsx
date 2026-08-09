@@ -11,6 +11,12 @@ import {
   statutSuivant,
   type Statut,
 } from "@/lib/commandes";
+import {
+  lienWhatsApp,
+  messagePret,
+  messageRappelEssayage,
+  messageRecapitulatif,
+} from "@/lib/whatsapp";
 import { ajouterPaiementAction, avancerStatutAction } from "./actions";
 
 const BUCKET = "commandes";
@@ -27,7 +33,7 @@ export default async function CommandeDetailPage({
   const { data: commande } = await supabase
     .from("commandes")
     .select(
-      "id, nom_modele, statut, prix_total, date_essayage, date_livraison, photo_modele_url, photo_tissu_url, client_id, clients(nom, whatsapp)"
+      "id, nom_modele, statut, prix_total, date_essayage, date_livraison, photo_modele_url, photo_tissu_url, client_id, atelier_id, clients(nom, whatsapp, telephone)"
     )
     .eq("id", id)
     .single();
@@ -39,7 +45,14 @@ export default async function CommandeDetailPage({
   const client = commande.clients as unknown as {
     nom: string;
     whatsapp: string | null;
+    telephone: string | null;
   } | null;
+
+  const { data: atelier } = await supabase
+    .from("ateliers")
+    .select("nom")
+    .eq("id", commande.atelier_id)
+    .single();
 
   const { data: paiements } = await supabase
     .from("paiements")
@@ -67,6 +80,38 @@ export default async function CommandeDetailPage({
     photosSignees?.flatMap((photo) =>
       photo.signedUrl ? [{ path: photo.path ?? photo.signedUrl, url: photo.signedUrl }] : []
     ) ?? [];
+
+  const numero = client?.whatsapp ?? client?.telephone ?? null;
+  const nomAtelier = atelier?.nom ?? "notre atelier";
+  const nomClient = client?.nom ?? "";
+  const donneesMessage = {
+    nom_modele: commande.nom_modele,
+    statut,
+    prix_total: Number(commande.prix_total),
+    date_essayage: commande.date_essayage,
+    date_livraison: commande.date_livraison,
+  };
+
+  const messagesWhatsApp = [
+    {
+      cle: "recapitulatif",
+      label: "Envoyer le recapitulatif",
+      texte: messageRecapitulatif(nomAtelier, nomClient, donneesMessage, resteAPayer),
+      visible: true,
+    },
+    {
+      cle: "essayage",
+      label: "Rappeler l'essayage",
+      texte: messageRappelEssayage(nomAtelier, nomClient, donneesMessage),
+      visible: Boolean(commande.date_essayage) && statut !== "livre",
+    },
+    {
+      cle: "pret",
+      label: "Prevenir que c'est pret",
+      texte: messagePret(nomAtelier, nomClient, donneesMessage, resteAPayer),
+      visible: statut === "pret",
+    },
+  ].filter((message) => message.visible);
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 py-6">
@@ -109,6 +154,29 @@ export default async function CommandeDetailPage({
               Passer a : {STATUT_LABELS[suivant]}
             </button>
           </form>
+        )}
+      </section>
+
+      <section className="mt-4 rounded-xl bg-white p-4 shadow-sm">
+        <p className="text-xs uppercase tracking-wide text-zinc-500">WhatsApp</p>
+        {numero ? (
+          <div className="mt-2 flex flex-col gap-2">
+            {messagesWhatsApp.map((message) => (
+              <a
+                key={message.cle}
+                href={lienWhatsApp(numero, message.texte) ?? "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-xl bg-emerald-600 px-4 py-3 text-center text-sm font-medium text-white active:bg-emerald-700"
+              >
+                {message.label}
+              </a>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-2 text-sm text-zinc-500">
+            Aucun numero enregistre pour ce client.
+          </p>
         )}
       </section>
 

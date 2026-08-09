@@ -24,3 +24,15 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/*
+ * Les champs de saisie ont une largeur intrinseque minimale (une vingtaine
+ * de caracteres) que le navigateur refuse de reduire. Dans une grille a deux
+ * colonnes sur petit ecran, cela fait deborder la page horizontalement.
+ */
+input,
+select,
+textarea {
+  min-width: 0;
+}
+
