@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "./actions";
+import { NavigationPrincipale } from "./navigation";
 
-export default async function ClientsLayout({
+export default async function AppLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -42,7 +43,11 @@ export default async function ClientsLayout({
           </button>
         </form>
       </header>
-      <main className="flex flex-1 flex-col">{children}</main>
+
+      {/* pb-20 laisse la place a la barre de navigation fixe */}
+      <main className="flex flex-1 flex-col pb-20">{children}</main>
+
+      <NavigationPrincipale />
     </div>
   );
 }

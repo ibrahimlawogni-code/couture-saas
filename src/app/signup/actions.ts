@@ -35,5 +35,5 @@ export async function signup(formData: FormData) {
     redirect("/signup/verifier-email");
   }
 
-  redirect("/clients");
+  redirect("/commandes");
 }

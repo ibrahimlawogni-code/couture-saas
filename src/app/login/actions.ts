@@ -14,5 +14,5 @@ export async function login(formData: FormData) {
     redirect(`/login?error=${encodeURIComponent("Email ou mot de passe incorrect")}`);
   }
 
-  redirect("/clients");
+  redirect("/commandes");
 }

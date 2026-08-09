@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { STATUT_LABELS, formaterMontant, type Statut } from "@/lib/commandes";
 
 const CHAMPS_LABELS: Record<string, string> = {
   poitrine: "Poitrine",
@@ -39,6 +40,12 @@ export default async function ClientDetailPage({
   const derniereMesure = mesures?.[0];
   const historique = mesures?.slice(1) ?? [];
 
+  const { data: commandes } = await supabase
+    .from("commandes")
+    .select("id, nom_modele, statut, prix_total, date_livraison")
+    .eq("client_id", id)
+    .order("created_at", { ascending: false });
+
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 py-6">
       <Link href="/clients" className="text-sm text-zinc-500">
@@ -57,9 +64,15 @@ export default async function ClientDetailPage({
       <div className="mt-4 flex gap-3">
         <Link
           href={`/clients/${client.id}/mesures/new`}
+          className="flex-1 rounded-xl border border-zinc-300 bg-white px-4 py-3 text-center text-sm font-medium text-zinc-900 active:bg-zinc-100"
+        >
+          + Mesure
+        </Link>
+        <Link
+          href={`/commandes/new?client=${client.id}`}
           className="flex-1 rounded-xl bg-zinc-900 px-4 py-3 text-center text-sm font-medium text-white active:bg-zinc-700"
         >
-          + Nouvelle mesure
+          + Commande
         </Link>
       </div>
 
@@ -115,7 +128,35 @@ export default async function ClientDetailPage({
         <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
           Commandes
         </h2>
-        <p className="mt-2 text-sm text-zinc-500">Bientot disponible.</p>
+        {commandes && commandes.length > 0 ? (
+          <ul className="mt-2 flex flex-col gap-2">
+            {commandes.map((commande) => (
+              <li key={commande.id}>
+                <Link
+                  href={`/commandes/${commande.id}`}
+                  className="flex items-center justify-between rounded-xl bg-white px-4 py-3 shadow-sm active:bg-zinc-100"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-zinc-900">
+                      {commande.nom_modele ?? "Sans modele"}
+                    </p>
+                    <p className="text-xs text-zinc-500">
+                      {STATUT_LABELS[commande.statut as Statut]}
+                      {commande.date_livraison
+                        ? ` · ${new Date(commande.date_livraison).toLocaleDateString("fr-FR")}`
+                        : ""}
+                    </p>
+                  </div>
+                  <span className="text-sm text-zinc-500">
+                    {formaterMontant(Number(commande.prix_total))}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-2 text-sm text-zinc-500">Aucune commande.</p>
+        )}
       </section>
     </div>
   );
