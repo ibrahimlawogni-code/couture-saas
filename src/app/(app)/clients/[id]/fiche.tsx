@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useIdentifiantUrl } from "@/lib/identifiant-url";
 import { STATUT_LABELS, formaterMontant, type Statut } from "@/lib/commandes";
 import { useDonnees } from "@/lib/offline/use-donnees";
 
@@ -17,11 +17,10 @@ const CHAMPS_LABELS: Record<string, string> = {
 };
 
 export function FicheClient() {
-  // L'identifiant est lu dans l'adresse plutot que recu du serveur : la page
-  // devient ainsi identique pour tous les clients, donc utilisable hors ligne
-  // meme pour une fiche jamais ouverte.
-  const parametres = useParams<{ id: string }>();
-  const clientId = parametres.id;
+  // Lu dans l'adresse du navigateur : hors ligne, la page vient d'un cache
+  // partage entre toutes les fiches, et les donnees de navigation de Next
+  // designeraient un autre client.
+  const clientId = useIdentifiantUrl();
 
   const { clients, mesures, commandes, chargee } = useDonnees();
 

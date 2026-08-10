@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useIdentifiantUrl } from "@/lib/identifiant-url";
 import { createClient } from "@/lib/supabase/client";
 import {
   PRIORITE_LABELS,
@@ -29,10 +29,10 @@ const BUCKET = "commandes";
 const HEURE_EN_SECONDES = 3600;
 
 export function DetailCommande() {
-  // Identifiant lu dans l'adresse : la page devient identique pour toutes les
-  // commandes, donc consultable hors reseau meme si elle n'a jamais ete ouverte.
-  const parametres = useParams<{ id: string }>();
-  const commandeId = parametres.id;
+  // Lu dans l'adresse du navigateur : hors ligne, la page vient d'un cache
+  // partage entre toutes les commandes, et les donnees de navigation de Next
+  // designeraient une autre commande.
+  const commandeId = useIdentifiantUrl() ?? "";
 
   const { atelier, clients, commandes, paiements, chargee } = useDonnees();
   const nomAtelier = atelier?.nom ?? "Mon atelier";

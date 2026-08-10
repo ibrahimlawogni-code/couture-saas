@@ -2,7 +2,7 @@
 // Strategie reseau d'abord, avec repli sur le cache, pour ne jamais
 // afficher une page perimee tant que la connexion repond.
 
-const CACHE = "couture-v4";
+const CACHE = "couture-v5";
 const PAGE_HORS_LIGNE = "/hors-ligne";
 
 const PRECACHE = [PAGE_HORS_LIGNE, "/icon-192.png", "/icon-512.png"];
@@ -25,7 +25,14 @@ const OPTIONS_MATCH = { ignoreVary: true };
  * jamais ouverte auparavant.
  */
 function cleModele(url) {
-  return new URL(url).pathname.replace(IDENTIFIANT, ":id");
+  const adresse = new URL(url);
+  const chemin = adresse.pathname.replace(IDENTIFIANT, ":id");
+
+  // Next demande aussi les donnees de navigation de chaque adresse, sous un
+  // parametre technique qui change a chaque version. Sans les ranger a part,
+  // il boucle indefiniment hors connexion : requete refusee, rechargement de
+  // la page, nouvelle requete.
+  return adresse.searchParams.has("_rsc") ? `${chemin}?modele-rsc` : chemin;
 }
 
 self.addEventListener("install", (evenement) => {
@@ -59,9 +66,11 @@ async function mettreEnCache(requete, reponse) {
   const cache = await caches.open(CACHE);
   await cache.put(requete, reponse.clone());
 
-  // Toute page HTML est aussi rangee sous son modele d'adresse, qu'elle ait
-  // ete ouverte directement ou simplement prechargee par l'application.
-  if (reponse.headers.get("content-type")?.includes("text/html")) {
+  // Pages et donnees de navigation sont aussi rangees sous leur modele
+  // d'adresse : une seule fiche mise en cache rend consultables toutes
+  // les autres du meme type.
+  const type = reponse.headers.get("content-type") ?? "";
+  if (type.includes("text/html") || type.includes("text/x-component")) {
     await cache.put(cleModele(requete.url), reponse.clone());
   }
 }
@@ -87,15 +96,16 @@ self.addEventListener("fetch", (evenement) => {
         const exact = await cache.match(request, OPTIONS_MATCH);
         if (exact) return exact;
 
+        // Vaut pour les pages comme pour les donnees de navigation.
+        const modele = await cache.match(cleModele(request.url), OPTIONS_MATCH);
+        if (modele) return modele;
+
         if (navigation) {
           const chemin = new URL(request.url).pathname;
 
           // Meme page, sans les parametres d'adresse.
           const sansParametres = await cache.match(chemin, OPTIONS_MATCH);
           if (sansParametres) return sansParametres;
-
-          const modele = await cache.match(cleModele(request.url), OPTIONS_MATCH);
-          if (modele) return modele;
 
           const repli = await cache.match(PAGE_HORS_LIGNE, OPTIONS_MATCH);
           if (repli) return repli;
