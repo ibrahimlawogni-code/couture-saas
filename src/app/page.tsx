@@ -92,7 +92,7 @@ function Hero() {
           src="/captures/commandes.png"
           alt="Le tableau des commandes de TailorHub sur un téléphone"
           width={1170}
-          height={2532}
+          height={2133}
           priority
           className="w-full rounded-3xl border border-zinc-200 shadow-xl"
         />
@@ -144,7 +144,7 @@ function Fonctions() {
               src="/captures/commandes.png"
               alt="Suivi des commandes par étape"
               width={1170}
-              height={2532}
+              height={2133}
               className="w-full object-cover object-top"
             />
           </div>
@@ -189,7 +189,7 @@ function Fonctions() {
               src="/captures/fiche-client.png"
               alt="Fiche client avec ses mesures et ses commandes"
               width={1170}
-              height={2532}
+              height={2133}
               className="w-full object-cover object-top"
             />
           </div>
@@ -208,7 +208,7 @@ function Argent() {
             src="/captures/finances.png"
             alt="Bilan financier du mois et liste des impayés"
             width={1170}
-            height={2532}
+            height={2628}
             className="w-full rounded-3xl border border-zinc-200 shadow-lg"
           />
         </div>
