@@ -46,3 +46,7 @@ next-env.d.ts
 
 # apercus de travail
 /apercu-*.png
+
+# fichiers de travail : apercus et references
+/reference-*.png
+/apercu-*.html
