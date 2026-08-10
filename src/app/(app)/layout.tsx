@@ -40,7 +40,7 @@ export default async function AppLayout({
             type="submit"
             className="rounded-lg px-3 py-2 text-sm font-medium text-zinc-500 active:bg-zinc-100"
           >
-            Deconnexion
+            Déconnexion
           </button>
         </form>
       </header>

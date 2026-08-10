@@ -84,7 +84,7 @@ export function BilanFinancier() {
 
       <section className="mt-4 rounded-xl bg-zinc-900 p-5 text-white shadow-sm">
         <p className="text-xs uppercase tracking-wide text-zinc-400">
-          Encaisse ce mois
+          Encaissé ce mois
         </p>
         <p className="mt-1 text-3xl font-semibold">
           {formaterMontant(bilan.encaisseMois)}
@@ -110,7 +110,7 @@ export function BilanFinancier() {
 
         <section className="rounded-xl bg-white p-4 shadow-sm">
           <p className="text-xs uppercase tracking-wide text-zinc-500">
-            Creances en attente
+            Créances en attente
           </p>
           <p
             className={`mt-1 text-xl font-semibold ${
@@ -127,10 +127,10 @@ export function BilanFinancier() {
 
       <section className="mt-6">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
-          A recouvrer
+          À recouvrer
         </h2>
         {bilan.impayes.length === 0 ? (
-          <p className="mt-2 text-sm text-zinc-500">Aucun impaye, tout est solde.</p>
+          <p className="mt-2 text-sm text-zinc-500">Aucun impayé, tout est soldé.</p>
         ) : (
           <ul className="mt-2 flex flex-col gap-2">
             {bilan.impayes.map((commande) => (
@@ -144,7 +144,7 @@ export function BilanFinancier() {
                       {commande.client}
                     </p>
                     <p className="truncate text-xs text-zinc-500">
-                      {commande.nom_modele ?? "Sans modele"} ·{" "}
+                      {commande.nom_modele ?? "Sans modèle"} ·{" "}
                       {STATUT_LABELS[commande.statut as Statut]}
                     </p>
                   </div>

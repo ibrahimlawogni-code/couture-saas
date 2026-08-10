@@ -97,7 +97,7 @@ export function DetailCommande() {
   if (!commande) {
     return (
       <p className="mt-8 text-sm text-zinc-500">
-        Cette commande est introuvable dans les donnees enregistrees sur cet appareil.
+        Cette commande est introuvable dans les données enregistrées sur cet appareil.
       </p>
     );
   }
@@ -145,7 +145,7 @@ export function DetailCommande() {
   const messagesWhatsApp = [
     {
       cle: "recapitulatif",
-      label: "Envoyer le recapitulatif",
+      label: "Envoyer le récapitulatif",
       texte: messageRecapitulatif(nomAtelier, nomClient, donneesMessage, resteAPayer),
       visible: true,
     },
@@ -157,7 +157,7 @@ export function DetailCommande() {
     },
     {
       cle: "pret",
-      label: "Prevenir que c'est pret",
+      label: "Prévenir que c'est prêt",
       texte: messagePret(nomAtelier, nomClient, donneesMessage, resteAPayer),
       visible: statut === "pret",
     },
@@ -196,7 +196,7 @@ export function DetailCommande() {
             disabled={horsLigne || commande.enAttente}
             className="mt-3 w-full rounded-xl bg-zinc-900 px-4 py-4 text-base font-medium text-white active:bg-zinc-700 disabled:opacity-40"
           >
-            Passer a : {STATUT_LABELS[suivant]}
+            Passer à : {STATUT_LABELS[suivant]}
           </button>
         )}
         {horsLigne && (
@@ -224,7 +224,7 @@ export function DetailCommande() {
           </div>
         ) : (
           <p className="mt-2 text-sm text-zinc-500">
-            Aucun numero enregistre pour ce client.
+            Aucun numéro enregistré pour ce client.
           </p>
         )}
       </section>
@@ -236,7 +236,7 @@ export function DetailCommande() {
           <span className="font-medium text-zinc-900">
             {commande.date_essayage
               ? new Date(commande.date_essayage).toLocaleDateString("fr-FR")
-              : "Non definie"}
+              : "Non définie"}
           </span>
         </div>
         <div className="mt-1 flex justify-between text-sm">
@@ -244,7 +244,7 @@ export function DetailCommande() {
           <span className="font-medium text-zinc-900">
             {commande.date_livraison
               ? new Date(commande.date_livraison).toLocaleDateString("fr-FR")
-              : "Non definie"}
+              : "Non définie"}
           </span>
         </div>
       </section>
@@ -258,11 +258,11 @@ export function DetailCommande() {
           </span>
         </div>
         <div className="mt-1 flex justify-between text-sm">
-          <span className="text-zinc-500">Deja verse</span>
+          <span className="text-zinc-500">Déjà versé</span>
           <span className="font-medium text-zinc-900">{formaterMontant(totalPaye)}</span>
         </div>
         <div className="mt-2 flex justify-between border-t border-zinc-100 pt-2 text-base">
-          <span className="font-medium text-zinc-700">Reste a payer</span>
+          <span className="font-medium text-zinc-700">Reste à payer</span>
           <span
             className={`font-semibold ${
               resteAPayer > 0 ? "text-red-600" : "text-emerald-600"
@@ -281,7 +281,7 @@ export function DetailCommande() {
               min="1"
               step="1"
               inputMode="numeric"
-              placeholder="Montant recu"
+              placeholder="Montant reçu"
               required
               className="w-full min-w-0 flex-1 rounded-xl border border-zinc-300 px-4 py-3 text-base"
             />

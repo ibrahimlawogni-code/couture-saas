@@ -55,12 +55,12 @@ export function FormulaireCommande({
     const formulaire = new FormData(evenement.currentTarget);
     const clientId = String(formulaire.get("client_id") ?? "");
 
-    const [photoModele, photoTissu] = await Promise.all([
+    const [photoModèle, photoTissu] = await Promise.all([
       preparerPhoto(formulaire.get("photo_modele") as File | null),
       preparerPhoto(formulaire.get("photo_tissu") as File | null),
     ]);
 
-    const photos = [photoModele, photoTissu].filter(
+    const photos = [photoModèle, photoTissu].filter(
       (photo): photo is PhotoEnAttente => photo !== null
     );
 
@@ -91,7 +91,7 @@ export function FormulaireCommande({
         client_id: clientId,
         mesure_id: mesureId,
         nom_modele: String(formulaire.get("nom_modele") ?? "").trim() || null,
-        photo_modele_url: photoModele?.chemin ?? null,
+        photo_modele_url: photoModèle?.chemin ?? null,
         photo_tissu_url: photoTissu?.chemin ?? null,
         prix_total: prixTotal,
         date_essayage: String(formulaire.get("date_essayage") ?? "") || null,
@@ -119,13 +119,13 @@ export function FormulaireCommande({
     return (
       <div className="mt-6 rounded-xl bg-white p-6 text-center shadow-sm">
         <p className="text-sm text-zinc-600">
-          Il faut au moins un client pour creer une commande.
+          Il faut au moins un client pour créer une commande.
         </p>
         <Link
           href="/clients/new"
           className="mt-4 inline-block rounded-xl bg-zinc-900 px-4 py-3 text-sm font-medium text-white"
         >
-          Creer un client
+          Créer un client
         </Link>
       </div>
     );
@@ -157,13 +157,13 @@ export function FormulaireCommande({
 
       <div>
         <label htmlFor="nom_modele" className="block text-sm font-medium text-zinc-700">
-          Modele
+          Modèle
         </label>
         <input
           id="nom_modele"
           name="nom_modele"
           type="text"
-          placeholder="Boubou brode, chemise..."
+          placeholder="Boubou brodé, chemise..."
           className="mt-1 w-full rounded-xl border border-zinc-300 px-4 py-3 text-base"
         />
       </div>
@@ -174,7 +174,7 @@ export function FormulaireCommande({
             htmlFor="photo_modele"
             className="block text-sm font-medium text-zinc-700"
           >
-            Photo modele
+            Photo modèle
           </label>
           <input
             id="photo_modele"

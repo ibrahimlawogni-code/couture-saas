@@ -13,7 +13,7 @@ const CHAMPS_LABELS: Record<string, string> = {
   longueur_bras: "Longueur bras",
   longueur_jambe: "Longueur jambe",
   col: "Col",
-  epaule: "Epaule",
+  epaule: "Épaule",
 };
 
 export function FicheClient() {
@@ -57,7 +57,7 @@ export function FicheClient() {
   if (!client) {
     return (
       <p className="mt-8 text-sm text-zinc-500">
-        Ce client est introuvable dans les donnees enregistrees sur cet appareil.
+        Ce client est introuvable dans les données enregistrées sur cet appareil.
       </p>
     );
   }
@@ -70,7 +70,7 @@ export function FicheClient() {
       <div className="mt-2">
         <h1 className="text-xl font-semibold text-zinc-900">{client.nom}</h1>
         <p className="text-sm text-zinc-500">
-          {client.telephone ?? "Pas de telephone"}
+          {client.telephone ?? "Pas de téléphone"}
           {client.whatsapp ? ` · WhatsApp ${client.whatsapp}` : ""}
         </p>
         {client.notes && <p className="mt-1 text-sm text-zinc-500">{client.notes}</p>}
@@ -93,7 +93,7 @@ export function FicheClient() {
 
       <section className="mt-6">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
-          Dernieres mesures
+          Dernières mesures
         </h2>
         {derniere ? (
           <div className="mt-2 rounded-xl bg-white p-4 shadow-sm">
@@ -115,7 +115,7 @@ export function FicheClient() {
             </dl>
           </div>
         ) : (
-          <p className="mt-2 text-sm text-zinc-500">Aucune mesure enregistree.</p>
+          <p className="mt-2 text-sm text-zinc-500">Aucune mesure enregistrée.</p>
         )}
       </section>
 
@@ -152,7 +152,7 @@ export function FicheClient() {
                 >
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-zinc-900">
-                      {commande.nom_modele ?? "Sans modele"}
+                      {commande.nom_modele ?? "Sans modèle"}
                     </p>
                     <p className="truncate text-xs text-zinc-500">
                       {commande.enAttente

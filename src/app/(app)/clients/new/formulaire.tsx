@@ -65,7 +65,7 @@ export function FormulaireClient({ atelierId }: { atelierId: string }) {
       </div>
       <div>
         <label htmlFor="telephone" className="block text-sm font-medium text-zinc-700">
-          Telephone
+          Téléphone
         </label>
         <input
           id="telephone"

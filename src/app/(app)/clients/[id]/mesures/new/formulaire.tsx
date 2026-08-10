@@ -12,7 +12,7 @@ const CHAMPS_STANDARDS: { cle: string; label: string }[] = [
   { cle: "longueur_bras", label: "Longueur bras (cm)" },
   { cle: "longueur_jambe", label: "Longueur jambe (cm)" },
   { cle: "col", label: "Col (cm)" },
-  { cle: "epaule", label: "Epaule (cm)" },
+  { cle: "epaule", label: "Épaule (cm)" },
 ];
 
 export function FormulaireMesure({
@@ -63,7 +63,7 @@ export function FormulaireMesure({
     <form onSubmit={soumettre} className="mt-6 flex flex-col gap-4">
       <div>
         <label htmlFor="libelle" className="block text-sm font-medium text-zinc-700">
-          Libelle
+          Libellé
         </label>
         <input
           id="libelle"
@@ -97,7 +97,7 @@ export function FormulaireMesure({
 
       <div className="rounded-xl border border-dashed border-zinc-300 p-4">
         <p className="text-sm font-medium text-zinc-700">
-          Champ personnalise (optionnel)
+          Champ personnalisé (optionnel)
         </p>
         <div className="mt-2 grid grid-cols-2 gap-4">
           <input

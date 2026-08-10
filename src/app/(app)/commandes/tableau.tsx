@@ -121,7 +121,7 @@ export function TableauCommandes() {
                           {nomsClients.get(commande.client_id) ?? "Client inconnu"}
                         </p>
                         <p className="truncate text-xs text-zinc-500">
-                          {commande.nom_modele ?? "Sans modele"}
+                          {commande.nom_modele ?? "Sans modèle"}
                         </p>
                         <div className="mt-2 flex items-center justify-between gap-2">
                           <span

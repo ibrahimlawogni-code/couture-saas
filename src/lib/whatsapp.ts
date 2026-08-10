@@ -25,7 +25,7 @@ export function lienWhatsApp(numero: string | null, message: string): string | n
 }
 
 function formaterDate(date: string | null) {
-  return date ? new Date(date).toLocaleDateString("fr-FR") : "a definir";
+  return date ? new Date(date).toLocaleDateString("fr-FR") : "à définir";
 }
 
 type Commande = {
@@ -45,13 +45,13 @@ export function messageRecapitulatif(
   return [
     `Bonjour ${client},`,
     "",
-    `Voici le recapitulatif de votre commande chez ${atelier} :`,
-    `Modele : ${commande.nom_modele ?? "a preciser"}`,
+    `Voici le récapitulatif de votre commande chez ${atelier} :`,
+    `Modèle : ${commande.nom_modele ?? "à préciser"}`,
     `Prix total : ${formaterMontant(commande.prix_total)}`,
-    `Reste a payer : ${formaterMontant(resteAPayer)}`,
+    `Reste à payer : ${formaterMontant(resteAPayer)}`,
     `Essayage : ${formaterDate(commande.date_essayage)}`,
     `Livraison : ${formaterDate(commande.date_livraison)}`,
-    `Etat : ${STATUT_LABELS[commande.statut]}`,
+    `État : ${STATUT_LABELS[commande.statut]}`,
     "",
     "Merci de votre confiance.",
   ].join("\n");
@@ -65,11 +65,11 @@ export function messageRappelEssayage(
   return [
     `Bonjour ${client},`,
     "",
-    `Petit rappel : votre essayage chez ${atelier} est prevu le ${formaterDate(
+    `Petit rappel : votre essayage chez ${atelier} est prévu le ${formaterDate(
       commande.date_essayage
     )}.`,
     "",
-    "A bientot.",
+    "À bientôt.",
   ].join("\n");
 }
 
@@ -82,13 +82,13 @@ export function messagePret(
   const lignes = [
     `Bonjour ${client},`,
     "",
-    `Votre ${commande.nom_modele ?? "vetement"} est pret chez ${atelier}, vous pouvez venir le retirer.`,
+    `Votre ${commande.nom_modele ?? "vêtement"} est prêt chez ${atelier}, vous pouvez venir le retirer.`,
   ];
 
   if (resteAPayer > 0) {
-    lignes.push(`Reste a payer : ${formaterMontant(resteAPayer)}.`);
+    lignes.push(`Reste à payer : ${formaterMontant(resteAPayer)}.`);
   }
 
-  lignes.push("", "A bientot.");
+  lignes.push("", "À bientôt.");
   return lignes.join("\n");
 }

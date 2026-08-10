@@ -17,7 +17,7 @@ export type DonneesRecu = {
 };
 
 function formaterDate(valeur: string | null) {
-  return valeur ? new Date(valeur).toLocaleDateString("fr-FR") : "a definir";
+  return valeur ? new Date(valeur).toLocaleDateString("fr-FR") : "à définir";
 }
 
 /**
@@ -50,7 +50,7 @@ export async function genererRecu(donnees: DonneesRecu): Promise<Blob> {
   ctx.font = "400 24px sans-serif";
   ctx.fillStyle = "#a1a1aa";
   ctx.fillText(
-    `Recu du ${new Date().toLocaleDateString("fr-FR")}`,
+    `Reçu du ${new Date().toLocaleDateString("fr-FR")}`,
     MARGE,
     104
   );
@@ -83,8 +83,8 @@ export async function genererRecu(donnees: DonneesRecu): Promise<Blob> {
   };
 
   ligne("Client", donnees.client, true);
-  ligne("Modele", donnees.modele ?? "Non precise");
-  ligne("Livraison prevue", formaterDate(donnees.dateLivraison));
+  ligne("Modèle", donnees.modele ?? "Non précisé");
+  ligne("Livraison prévue", formaterDate(donnees.dateLivraison));
 
   separateur();
 
@@ -113,13 +113,13 @@ export async function genererRecu(donnees: DonneesRecu): Promise<Blob> {
   );
   const reste = donnees.prixTotal - totalVerse;
 
-  ligne("Deja verse", formaterMontant(totalVerse));
+  ligne("Déjà versé", formaterMontant(totalVerse));
 
   separateur();
 
   ctx.font = "600 30px sans-serif";
   ctx.fillStyle = GRIS;
-  ctx.fillText("Reste a payer", MARGE, y);
+  ctx.fillText("Reste à payer", MARGE, y);
   ctx.font = "700 34px sans-serif";
   ctx.fillStyle = reste > 0 ? ROUGE : VERT;
   ctx.textAlign = "right";
@@ -132,7 +132,7 @@ export async function genererRecu(donnees: DonneesRecu): Promise<Blob> {
 
   return new Promise((resolve, reject) => {
     canvas.toBlob(
-      (blob) => (blob ? resolve(blob) : reject(new Error("Recu illisible"))),
+      (blob) => (blob ? resolve(blob) : reject(new Error("Reçu illisible"))),
       "image/jpeg",
       0.92
     );

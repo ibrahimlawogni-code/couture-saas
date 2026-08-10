@@ -16,7 +16,7 @@ export function BoutonRecu({ donnees }: { donnees: DonneesRecu }) {
 
       // Le partage natif ouvre WhatsApp directement depuis le telephone.
       if (navigator.canShare?.({ files: [fichier] })) {
-        await navigator.share({ files: [fichier], title: "Recu" });
+        await navigator.share({ files: [fichier], title: "Reçu" });
       } else {
         const url = URL.createObjectURL(blob);
         const lien = document.createElement("a");
@@ -40,7 +40,7 @@ export function BoutonRecu({ donnees }: { donnees: DonneesRecu }) {
       disabled={etat === "generation"}
       className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm font-medium text-zinc-900 active:bg-zinc-100 disabled:opacity-60"
     >
-      {etat === "generation" ? "Preparation..." : "Partager le recu"}
+      {etat === "generation" ? "Préparation..." : "Partager le reçu"}
     </button>
   );
 }

@@ -26,7 +26,7 @@ export function ListeClients() {
         type="search"
         value={recherche}
         onChange={(evenement) => setRecherche(evenement.target.value)}
-        placeholder="Chercher un nom ou un numero..."
+        placeholder="Chercher un nom ou un numéro..."
         className="mt-4 w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-base"
       />
 
@@ -60,7 +60,7 @@ export function ListeClients() {
 
       {chargee && resultats.length === 0 && (
         <p className="mt-8 text-center text-sm text-zinc-500">
-          {recherche ? "Aucun client trouve." : "Aucun client pour l'instant."}
+          {recherche ? "Aucun client trouvé." : "Aucun client pour l'instant."}
         </p>
       )}
     </>

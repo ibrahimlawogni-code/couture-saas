@@ -43,3 +43,6 @@ next-env.d.ts
 
 # scripts de test navigateur, temporaires
 /test-*.mjs
+
+# apercus de travail
+/apercu-*.png

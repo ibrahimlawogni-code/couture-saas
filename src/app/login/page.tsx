@@ -12,7 +12,7 @@ export default async function LoginPage({
     <div className="flex flex-1 items-center justify-center bg-zinc-50 px-4">
       <div className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-sm">
         <h1 className="text-2xl font-semibold text-zinc-900">Connexion</h1>
-        <p className="mt-1 text-sm text-zinc-500">Accede a ton atelier</p>
+        <p className="mt-1 text-sm text-zinc-500">Accède à ton atelier</p>
 
         {error && (
           <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -56,7 +56,7 @@ export default async function LoginPage({
         <p className="mt-6 text-center text-sm text-zinc-500">
           Pas encore de compte ?{" "}
           <Link href="/signup" className="font-medium text-zinc-900 underline">
-            Creer un atelier
+            Créer un atelier
           </Link>
         </p>
       </div>

@@ -11,13 +11,13 @@ export const STATUTS = [
 export type Statut = (typeof STATUTS)[number];
 
 export const STATUT_LABELS: Record<Statut, string> = {
-  recu: "Recu",
+  recu: "Reçu",
   coupe: "Coupe",
   couture: "Couture",
   essayage: "Essayage",
   finitions: "Finitions",
-  pret: "Pret a retirer",
-  livre: "Livre",
+  pret: "Prêt à retirer",
+  livre: "Livré",
 };
 
 export function statutSuivant(statut: Statut): Statut | null {
@@ -54,7 +54,7 @@ export const PRIORITE_STYLES: Record<Priorite, string> = {
 
 export const PRIORITE_LABELS: Record<Priorite, string> = {
   en_retard: "En retard",
-  urgent: "A livrer bientot",
+  urgent: "À livrer bientôt",
   normal: "Dans les temps",
 };
 

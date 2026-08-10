@@ -3,9 +3,15 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const PUBLIC_PATHS = ["/login", "/signup", "/auth"];
 
-// Repli du service worker : doit repondre la meme page connecte ou non,
-// sinon c'est une redirection qui finit en cache.
+// Accessibles dans le meme etat connecte ou non : la page de presentation
+// doit rester visible par un visiteur, et le repli du service worker doit
+// repondre la meme chose dans les deux cas, sinon c'est une redirection qui
+// finit en cache.
 const CHEMINS_LIBRES = ["/hors-ligne"];
+
+function estCheminLibre(chemin: string) {
+  return chemin === "/" || CHEMINS_LIBRES.some((libre) => chemin.startsWith(libre));
+}
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -37,7 +43,7 @@ export async function updateSession(request: NextRequest) {
 
   const chemin = request.nextUrl.pathname;
 
-  if (CHEMINS_LIBRES.some((libre) => chemin.startsWith(libre))) {
+  if (estCheminLibre(chemin)) {
     return response;
   }
 
