@@ -1,36 +1,30 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { DM_Sans } from "next/font/google";
 import "./globals.css";
 import { BarreEtatReseau } from "./service-worker";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+// Une seule famille pour toute l'application. Plus ronde et plus chaleureuse
+// qu'une grotesque neutre, elle convient mieux a un public d'artisans.
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "Couture SaaS",
+  title: "TailorHub",
   description: "Gestion des clients, mesures et commandes pour ateliers de couture",
-  appleWebApp: { capable: true, title: "Couture", statusBarStyle: "default" },
+  appleWebApp: { capable: true, title: "TailorHub", statusBarStyle: "default" },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#18181b",
+  themeColor: "#0c3b2e",
   // Empeche le zoom automatique d'iOS a la mise au point d'un champ.
   maximumScale: 1,
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="fr"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
+    <html lang="fr" className={`${dmSans.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <BarreEtatReseau />
         {children}

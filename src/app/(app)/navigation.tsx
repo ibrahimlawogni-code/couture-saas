@@ -13,7 +13,7 @@ export function NavigationPrincipale() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 border-t border-zinc-200 bg-white">
+    <nav className="fixed inset-x-0 bottom-0 border-t border-bordure bg-white">
       <ul className="mx-auto flex max-w-2xl">
         {ONGLETS.map((onglet) => {
           const actif = pathname.startsWith(onglet.href);
@@ -22,7 +22,7 @@ export function NavigationPrincipale() {
               <Link
                 href={onglet.href}
                 className={`block py-4 text-center text-sm font-medium ${
-                  actif ? "text-zinc-900" : "text-zinc-400"
+                  actif ? "text-encre" : "text-gris"
                 }`}
               >
                 {onglet.label}

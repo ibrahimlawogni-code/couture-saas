@@ -91,12 +91,12 @@ export function DetailCommande() {
   const photos = horsLigne || cheminsPhotos.length === 0 ? [] : signatures;
 
   if (!chargee) {
-    return <p className="mt-8 text-sm text-zinc-500">Chargement...</p>;
+    return <p className="mt-8 text-sm text-gris">Chargement...</p>;
   }
 
   if (!commande) {
     return (
-      <p className="mt-8 text-sm text-zinc-500">
+      <p className="mt-8 text-sm text-gris">
         Cette commande est introuvable dans les données enregistrées sur cet appareil.
       </p>
     );
@@ -167,12 +167,12 @@ export function DetailCommande() {
     <>
       <div className="mt-2 flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="truncate text-xl font-semibold text-zinc-900">
+          <h1 className="truncate text-xl font-semibold text-encre">
             {commande.nom_modele ?? "Commande"}
           </h1>
           <Link
             href={`/clients/${commande.client_id}`}
-            className="text-sm text-zinc-500 underline"
+            className="text-sm text-gris underline"
           >
             {nomClient || "Client inconnu"}
           </Link>
@@ -184,9 +184,9 @@ export function DetailCommande() {
         </span>
       </div>
 
-      <section className="mt-4 rounded-xl bg-white p-4 shadow-sm">
-        <p className="text-xs uppercase tracking-wide text-zinc-500">Statut</p>
-        <p className="mt-1 text-lg font-semibold text-zinc-900">
+      <section className="mt-4 rounded-2xl bg-white p-4 shadow-sm">
+        <p className="text-xs uppercase tracking-wide text-gris">Statut</p>
+        <p className="mt-1 text-lg font-semibold text-encre">
           {STATUT_LABELS[statut]}
         </p>
         {suivant && (
@@ -194,20 +194,20 @@ export function DetailCommande() {
             type="button"
             onClick={avancer}
             disabled={horsLigne || commande.enAttente}
-            className="mt-3 w-full rounded-xl bg-zinc-900 px-4 py-4 text-base font-medium text-white active:bg-zinc-700 disabled:opacity-40"
+            className="mt-3 w-full rounded-2xl bg-foret px-4 py-4 text-base font-medium text-white active:bg-vert disabled:opacity-40"
           >
             Passer à : {STATUT_LABELS[suivant]}
           </button>
         )}
         {horsLigne && (
-          <p className="mt-2 text-xs text-zinc-500">
+          <p className="mt-2 text-xs text-gris">
             L&apos;avancement du statut demande une connexion.
           </p>
         )}
       </section>
 
-      <section className="mt-4 rounded-xl bg-white p-4 shadow-sm">
-        <p className="text-xs uppercase tracking-wide text-zinc-500">WhatsApp</p>
+      <section className="mt-4 rounded-2xl bg-white p-4 shadow-sm">
+        <p className="text-xs uppercase tracking-wide text-gris">WhatsApp</p>
         {numero ? (
           <div className="mt-2 flex flex-col gap-2">
             {messagesWhatsApp.map((message) => (
@@ -216,32 +216,32 @@ export function DetailCommande() {
                 href={lienWhatsApp(numero, message.texte) ?? "#"}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-xl bg-emerald-600 px-4 py-3 text-center text-sm font-medium text-white active:bg-emerald-700"
+                className="rounded-2xl bg-vert px-4 py-3 text-center text-sm font-medium text-white active:bg-foret"
               >
                 {message.label}
               </a>
             ))}
           </div>
         ) : (
-          <p className="mt-2 text-sm text-zinc-500">
+          <p className="mt-2 text-sm text-gris">
             Aucun numéro enregistré pour ce client.
           </p>
         )}
       </section>
 
-      <section className="mt-4 rounded-xl bg-white p-4 shadow-sm">
-        <p className="text-xs uppercase tracking-wide text-zinc-500">Dates</p>
+      <section className="mt-4 rounded-2xl bg-white p-4 shadow-sm">
+        <p className="text-xs uppercase tracking-wide text-gris">Dates</p>
         <div className="mt-2 flex justify-between text-sm">
-          <span className="text-zinc-500">Essayage</span>
-          <span className="font-medium text-zinc-900">
+          <span className="text-gris">Essayage</span>
+          <span className="font-medium text-encre">
             {commande.date_essayage
               ? new Date(commande.date_essayage).toLocaleDateString("fr-FR")
               : "Non définie"}
           </span>
         </div>
         <div className="mt-1 flex justify-between text-sm">
-          <span className="text-zinc-500">Livraison</span>
-          <span className="font-medium text-zinc-900">
+          <span className="text-gris">Livraison</span>
+          <span className="font-medium text-encre">
             {commande.date_livraison
               ? new Date(commande.date_livraison).toLocaleDateString("fr-FR")
               : "Non définie"}
@@ -249,23 +249,23 @@ export function DetailCommande() {
         </div>
       </section>
 
-      <section className="mt-4 rounded-xl bg-white p-4 shadow-sm">
-        <p className="text-xs uppercase tracking-wide text-zinc-500">Paiement</p>
+      <section className="mt-4 rounded-2xl bg-white p-4 shadow-sm">
+        <p className="text-xs uppercase tracking-wide text-gris">Paiement</p>
         <div className="mt-2 flex justify-between text-sm">
-          <span className="text-zinc-500">Prix total</span>
-          <span className="font-medium text-zinc-900">
+          <span className="text-gris">Prix total</span>
+          <span className="font-medium text-encre">
             {formaterMontant(Number(commande.prix_total))}
           </span>
         </div>
         <div className="mt-1 flex justify-between text-sm">
-          <span className="text-zinc-500">Déjà versé</span>
-          <span className="font-medium text-zinc-900">{formaterMontant(totalPaye)}</span>
+          <span className="text-gris">Déjà versé</span>
+          <span className="font-medium text-encre">{formaterMontant(totalPaye)}</span>
         </div>
-        <div className="mt-2 flex justify-between border-t border-zinc-100 pt-2 text-base">
-          <span className="font-medium text-zinc-700">Reste à payer</span>
+        <div className="mt-2 flex justify-between border-t border-bordure pt-2 text-base">
+          <span className="font-medium text-encre">Reste à payer</span>
           <span
             className={`font-semibold ${
-              resteAPayer > 0 ? "text-red-600" : "text-emerald-600"
+              resteAPayer > 0 ? "text-rouge" : "text-vert"
             }`}
           >
             {formaterMontant(resteAPayer)}
@@ -283,11 +283,11 @@ export function DetailCommande() {
               inputMode="numeric"
               placeholder="Montant reçu"
               required
-              className="w-full min-w-0 flex-1 rounded-xl border border-zinc-300 px-4 py-3 text-base"
+              className="w-full min-w-0 flex-1 rounded-2xl border border-bordure px-4 py-3 text-base"
             />
             <button
               type="submit"
-              className="shrink-0 rounded-xl bg-zinc-900 px-4 py-3 text-sm font-medium text-white active:bg-zinc-700"
+              className="shrink-0 rounded-2xl bg-foret px-4 py-3 text-sm font-medium text-white active:bg-vert"
             >
               Ajouter
             </button>
@@ -295,11 +295,11 @@ export function DetailCommande() {
         )}
 
         {versements.length > 0 && (
-          <ul className="mt-3 flex flex-col gap-1 border-t border-zinc-100 pt-3">
+          <ul className="mt-3 flex flex-col gap-1 border-t border-bordure pt-3">
             {versements.map((paiement) => (
               <li
                 key={paiement.id}
-                className="flex justify-between text-sm text-zinc-500"
+                className="flex justify-between text-sm text-gris"
               >
                 <span>
                   {new Date(paiement.created_at).toLocaleDateString("fr-FR")} ·{" "}
@@ -312,7 +312,7 @@ export function DetailCommande() {
           </ul>
         )}
 
-        <div className="mt-3 border-t border-zinc-100 pt-3">
+        <div className="mt-3 border-t border-bordure pt-3">
           <BoutonRecu
             donnees={{
               atelier: nomAtelier,
@@ -332,7 +332,7 @@ export function DetailCommande() {
 
       {photos.length > 0 && (
         <section className="mt-4">
-          <p className="text-xs uppercase tracking-wide text-zinc-500">Photos</p>
+          <p className="text-xs uppercase tracking-wide text-gris">Photos</p>
           <div className="mt-2 grid grid-cols-2 gap-3">
             {photos.map((url) => (
               // Images signees a duree limitee : next/image n'apporte rien ici.
@@ -341,7 +341,7 @@ export function DetailCommande() {
                 key={url}
                 src={url}
                 alt="Photo de la commande"
-                className="aspect-square w-full rounded-xl bg-zinc-200 object-cover"
+                className="aspect-square w-full rounded-2xl bg-vert-clair object-cover"
               />
             ))}
           </div>

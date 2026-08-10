@@ -21,10 +21,10 @@ export default async function NewMesurePage({
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 py-6">
-      <Link href={`/clients/${id}`} className="text-sm text-zinc-500">
+      <Link href={`/clients/${id}`} className="text-sm text-gris">
         &larr; Retour
       </Link>
-      <h1 className="mt-2 text-xl font-semibold text-zinc-900">Nouvelle mesure</h1>
+      <h1 className="mt-2 text-xl font-semibold text-encre">Nouvelle mesure</h1>
 
       <FormulaireMesure clientId={id} utilisateurId={user.id} />
     </div>

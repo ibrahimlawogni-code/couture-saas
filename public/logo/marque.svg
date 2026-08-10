@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 160" fill="none" role="img" aria-label="TailorHub">
+  <!--
+    Logo complet : buste de couture ceint d'un metre ruban.
+    Deux nuances d'un meme vert plutot que deux couleurs etrangeres.
+    Reserve aux grands formats. En dessous de 48 px, utiliser icone.svg.
+  -->
+
+  <!-- Pommeau et col -->
+  <circle cx="60" cy="9" r="4.5" fill="#059669" />
+  <path d="M56.5 14h7v7h-7z" fill="#059669" />
+
+  <!-- Buste -->
+  <path
+    d="M60 20 78 30c10 8 12 22 6 36-4 10-6 18-2 30 4 12 2 24-8 36L60 140l-14-8c-10-12-12-24-8-36 4-12 2-20-2-30-6-14-4-28 6-36L60 20z"
+    fill="#059669"
+  />
+
+  <!-- Ouverture centrale : allege la silhouette et evoque la couture -->
+  <path d="M60 34v92" stroke="#ffffff" stroke-width="2.4" stroke-opacity="0.28" />
+
+  <!-- Metre ruban, bande superieure -->
+  <path
+    d="M22 78c22 10 54 4 78-16"
+    stroke="#6ee7b7"
+    stroke-width="11"
+    stroke-linecap="round"
+  />
+  <path
+    d="M22 78c22 10 54 4 78-16"
+    stroke="#065f46"
+    stroke-width="11"
+    stroke-linecap="butt"
+    stroke-dasharray="1.4 7"
+  />
+
+  <!-- Metre ruban, bande inferieure -->
+  <path
+    d="M26 100c22 10 54 4 78-16"
+    stroke="#34d399"
+    stroke-width="11"
+    stroke-linecap="round"
+  />
+  <path
+    d="M26 100c22 10 54 4 78-16"
+    stroke="#065f46"
+    stroke-width="11"
+    stroke-linecap="butt"
+    stroke-dasharray="1.4 7"
+  />
+</svg>

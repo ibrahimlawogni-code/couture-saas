@@ -117,13 +117,13 @@ export function FormulaireCommande({
 
   if (tousLesClients.length === 0) {
     return (
-      <div className="mt-6 rounded-xl bg-white p-6 text-center shadow-sm">
-        <p className="text-sm text-zinc-600">
+      <div className="mt-6 rounded-2xl bg-white p-6 text-center shadow-sm">
+        <p className="text-sm text-gris">
           Il faut au moins un client pour créer une commande.
         </p>
         <Link
           href="/clients/new"
-          className="mt-4 inline-block rounded-xl bg-zinc-900 px-4 py-3 text-sm font-medium text-white"
+          className="mt-4 inline-block rounded-2xl bg-foret px-4 py-3 text-sm font-medium text-white"
         >
           Créer un client
         </Link>
@@ -134,7 +134,7 @@ export function FormulaireCommande({
   return (
     <form onSubmit={soumettre} className="mt-6 flex flex-col gap-4">
       <div>
-        <label htmlFor="client_id" className="block text-sm font-medium text-zinc-700">
+        <label htmlFor="client_id" className="block text-sm font-medium text-encre">
           Client
         </label>
         <select
@@ -142,7 +142,7 @@ export function FormulaireCommande({
           name="client_id"
           required
           defaultValue={clientPreselectionne ?? ""}
-          className="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-base"
+          className="mt-1 w-full rounded-2xl border border-bordure bg-white px-4 py-3 text-base"
         >
           <option value="" disabled>
             Choisir un client
@@ -156,7 +156,7 @@ export function FormulaireCommande({
       </div>
 
       <div>
-        <label htmlFor="nom_modele" className="block text-sm font-medium text-zinc-700">
+        <label htmlFor="nom_modele" className="block text-sm font-medium text-encre">
           Modèle
         </label>
         <input
@@ -164,7 +164,7 @@ export function FormulaireCommande({
           name="nom_modele"
           type="text"
           placeholder="Boubou brodé, chemise..."
-          className="mt-1 w-full rounded-xl border border-zinc-300 px-4 py-3 text-base"
+          className="mt-1 w-full rounded-2xl border border-bordure px-4 py-3 text-base"
         />
       </div>
 
@@ -172,7 +172,7 @@ export function FormulaireCommande({
         <div>
           <label
             htmlFor="photo_modele"
-            className="block text-sm font-medium text-zinc-700"
+            className="block text-sm font-medium text-encre"
           >
             Photo modèle
           </label>
@@ -182,13 +182,13 @@ export function FormulaireCommande({
             type="file"
             accept="image/*"
             capture="environment"
-            className="mt-1 w-full rounded-xl border border-zinc-300 px-3 py-3 text-sm"
+            className="mt-1 w-full rounded-2xl border border-bordure px-3 py-3 text-sm"
           />
         </div>
         <div>
           <label
             htmlFor="photo_tissu"
-            className="block text-sm font-medium text-zinc-700"
+            className="block text-sm font-medium text-encre"
           >
             Photo tissu
           </label>
@@ -198,14 +198,14 @@ export function FormulaireCommande({
             type="file"
             accept="image/*"
             capture="environment"
-            className="mt-1 w-full rounded-xl border border-zinc-300 px-3 py-3 text-sm"
+            className="mt-1 w-full rounded-2xl border border-bordure px-3 py-3 text-sm"
           />
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label htmlFor="prix_total" className="block text-sm font-medium text-zinc-700">
+          <label htmlFor="prix_total" className="block text-sm font-medium text-encre">
             Prix total (FCFA)
           </label>
           <input
@@ -216,11 +216,11 @@ export function FormulaireCommande({
             step="1"
             inputMode="numeric"
             required
-            className="mt-1 w-full rounded-xl border border-zinc-300 px-4 py-3 text-base"
+            className="mt-1 w-full rounded-2xl border border-bordure px-4 py-3 text-base"
           />
         </div>
         <div>
-          <label htmlFor="acompte" className="block text-sm font-medium text-zinc-700">
+          <label htmlFor="acompte" className="block text-sm font-medium text-encre">
             Acompte verse
           </label>
           <input
@@ -230,7 +230,7 @@ export function FormulaireCommande({
             min="0"
             step="1"
             inputMode="numeric"
-            className="mt-1 w-full rounded-xl border border-zinc-300 px-4 py-3 text-base"
+            className="mt-1 w-full rounded-2xl border border-bordure px-4 py-3 text-base"
           />
         </div>
       </div>
@@ -239,7 +239,7 @@ export function FormulaireCommande({
         <div>
           <label
             htmlFor="date_essayage"
-            className="block text-sm font-medium text-zinc-700"
+            className="block text-sm font-medium text-encre"
           >
             Date d&apos;essayage
           </label>
@@ -247,13 +247,13 @@ export function FormulaireCommande({
             id="date_essayage"
             name="date_essayage"
             type="date"
-            className="mt-1 w-full rounded-xl border border-zinc-300 px-4 py-3 text-base"
+            className="mt-1 w-full rounded-2xl border border-bordure px-4 py-3 text-base"
           />
         </div>
         <div>
           <label
             htmlFor="date_livraison"
-            className="block text-sm font-medium text-zinc-700"
+            className="block text-sm font-medium text-encre"
           >
             Date de livraison
           </label>
@@ -261,7 +261,7 @@ export function FormulaireCommande({
             id="date_livraison"
             name="date_livraison"
             type="date"
-            className="mt-1 w-full rounded-xl border border-zinc-300 px-4 py-3 text-base"
+            className="mt-1 w-full rounded-2xl border border-bordure px-4 py-3 text-base"
           />
         </div>
       </div>
@@ -269,7 +269,7 @@ export function FormulaireCommande({
       <button
         type="submit"
         disabled={!pret || envoi}
-        className="mt-2 rounded-xl bg-zinc-900 px-4 py-4 text-base font-medium text-white active:bg-zinc-700 disabled:opacity-60"
+        className="mt-2 rounded-2xl bg-foret px-4 py-4 text-base font-medium text-white active:bg-vert disabled:opacity-60"
       >
         {!pret
           ? "Chargement..."

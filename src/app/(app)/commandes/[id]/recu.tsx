@@ -38,7 +38,7 @@ export function BoutonRecu({ donnees }: { donnees: DonneesRecu }) {
       type="button"
       onClick={partager}
       disabled={etat === "generation"}
-      className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm font-medium text-zinc-900 active:bg-zinc-100 disabled:opacity-60"
+      className="w-full rounded-2xl border border-bordure bg-white px-4 py-3 text-sm font-medium text-encre active:bg-papier disabled:opacity-60"
     >
       {etat === "generation" ? "Préparation..." : "Partager le reçu"}
     </button>

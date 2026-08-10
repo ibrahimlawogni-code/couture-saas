@@ -62,7 +62,7 @@ export function FormulaireMesure({
   return (
     <form onSubmit={soumettre} className="mt-6 flex flex-col gap-4">
       <div>
-        <label htmlFor="libelle" className="block text-sm font-medium text-zinc-700">
+        <label htmlFor="libelle" className="block text-sm font-medium text-encre">
           Libellé
         </label>
         <input
@@ -70,7 +70,7 @@ export function FormulaireMesure({
           name="libelle"
           type="text"
           defaultValue="Mesures"
-          className="mt-1 w-full rounded-xl border border-zinc-300 px-4 py-3 text-base"
+          className="mt-1 w-full rounded-2xl border border-bordure px-4 py-3 text-base"
         />
       </div>
 
@@ -79,7 +79,7 @@ export function FormulaireMesure({
           <div key={champ.cle}>
             <label
               htmlFor={champ.cle}
-              className="block text-sm font-medium text-zinc-700"
+              className="block text-sm font-medium text-encre"
             >
               {champ.label}
             </label>
@@ -89,14 +89,14 @@ export function FormulaireMesure({
               type="number"
               step="0.5"
               inputMode="decimal"
-              className="mt-1 w-full rounded-xl border border-zinc-300 px-4 py-3 text-base"
+              className="mt-1 w-full rounded-2xl border border-bordure px-4 py-3 text-base"
             />
           </div>
         ))}
       </div>
 
-      <div className="rounded-xl border border-dashed border-zinc-300 p-4">
-        <p className="text-sm font-medium text-zinc-700">
+      <div className="rounded-2xl border border-dashed border-bordure p-4">
+        <p className="text-sm font-medium text-encre">
           Champ personnalisé (optionnel)
         </p>
         <div className="mt-2 grid grid-cols-2 gap-4">
@@ -104,13 +104,13 @@ export function FormulaireMesure({
             name="champ_custom_nom"
             type="text"
             placeholder="Nom du champ"
-            className="rounded-xl border border-zinc-300 px-4 py-3 text-base"
+            className="rounded-2xl border border-bordure px-4 py-3 text-base"
           />
           <input
             name="champ_custom_valeur"
             type="text"
             placeholder="Valeur"
-            className="rounded-xl border border-zinc-300 px-4 py-3 text-base"
+            className="rounded-2xl border border-bordure px-4 py-3 text-base"
           />
         </div>
       </div>
@@ -118,7 +118,7 @@ export function FormulaireMesure({
       <button
         type="submit"
         disabled={!pret || envoi}
-        className="mt-2 rounded-xl bg-zinc-900 px-4 py-4 text-base font-medium text-white active:bg-zinc-700 disabled:opacity-60"
+        className="mt-2 rounded-2xl bg-foret px-4 py-4 text-base font-medium text-white active:bg-vert disabled:opacity-60"
       >
         {!pret ? "Chargement..." : envoi ? "Enregistrement..." : "Enregistrer"}
       </button>

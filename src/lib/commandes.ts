@@ -46,10 +46,15 @@ export function priorite(dateLivraison: string | null, statut: Statut): Priorite
   return "normal";
 }
 
+/*
+ * Trois degres d'urgence, trois teintes distinctes. Le bleu est exclu ici :
+ * il est reserve aux messages du systeme, alors qu'une echeance concerne le
+ * metier du tailleur.
+ */
 export const PRIORITE_STYLES: Record<Priorite, string> = {
-  en_retard: "bg-red-100 text-red-700",
-  urgent: "bg-amber-100 text-amber-800",
-  normal: "bg-zinc-100 text-zinc-600",
+  en_retard: "bg-rouge-clair text-rouge",
+  urgent: "bg-ambre-clair text-ambre",
+  normal: "bg-vert-clair text-foret",
 };
 
 export const PRIORITE_LABELS: Record<Priorite, string> = {

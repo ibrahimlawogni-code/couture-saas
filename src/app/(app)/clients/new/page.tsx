@@ -12,10 +12,10 @@ export default async function NewClientPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 py-6">
-      <Link href="/clients" className="text-sm text-zinc-500">
+      <Link href="/clients" className="text-sm text-gris">
         &larr; Retour
       </Link>
-      <h1 className="mt-2 text-xl font-semibold text-zinc-900">Nouveau client</h1>
+      <h1 className="mt-2 text-xl font-semibold text-encre">Nouveau client</h1>
 
       <FormulaireClient atelierId={atelierId} />
     </div>

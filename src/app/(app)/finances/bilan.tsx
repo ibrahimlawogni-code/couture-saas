@@ -69,12 +69,12 @@ export function BilanFinancier() {
   }, [clients, commandes, paiements]);
 
   if (!chargee) {
-    return <p className="mt-8 text-sm text-zinc-500">Chargement...</p>;
+    return <p className="mt-8 text-sm text-gris">Chargement...</p>;
   }
 
   return (
     <>
-      <p className="text-sm text-zinc-500">
+      <p className="text-sm text-gris">
         Mois de{" "}
         {bilan.debutMois.toLocaleDateString("fr-FR", {
           month: "long",
@@ -82,73 +82,73 @@ export function BilanFinancier() {
         })}
       </p>
 
-      <section className="mt-4 rounded-xl bg-zinc-900 p-5 text-white shadow-sm">
-        <p className="text-xs uppercase tracking-wide text-zinc-400">
+      <section className="mt-4 rounded-3xl bg-foret p-5 text-white shadow-sm">
+        <p className="text-xs uppercase tracking-wide text-vert-pale">
           Encaissé ce mois
         </p>
         <p className="mt-1 text-3xl font-semibold">
           {formaterMontant(bilan.encaisseMois)}
         </p>
-        <p className="mt-1 text-sm text-zinc-400">
+        <p className="mt-1 text-sm text-vert-pale">
           dont {formaterMontant(bilan.acomptesMois)} d&apos;acomptes
         </p>
       </section>
 
       <div className="mt-3 grid grid-cols-2 gap-3">
-        <section className="rounded-xl bg-white p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-wide text-zinc-500">
+        <section className="rounded-2xl bg-white p-4 shadow-sm">
+          <p className="text-xs uppercase tracking-wide text-gris">
             Commandes du mois
           </p>
-          <p className="mt-1 text-xl font-semibold text-zinc-900">
+          <p className="mt-1 text-xl font-semibold text-encre">
             {formaterMontant(bilan.valeurCommandesMois)}
           </p>
-          <p className="text-sm text-zinc-500">
+          <p className="text-sm text-gris">
             {bilan.commandesMois.length} commande
             {bilan.commandesMois.length > 1 ? "s" : ""}
           </p>
         </section>
 
-        <section className="rounded-xl bg-white p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-wide text-zinc-500">
+        <section className="rounded-2xl bg-white p-4 shadow-sm">
+          <p className="text-xs uppercase tracking-wide text-gris">
             Créances en attente
           </p>
           <p
             className={`mt-1 text-xl font-semibold ${
-              bilan.totalCreances > 0 ? "text-red-600" : "text-emerald-600"
+              bilan.totalCreances > 0 ? "text-rouge" : "text-vert"
             }`}
           >
             {formaterMontant(bilan.totalCreances)}
           </p>
-          <p className="text-sm text-zinc-500">
+          <p className="text-sm text-gris">
             {bilan.impayes.length} commande{bilan.impayes.length > 1 ? "s" : ""}
           </p>
         </section>
       </div>
 
       <section className="mt-6">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-gris">
           À recouvrer
         </h2>
         {bilan.impayes.length === 0 ? (
-          <p className="mt-2 text-sm text-zinc-500">Aucun impayé, tout est soldé.</p>
+          <p className="mt-2 text-sm text-gris">Aucun impayé, tout est soldé.</p>
         ) : (
           <ul className="mt-2 flex flex-col gap-2">
             {bilan.impayes.map((commande) => (
               <li key={commande.id}>
                 <Link
                   href={`/commandes/${commande.id}`}
-                  className="flex items-center justify-between gap-3 rounded-xl bg-white px-4 py-3 shadow-sm active:bg-zinc-100"
+                  className="flex items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3 shadow-sm active:bg-papier"
                 >
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-zinc-900">
+                    <p className="truncate text-sm font-medium text-encre">
                       {commande.client}
                     </p>
-                    <p className="truncate text-xs text-zinc-500">
+                    <p className="truncate text-xs text-gris">
                       {commande.nom_modele ?? "Sans modèle"} ·{" "}
                       {STATUT_LABELS[commande.statut as Statut]}
                     </p>
                   </div>
-                  <span className="shrink-0 text-sm font-semibold text-red-600">
+                  <span className="shrink-0 text-sm font-semibold text-rouge">
                     {formaterMontant(commande.reste)}
                   </span>
                 </Link>

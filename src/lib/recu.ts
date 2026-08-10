@@ -2,10 +2,10 @@ import { formaterMontant } from "@/lib/commandes";
 
 const LARGEUR = 800;
 const MARGE = 56;
-const NOIR = "#18181b";
-const GRIS = "#71717a";
-const ROUGE = "#dc2626";
-const VERT = "#059669";
+const ENCRE = "#111e1a";
+const GRIS = "#6b7a74";
+const ROUGE = "#a8261e";
+const VERT = "#12684e";
 
 export type DonneesRecu = {
   atelier: string;
@@ -42,7 +42,7 @@ export async function genererRecu(donnees: DonneesRecu): Promise<Blob> {
   ctx.fillRect(0, 0, LARGEUR, hauteur);
 
   // Entete
-  ctx.fillStyle = NOIR;
+  ctx.fillStyle = ENCRE;
   ctx.fillRect(0, 0, LARGEUR, hauteurEntete);
   ctx.fillStyle = "#ffffff";
   ctx.font = "600 40px sans-serif";
@@ -64,7 +64,7 @@ export async function genererRecu(donnees: DonneesRecu): Promise<Blob> {
     ctx.fillText(libelle, MARGE, y);
 
     ctx.font = gras ? "600 30px sans-serif" : "400 28px sans-serif";
-    ctx.fillStyle = NOIR;
+    ctx.fillStyle = ENCRE;
     ctx.textAlign = "right";
     ctx.fillText(valeur, LARGEUR - MARGE, y);
     ctx.textAlign = "left";

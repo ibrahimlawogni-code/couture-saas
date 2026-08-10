@@ -27,7 +27,7 @@ export function ListeClients() {
         value={recherche}
         onChange={(evenement) => setRecherche(evenement.target.value)}
         placeholder="Chercher un nom ou un numéro..."
-        className="mt-4 w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-base"
+        className="mt-4 w-full rounded-2xl border border-bordure bg-white px-4 py-3 text-base"
       />
 
       <ul className="mt-4 flex flex-col gap-2">
@@ -35,21 +35,21 @@ export function ListeClients() {
           <li key={client.id}>
             <Link
               href={`/clients/${client.id}`}
-              className={`flex items-center justify-between gap-3 rounded-xl px-4 py-4 active:bg-zinc-100 ${
+              className={`flex items-center justify-between gap-3 rounded-2xl px-4 py-4 active:bg-papier ${
                 client.enAttente
-                  ? "border border-dashed border-zinc-300 bg-white"
+                  ? "border border-dashed border-bordure bg-white"
                   : "bg-white shadow-sm"
               }`}
             >
-              <span className="min-w-0 truncate text-base font-medium text-zinc-900">
+              <span className="min-w-0 truncate text-base font-medium text-encre">
                 {client.nom}
               </span>
               {client.enAttente ? (
-                <span className="shrink-0 rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800">
+                <span className="shrink-0 rounded-full bg-bleu-clair px-2 py-1 text-xs font-medium text-bleu">
                   En attente
                 </span>
               ) : (
-                <span className="shrink-0 text-sm text-zinc-500">
+                <span className="shrink-0 text-sm text-gris">
                   {client.telephone}
                 </span>
               )}
@@ -59,7 +59,7 @@ export function ListeClients() {
       </ul>
 
       {chargee && resultats.length === 0 && (
-        <p className="mt-8 text-center text-sm text-zinc-500">
+        <p className="mt-8 text-center text-sm text-gris">
           {recherche ? "Aucun client trouvé." : "Aucun client pour l'instant."}
         </p>
       )}

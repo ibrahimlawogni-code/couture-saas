@@ -28,10 +28,10 @@ export default async function NewCommandePage({
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 py-6">
-      <Link href="/commandes" className="text-sm text-zinc-500">
+      <Link href="/commandes" className="text-sm text-gris">
         &larr; Retour
       </Link>
-      <h1 className="mt-2 text-xl font-semibold text-zinc-900">Nouvelle commande</h1>
+      <h1 className="mt-2 text-xl font-semibold text-encre">Nouvelle commande</h1>
 
       <FormulaireCommande
         atelierId={atelierId}

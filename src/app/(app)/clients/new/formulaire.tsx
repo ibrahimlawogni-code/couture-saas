@@ -48,11 +48,11 @@ export function FormulaireClient({ atelierId }: { atelierId: string }) {
   return (
     <form onSubmit={soumettre} className="mt-6 flex flex-col gap-4">
       {erreur && (
-        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{erreur}</p>
+        <p className="rounded-2xl bg-rouge-clair px-3 py-2 text-sm text-rouge">{erreur}</p>
       )}
 
       <div>
-        <label htmlFor="nom" className="block text-sm font-medium text-zinc-700">
+        <label htmlFor="nom" className="block text-sm font-medium text-encre">
           Nom
         </label>
         <input
@@ -60,47 +60,47 @@ export function FormulaireClient({ atelierId }: { atelierId: string }) {
           name="nom"
           type="text"
           required
-          className="mt-1 w-full rounded-xl border border-zinc-300 px-4 py-3 text-base"
+          className="mt-1 w-full rounded-2xl border border-bordure px-4 py-3 text-base"
         />
       </div>
       <div>
-        <label htmlFor="telephone" className="block text-sm font-medium text-zinc-700">
+        <label htmlFor="telephone" className="block text-sm font-medium text-encre">
           Téléphone
         </label>
         <input
           id="telephone"
           name="telephone"
           type="tel"
-          className="mt-1 w-full rounded-xl border border-zinc-300 px-4 py-3 text-base"
+          className="mt-1 w-full rounded-2xl border border-bordure px-4 py-3 text-base"
         />
       </div>
       <div>
-        <label htmlFor="whatsapp" className="block text-sm font-medium text-zinc-700">
+        <label htmlFor="whatsapp" className="block text-sm font-medium text-encre">
           WhatsApp
         </label>
         <input
           id="whatsapp"
           name="whatsapp"
           type="tel"
-          className="mt-1 w-full rounded-xl border border-zinc-300 px-4 py-3 text-base"
+          className="mt-1 w-full rounded-2xl border border-bordure px-4 py-3 text-base"
         />
       </div>
       <div>
-        <label htmlFor="notes" className="block text-sm font-medium text-zinc-700">
+        <label htmlFor="notes" className="block text-sm font-medium text-encre">
           Notes
         </label>
         <textarea
           id="notes"
           name="notes"
           rows={3}
-          className="mt-1 w-full rounded-xl border border-zinc-300 px-4 py-3 text-base"
+          className="mt-1 w-full rounded-2xl border border-bordure px-4 py-3 text-base"
         />
       </div>
 
       <button
         type="submit"
         disabled={!pret || envoi}
-        className="mt-2 rounded-xl bg-zinc-900 px-4 py-4 text-base font-medium text-white active:bg-zinc-700 disabled:opacity-60"
+        className="mt-2 rounded-2xl bg-foret px-4 py-4 text-base font-medium text-white active:bg-vert disabled:opacity-60"
       >
         {!pret ? "Chargement..." : envoi ? "Enregistrement..." : "Enregistrer"}
       </button>

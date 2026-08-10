@@ -1,28 +1,52 @@
 @import "tailwindcss";
 
 /*
- * L'interface est concue en clair (fonds blancs, texte sombre). On le declare
- * au navigateur : sans color-scheme, un telephone en mode sombre dessine ses
- * propres elements (oeil du mot de passe, selecteur de date) en version
- * sombre, donc invisibles sur nos champs clairs.
+ * L'interface est concue en clair. On le declare au navigateur : sans
+ * color-scheme, un telephone en mode sombre dessine ses propres elements
+ * (oeil du mot de passe, selecteur de date) en version sombre, donc
+ * invisibles sur nos champs clairs.
  */
 :root {
   color-scheme: light;
-  --background: #ffffff;
-  --foreground: #18181b;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/*
+ * Huit teintes, chacune avec un seul role.
+ *
+ * Rien n'est neutre : le papier est legerement verdi, l'encre et le gris
+ * tirent vers le vert. L'ensemble donne la sensation d'une seule matiere
+ * plutot que d'un assemblage.
+ *
+ * Le bleu ne decore jamais. Il est reserve aux moments ou c'est
+ * l'application qui parle : synchronisation, information non demandee.
+ * Le tailleur apprend ainsi sans y penser que le vert parle de son metier,
+ * le rouge d'un probleme, et le bleu du systeme.
+ */
+@theme {
+  --color-foret: #0c3b2e;
+  --color-vert: #12684e;
+  --color-vert-clair: #dcede5;
+  /* Texte secondaire sur les aplats sombres : le gris n'y a pas assez de
+     contraste, il faut une teinte claire de la meme famille. */
+  --color-vert-pale: #9bc4b3;
+  --color-encre: #111e1a;
+  --color-gris: #6b7a74;
+  --color-papier: #f7f9f8;
+  --color-bordure: #e3e8e6;
+  --color-bleu: #1b4f72;
+  --color-bleu-clair: #dce7f0;
+  --color-ambre: #8a5a12;
+  --color-ambre-clair: #f6e7cd;
+  --color-rouge: #a8261e;
+  --color-rouge-clair: #f6dedc;
+
+  --font-sans: var(--font-dm-sans);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  background: var(--color-papier);
+  color: var(--color-encre);
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
 }
 
 input,
@@ -33,7 +57,7 @@ textarea {
    * devient illisible des que le systeme passe en mode sombre.
    */
   background-color: #ffffff;
-  color: #18181b;
+  color: var(--color-encre);
 
   /*
    * Les champs ont une largeur intrinseque minimale (une vingtaine de
@@ -44,5 +68,5 @@ textarea {
 }
 
 ::placeholder {
-  color: #a1a1aa;
+  color: var(--color-gris);
 }

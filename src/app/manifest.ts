@@ -2,15 +2,15 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Couture SaaS",
-    short_name: "Couture",
+    name: "TailorHub",
+    short_name: "TailorHub",
     description:
       "Gestion des clients, mesures et commandes pour ateliers de couture",
     start_url: "/commandes",
     display: "standalone",
     orientation: "portrait",
-    background_color: "#fafafa",
-    theme_color: "#18181b",
+    background_color: "#f7f9f8",
+    theme_color: "#0c3b2e",
     lang: "fr",
     icons: [
       { src: "/icon-192.png", sizes: "192x192", type: "image/png" },

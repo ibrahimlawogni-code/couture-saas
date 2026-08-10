@@ -27,18 +27,18 @@ export default async function AppLayout({
   const atelier = utilisateur?.ateliers as unknown as { nom: string } | null;
 
   return (
-    <div className="flex min-h-full flex-1 flex-col bg-zinc-50">
-      <header className="flex items-center justify-between border-b border-zinc-200 bg-white px-4 py-4">
+    <div className="flex min-h-full flex-1 flex-col bg-papier">
+      <header className="flex items-center justify-between border-b border-bordure bg-white px-4 py-4">
         <div>
-          <p className="text-sm font-semibold text-zinc-900">
+          <p className="text-sm font-semibold text-encre">
             {atelier?.nom ?? "Mon atelier"}
           </p>
-          <p className="text-xs text-zinc-500">{utilisateur?.nom}</p>
+          <p className="text-xs text-gris">{utilisateur?.nom}</p>
         </div>
         <form action={signOut}>
           <button
             type="submit"
-            className="rounded-lg px-3 py-2 text-sm font-medium text-zinc-500 active:bg-zinc-100"
+            className="rounded-2xl px-3 py-2 text-sm font-medium text-gris active:bg-papier"
           >
             Déconnexion
           </button>

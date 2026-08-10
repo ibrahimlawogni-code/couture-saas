@@ -23,7 +23,7 @@ export function BarreEtatReseau() {
 
   if (echecs.length > 0) {
     return (
-      <p className="fixed inset-x-0 top-0 z-50 bg-red-600 py-2 text-center text-sm font-medium text-white">
+      <p className="fixed inset-x-0 top-0 z-50 bg-rouge py-2 text-center text-sm font-medium text-white">
         {echecs.length} enregistrement{echecs.length > 1 ? "s" : ""} n&apos;
         {echecs.length > 1 ? "ont" : "a"} pas pu etre envoye
         {echecs.length > 1 ? "s" : ""}
@@ -33,7 +33,7 @@ export function BarreEtatReseau() {
 
   if (horsLigne) {
     return (
-      <p className="fixed inset-x-0 top-0 z-50 bg-amber-500 py-2 text-center text-sm font-medium text-white">
+      <p className="fixed inset-x-0 top-0 z-50 bg-bleu py-2 text-center text-sm font-medium text-white">
         Hors connexion
         {enAttente.length > 0 && ` · ${enAttente.length} en attente d'envoi`}
       </p>
@@ -42,7 +42,7 @@ export function BarreEtatReseau() {
 
   if (enAttente.length > 0) {
     return (
-      <p className="fixed inset-x-0 top-0 z-50 bg-blue-600 py-2 text-center text-sm font-medium text-white">
+      <p className="fixed inset-x-0 top-0 z-50 bg-bleu py-2 text-center text-sm font-medium text-white">
         Envoi en cours · {enAttente.length} restant
         {enAttente.length > 1 ? "s" : ""}
       </p>
