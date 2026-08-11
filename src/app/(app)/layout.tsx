@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "./actions";
@@ -29,12 +30,14 @@ export default async function AppLayout({
   return (
     <div className="flex min-h-full flex-1 flex-col bg-papier">
       <header className="flex items-center justify-between border-b border-bordure bg-white px-4 py-4">
-        <div>
+        {/* Le nom de l'atelier mene aux reglages : c'est la qu'on cherche
+            naturellement a le modifier, et la barre du bas reste degagee. */}
+        <Link href="/reglages" className="-m-2 rounded-2xl p-2 active:bg-papier">
           <p className="text-sm font-semibold text-encre">
             {atelier?.nom ?? "Mon atelier"}
           </p>
           <p className="text-xs text-gris">{utilisateur?.nom}</p>
-        </div>
+        </Link>
         <form action={signOut}>
           <button
             type="submit"

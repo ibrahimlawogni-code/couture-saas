@@ -9,6 +9,7 @@ const ECRANS_FIXES = [
   "/finances",
   "/clients/new",
   "/commandes/new",
+  "/reglages",
 ];
 
 // Une seule preparation par session : inutile de refaire ces requetes a
