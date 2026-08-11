@@ -1,100 +1,112 @@
-import Image from "next/image";
 import Link from "next/link";
+import { EnvelopeSimple, LockSimple } from "@phosphor-icons/react/dist/ssr";
+import { Marque } from "../marque";
 import { login } from "./actions";
 
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; message?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, message } = await searchParams;
 
   return (
-    <div className="flex flex-1 lg:grid lg:grid-cols-2">
-      <div className="flex flex-1 items-center justify-center bg-papier px-6 py-10">
-        <div className="w-full max-w-xs">
-          <Link href="/" className="text-lg font-semibold tracking-tight text-encre">
-            TailorHub
-          </Link>
+    <div className="flex flex-1 items-center justify-center bg-papier px-5 py-10">
+      <div className="w-full max-w-sm">
+        <div className="rounded-3xl bg-foret p-8 text-white shadow-lg shadow-foret/20">
+          <div className="flex justify-center">
+            {/* La marque occupe la place que la maquette reservait a un
+                portrait : c'est le produit qu'on identifie ici, pas la
+                personne, qui ne s'est pas encore annoncee. */}
+            <span className="flex h-20 w-20 items-center justify-center rounded-full bg-white/10 text-white">
+              <Marque taille={40} />
+            </span>
+          </div>
 
-          <h1 className="mt-8 text-2xl font-semibold tracking-tight text-encre">
-            Bon retour
-          </h1>
-          <p className="mt-1.5 text-sm text-gris">Accède à ton atelier</p>
+          <p className="mt-5 text-center text-lg font-semibold tracking-tight">
+            TailorHub
+          </p>
+          <p className="mt-1 text-center text-sm text-vert-pale">
+            Accédez à votre atelier
+          </p>
 
           {error && (
-            <p className="mt-6 rounded-2xl bg-rouge-clair px-4 py-3 text-sm text-rouge">
+            <p className="mt-6 rounded-2xl bg-white/10 px-4 py-3 text-sm text-white">
               {error}
             </p>
           )}
+          {message && (
+            <p className="mt-6 rounded-2xl bg-white/10 px-4 py-3 text-sm text-vert-pale">
+              {message}
+            </p>
+          )}
 
-          <form action={login} className="mt-6 flex flex-col gap-3.5">
+          <form action={login} className="mt-8 flex flex-col gap-6">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-encre">
+              <label htmlFor="email" className="sr-only">
                 Email
               </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="mt-1.5 w-full rounded-2xl border border-bordure px-4 py-3 text-base"
-              />
+              <div className="flex items-center gap-3 border-b border-white/25 pb-2 focus-within:border-white">
+                <EnvelopeSimple size={20} weight="light" className="text-vert-pale" />
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  placeholder="Adresse email"
+                  className="w-full border-0 bg-transparent p-0 text-base text-white placeholder:text-vert-pale focus:outline-none"
+                />
+              </div>
             </div>
+
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-encre">
+              <label htmlFor="password" className="sr-only">
                 Mot de passe
               </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                className="mt-1.5 w-full rounded-2xl border border-bordure px-4 py-3 text-base"
-              />
+              <div className="flex items-center gap-3 border-b border-white/25 pb-2 focus-within:border-white">
+                <LockSimple size={20} weight="light" className="text-vert-pale" />
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  placeholder="Mot de passe"
+                  className="w-full border-0 bg-transparent p-0 text-base text-white placeholder:text-vert-pale focus:outline-none"
+                />
+              </div>
             </div>
+
+            {/*
+              La maquette proposait une case "Se souvenir de moi". Elle est
+              ecartee : la session dure deja plusieurs mois sans rien cocher,
+              la case n'aurait donc rien commande.
+            */}
+            <div className="flex justify-end">
+              <Link
+                href="/mot-de-passe-oublie"
+                className="text-sm text-vert-pale underline underline-offset-2 hover:text-white"
+              >
+                Mot de passe oublié ?
+              </Link>
+            </div>
+
             <button
               type="submit"
-              className="mt-2 rounded-2xl bg-vert px-4 py-3.5 text-base font-medium text-white transition-colors hover:bg-foret active:translate-y-px"
+              className="mt-2 rounded-2xl bg-white px-4 py-4 text-base font-semibold tracking-wide text-foret transition-transform hover:bg-vert-clair active:translate-y-px"
             >
               Se connecter
             </button>
           </form>
-
-          <p className="mt-6 text-sm text-gris">
-            Pas encore de compte ?{" "}
-            <Link href="/signup" className="font-medium text-encre underline">
-              Créer un atelier
-            </Link>
-          </p>
         </div>
-      </div>
 
-      {/*
-        Visuel reserve au grand ecran. Sur un telephone, le clavier occupe deja
-        la moitie de la hauteur : une photo repousserait le formulaire hors de
-        vue et ralentirait le chargement pour rien.
-      */}
-      <div className="relative hidden lg:block">
-        <Image
-          src="/photos/atelier.jpg"
-          alt="Un tailleur au travail dans son atelier"
-          fill
-          sizes="50vw"
-          priority
-          className="object-cover"
-        />
-        <div className="absolute inset-0 bg-foret/55" />
-        <div className="absolute inset-x-0 bottom-0 p-12">
-          <p className="max-w-sm text-2xl font-semibold leading-snug tracking-tight text-white">
-            Vos mesures, vos commandes et vos acomptes, au même endroit.
-          </p>
-          <p className="mt-3 max-w-sm text-vert-pale">
-            Même quand la connexion vous lâche.
-          </p>
-        </div>
+        <p className="mt-6 text-center text-sm text-gris">
+          Pas encore d&apos;atelier ?{" "}
+          <Link href="/signup" className="font-medium text-encre underline">
+            En créer un
+          </Link>
+        </p>
       </div>
     </div>
   );

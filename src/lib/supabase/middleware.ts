@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/signup", "/auth"];
+const PUBLIC_PATHS = ["/login", "/signup", "/auth", "/mot-de-passe-oublie"];
 
 // Accessibles dans le meme etat connecte ou non : la page de presentation
 // doit rester visible par un visiteur, et le repli du service worker doit

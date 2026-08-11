@@ -5,6 +5,16 @@
  */
 const TRADUCTIONS: { motif: RegExp; message: string }[] = [
   {
+    motif: /code_invitation_invalide/i,
+    message:
+      "Ce code d'invitation est invalide ou a expiré. Demandez-en un nouveau au propriétaire de l'atelier.",
+  },
+  {
+    motif: /atelier_complet/i,
+    message:
+      "Cet atelier a atteint son nombre maximum de comptes. Le propriétaire doit libérer une place ou changer de formule.",
+  },
+  {
     motif: /error sending confirmation email|error sending email/i,
     message:
       "L'email de confirmation n'a pas pu partir. Contacte-nous et nous activerons ton atelier à la main.",

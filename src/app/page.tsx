@@ -264,76 +264,98 @@ function HorsLigne() {
 function Tarifs() {
   const offres = [
     {
-      nom: "Atelier",
-      prix: "9 000",
-      pour: "Pour le tailleur qui travaille seul",
+      nom: "Découverte",
+      prix: "Gratuit",
+      unite: "sans limite de durée",
+      pour: "Pour essayer sur de vraies commandes",
       avantages: [
-        "Clients et mesures sans limite",
-        "Suivi des commandes et des acomptes",
+        "5 clients",
+        "5 commandes en cours",
+        "Mesures et acomptes",
         "Reçus et rappels WhatsApp",
-        "Fonctionne sans connexion",
       ],
       mis: false,
+      cta: "Commencer",
+    },
+    {
+      nom: "Atelier",
+      prix: "3 500",
+      unite: "FCFA par mois",
+      pour: "Pour le tailleur qui travaille seul",
+      avantages: [
+        "Clients et commandes sans limite",
+        "Bilan financier du mois",
+        "Fonctionne sans connexion",
+        "Sans engagement",
+      ],
+      mis: false,
+      cta: "Choisir Atelier",
     },
     {
       nom: "Atelier Pro",
-      prix: "15 000",
+      prix: "5 000",
+      unite: "FCFA par mois",
       pour: "Pour un atelier avec des apprentis",
       avantages: [
         "Tout ce que contient Atelier",
-        "Jusqu'à 5 personnes sur le même atelier",
-        "Bilan financier détaillé",
-        "Assistance par WhatsApp sous 24 h",
+        "Jusqu'à 5 apprentis sur le même atelier",
+        "Chacun son compte, ses commandes visibles",
+        "Assistance WhatsApp sous 24 h",
       ],
       mis: true,
+      cta: "Choisir Atelier Pro",
     },
   ];
 
   return (
     <section className="bg-foret px-5 py-24 text-white">
-      <div className="mx-auto max-w-5xl">
+      <div className="mx-auto max-w-6xl">
         <h2 className="text-3xl font-semibold tracking-tight md:text-4xl">
           Un prix, pas de surprise
         </h2>
         <p className="mt-4 text-lg text-vert-pale">
-          Les 30 premiers jours sont gratuits, sans carte bancaire.
+          Moins qu&apos;une commande par mois. Résiliable quand vous voulez.
         </p>
 
-        <div className="mt-12 grid gap-5 md:grid-cols-2">
+        <div className="mt-12 grid gap-5 md:grid-cols-3">
           {offres.map((offre) => (
             <article
               key={offre.nom}
-              className={`rounded-3xl p-8 ${
-                offre.mis
-                  ? "bg-white text-encre"
-                  : "border border-vert bg-foret"
+              className={`relative flex flex-col rounded-3xl p-7 ${
+                offre.mis ? "bg-white text-encre" : "border border-vert bg-foret"
               }`}
             >
+              {offre.mis && (
+                <span className="absolute -top-3 left-7 rounded-full bg-vert px-3 py-1 text-xs font-semibold text-white">
+                  Recommandé
+                </span>
+              )}
+
               <h3 className="text-lg font-semibold">{offre.nom}</h3>
               <p
-                className={`mt-1 text-sm ${
-                  offre.mis ? "text-gris" : "text-vert-pale"
-                }`}
+                className={`mt-1 text-sm ${offre.mis ? "text-gris" : "text-vert-pale"}`}
               >
                 {offre.pour}
               </p>
-              <p className="mt-6 flex items-baseline gap-2">
+
+              <p className="mt-6 flex flex-wrap items-baseline gap-x-2">
                 <span className="text-4xl font-semibold tracking-tight">
                   {offre.prix}
                 </span>
-                <span
-                  className={offre.mis ? "text-gris" : "text-vert-pale"}
-                >
-                  FCFA par mois
+                <span className={offre.mis ? "text-gris" : "text-vert-pale"}>
+                  {offre.unite}
                 </span>
               </p>
-              <ul className="mt-8 space-y-3">
+
+              <ul className="mt-7 space-y-3">
                 {offre.avantages.map((avantage) => (
                   <li key={avantage} className="flex items-start gap-3 text-sm">
                     <CheckCircle
                       size={18}
                       weight="fill"
-                      className="mt-0.5 shrink-0 text-vert"
+                      className={`mt-0.5 shrink-0 ${
+                        offre.mis ? "text-vert" : "text-vert-pale"
+                      }`}
                     />
                     <span className={offre.mis ? "text-encre" : "text-vert-clair"}>
                       {avantage}
@@ -341,6 +363,7 @@ function Tarifs() {
                   </li>
                 ))}
               </ul>
+
               <Link
                 href="/signup"
                 className={`mt-8 block rounded-2xl px-6 py-3.5 text-center text-base font-medium transition-transform active:translate-y-px ${
@@ -349,11 +372,16 @@ function Tarifs() {
                     : "border border-vert text-white hover:bg-vert"
                 }`}
               >
-                Essayer gratuitement
+                {offre.cta}
               </Link>
             </article>
           ))}
         </div>
+
+        <p className="mt-8 text-sm text-vert-pale">
+          Paiement par Mobile Money. Vous commencez sur l&apos;offre Découverte,
+          vous changez quand votre carnet se remplit.
+        </p>
       </div>
     </section>
   );
@@ -412,8 +440,8 @@ function AppelFinal() {
           Essayez sur vos trois prochaines commandes
         </h2>
         <p className="mt-5 text-lg text-encre">
-          Trente jours gratuits. Si ça ne vous fait pas gagner de temps, vous
-          arrêtez.
+          L&apos;offre Découverte est gratuite et sans limite de durée. Si ça ne
+          vous fait pas gagner de temps, vous arrêtez.
         </p>
         <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
           <Link

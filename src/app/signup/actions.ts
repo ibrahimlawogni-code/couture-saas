@@ -10,6 +10,9 @@ export async function signup(formData: FormData) {
   const nom = String(formData.get("nom") ?? "").trim();
   const email = String(formData.get("email") ?? "");
   const password = String(formData.get("password") ?? "");
+  // Avec un code, le declencheur rattache la personne a l'atelier existant
+  // au lieu d'en ouvrir un nouveau (voir migration 0007).
+  const code = String(formData.get("code") ?? "").trim().toUpperCase();
 
   const headerList = await headers();
   const origin = headerList.get("origin") ?? "http://localhost:3000";
@@ -22,7 +25,7 @@ export async function signup(formData: FormData) {
     email,
     password,
     options: {
-      data: { atelier_nom: atelier, nom },
+      data: { atelier_nom: atelier, nom, code_invitation: code },
       emailRedirectTo: `${origin}/auth/callback`,
     },
   });
