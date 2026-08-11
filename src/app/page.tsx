@@ -10,9 +10,9 @@ import {
   WhatsappLogo,
 } from "@phosphor-icons/react/dist/ssr";
 
-// Adresse provisoire, a remplacer par une adresse professionnelle.
+// Adresse professionnelle, hebergee sur le domaine colossalebusiness.fr.
 const WHATSAPP = "2290197970999";
-const EMAIL = "dobrak.ib@gmail.com";
+const EMAIL = "support@colossalebusiness.fr";
 
 const lienWhatsApp = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(
   "Bonjour, je suis tailleur et je voudrais essayer TailorHub."
