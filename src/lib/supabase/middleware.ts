@@ -57,7 +57,7 @@ export async function updateSession(request: NextRequest) {
 
   if (user && isPublicPath) {
     const url = request.nextUrl.clone();
-    url.pathname = "/commandes";
+    url.pathname = "/tableau-de-bord";
     return NextResponse.redirect(url);
   }
 

@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useDonnees } from "@/lib/offline/use-donnees";
 
 const ECRANS_FIXES = [
+  "/tableau-de-bord",
   "/commandes",
   "/clients",
   "/finances",

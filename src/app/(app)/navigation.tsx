@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const ONGLETS = [
+  { href: "/tableau-de-bord", label: "Accueil" },
   { href: "/commandes", label: "Commandes" },
   { href: "/clients", label: "Clients" },
   { href: "/finances", label: "Finances" },

@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "TailorHub",
     description:
       "Gestion des clients, mesures et commandes pour ateliers de couture",
-    start_url: "/commandes",
+    start_url: "/tableau-de-bord",
     display: "standalone",
     orientation: "portrait",
     background_color: "#f7f9f8",

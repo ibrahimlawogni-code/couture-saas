@@ -15,5 +15,5 @@ export async function login(formData: FormData) {
     redirect(`/login?error=${encodeURIComponent(messageAuth(error.message))}`);
   }
 
-  redirect("/commandes");
+  redirect("/tableau-de-bord");
 }
