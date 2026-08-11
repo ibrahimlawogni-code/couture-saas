@@ -128,8 +128,8 @@ export function TableauDeBord() {
           <h2 className="text-sm font-semibold uppercase tracking-wide text-gris">
             À traiter
           </h2>
-          <ul className="mt-2 flex flex-col gap-2">
-            {bilan.aTraiter.slice(0, 5).map((commande) => (
+          <ul className="mt-2 grid gap-2 lg:grid-cols-2">
+            {bilan.aTraiter.slice(0, 6).map((commande) => (
               <li key={commande.id}>
                 <Link
                   href={`/commandes/${commande.id}`}
@@ -164,7 +164,7 @@ export function TableauDeBord() {
         </section>
       )}
 
-      <div className="mt-4 grid grid-cols-2 gap-3">
+      <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <article className="rounded-3xl bg-white p-4 shadow-sm">
           <p className="text-xs uppercase tracking-wide text-gris">Encaissé ce mois</p>
           <p className="mt-1 text-xl font-semibold tracking-tight text-encre">
