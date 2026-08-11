@@ -182,7 +182,7 @@ export function TableauDeBord() {
           </p>
         </article>
         <article className="rounded-3xl bg-white p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-wide text-gris">Commandes en cours</p>
+          <p className="text-xs uppercase tracking-wide text-gris">En cours</p>
           <p className="mt-1 text-xl font-semibold tracking-tight text-encre">
             {bilan.enCours.length}
           </p>
