@@ -49,24 +49,31 @@ body {
   font-family: var(--font-dm-sans), system-ui, sans-serif;
 }
 
-input,
-select,
-textarea {
-  /*
-   * Couleurs explicites : sans elles, un champ herite du texte de la page et
-   * devient illisible des que le systeme passe en mode sombre.
-   */
-  background-color: #ffffff;
-  color: var(--color-encre);
+/*
+ * Dans la couche de base, et non hors couche : une regle sans couche
+ * l'emporterait sur les utilitaires, et un champ pose sur fond vert ne
+ * pourrait plus demander un fond transparent.
+ */
+@layer base {
+  input,
+  select,
+  textarea {
+    /*
+     * Couleurs explicites : sans elles, un champ herite du texte de la page
+     * et devient illisible des que le systeme passe en mode sombre.
+     */
+    background-color: #ffffff;
+    color: var(--color-encre);
 
-  /*
-   * Les champs ont une largeur intrinseque minimale (une vingtaine de
-   * caracteres) que le navigateur refuse de reduire. Dans une grille a deux
-   * colonnes sur petit ecran, cela fait deborder la page horizontalement.
-   */
-  min-width: 0;
-}
+    /*
+     * Les champs ont une largeur intrinseque minimale (une vingtaine de
+     * caracteres) que le navigateur refuse de reduire. Dans une grille a
+     * deux colonnes sur petit ecran, cela fait deborder la page.
+     */
+    min-width: 0;
+  }
 
-::placeholder {
-  color: var(--color-gris);
+  ::placeholder {
+    color: var(--color-gris);
+  }
 }
