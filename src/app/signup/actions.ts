@@ -3,6 +3,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { messageAuth } from "@/lib/messages-auth";
 
 export async function signup(formData: FormData) {
   const atelier = String(formData.get("atelier") ?? "").trim();
@@ -27,7 +28,7 @@ export async function signup(formData: FormData) {
   });
 
   if (error) {
-    redirect(`/signup?error=${encodeURIComponent(error.message)}`);
+    redirect(`/signup?error=${encodeURIComponent(messageAuth(error.message))}`);
   }
 
   // Face a une adresse deja inscrite, Supabase repond comme a une inscription
@@ -36,9 +37,7 @@ export async function signup(formData: FormData) {
   // indefiniment un mail qui ne partira jamais.
   if (data.user && data.user.identities?.length === 0) {
     redirect(
-      `/login?error=${encodeURIComponent(
-        "Un compte existe deja avec cet email. Connecte-toi ou utilise une autre adresse."
-      )}`
+      `/login?error=${encodeURIComponent(messageAuth("user already registered"))}`
     );
   }
 

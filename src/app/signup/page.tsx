@@ -18,16 +18,16 @@ export default async function SignupPage({
 
   return (
     <div className="flex flex-1 lg:grid lg:grid-cols-2">
-      <div className="flex flex-1 items-center justify-center bg-papier px-5 py-12">
-        <div className="w-full max-w-sm">
+      <div className="flex flex-1 items-center justify-center bg-papier px-6 py-10">
+        <div className="w-full max-w-xs">
           <Link href="/" className="text-lg font-semibold tracking-tight text-encre">
             TailorHub
           </Link>
 
-          <h1 className="mt-10 text-3xl font-semibold tracking-tight text-encre">
+          <h1 className="mt-8 text-2xl font-semibold tracking-tight text-encre">
             Créer ton atelier
           </h1>
-          <p className="mt-2 text-gris">Quelques informations et c&apos;est parti</p>
+          <p className="mt-1.5 text-sm text-gris">Quelques informations et c&apos;est parti</p>
 
           {error && (
             <p className="mt-6 rounded-2xl bg-rouge-clair px-4 py-3 text-sm text-rouge">
@@ -35,7 +35,7 @@ export default async function SignupPage({
             </p>
           )}
 
-          <form action={signup} className="mt-8 flex flex-col gap-4">
+          <form action={signup} className="mt-6 flex flex-col gap-3.5">
             {CHAMPS.map((champ) => (
               <div key={champ.id}>
                 <label
@@ -51,19 +51,19 @@ export default async function SignupPage({
                   autoComplete={champ.auto}
                   required
                   minLength={champ.id === "password" ? 6 : undefined}
-                  className="mt-1.5 w-full rounded-2xl border border-bordure px-4 py-3.5 text-base"
+                  className="mt-1.5 w-full rounded-2xl border border-bordure px-4 py-3 text-base"
                 />
               </div>
             ))}
             <button
               type="submit"
-              className="mt-3 rounded-2xl bg-vert px-4 py-4 text-base font-medium text-white transition-colors hover:bg-foret active:translate-y-px"
+              className="mt-2 rounded-2xl bg-vert px-4 py-3.5 text-base font-medium text-white transition-colors hover:bg-foret active:translate-y-px"
             >
               Créer mon atelier
             </button>
           </form>
 
-          <p className="mt-8 text-sm text-gris">
+          <p className="mt-6 text-sm text-gris">
             Déjà un compte ?{" "}
             <Link href="/login" className="font-medium text-encre underline">
               Se connecter
