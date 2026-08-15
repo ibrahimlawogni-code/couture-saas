@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { EnvelopeSimple, LockSimple } from "@phosphor-icons/react/dist/ssr";
 import { Marque } from "../marque";
@@ -11,8 +12,25 @@ export default async function LoginPage({
   const { error, message } = await searchParams;
 
   return (
-    <div className="flex flex-1 items-center justify-center bg-papier px-5 py-10">
-      <div className="w-full max-w-sm">
+    <div className="relative flex flex-1 items-center justify-center overflow-hidden bg-papier px-5 py-10">
+      {/*
+        L'atelier passe derriere la carte, sur grand ecran seulement. Sur un
+        telephone, le clavier couvre la moitie de l'ecran et la photo ne
+        ferait qu'alourdir le chargement pour une image qu'on ne verrait pas.
+      */}
+      <div className="absolute inset-0 hidden lg:block">
+        <Image
+          src="/photos/atelier.jpg"
+          alt=""
+          fill
+          sizes="100vw"
+          priority
+          className="object-cover"
+        />
+        <div className="absolute inset-0 bg-foret/80" />
+      </div>
+
+      <div className="relative w-full max-w-sm">
         <div className="rounded-3xl bg-foret p-8 text-white shadow-lg shadow-foret/20">
           <div className="flex justify-center">
             {/* La marque occupe la place que la maquette reservait a un
