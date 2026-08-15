@@ -119,9 +119,14 @@ export default async function LoginPage({
           </form>
         </div>
 
-        <p className="mt-6 text-center text-sm text-gris">
+        {/* Sur grand ecran cette ligne repose sur la photo assombrie : le gris
+            du fond papier n'y aurait pas assez de contraste. */}
+        <p className="mt-6 text-center text-sm text-gris lg:text-vert-pale">
           Pas encore d&apos;atelier ?{" "}
-          <Link href="/signup" className="font-medium text-encre underline">
+          <Link
+            href="/signup"
+            className="font-medium text-encre underline lg:text-white"
+          >
             En créer un
           </Link>
         </p>
