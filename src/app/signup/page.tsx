@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { ChampCode } from "./champ-code";
 import { signup } from "./actions";
 
 export default async function SignupPage({
@@ -73,29 +74,7 @@ export default async function SignupPage({
               </div>
             ))}
 
-            <div>
-              <label htmlFor="code" className="block text-sm font-medium text-encre">
-                Code d&apos;invitation{" "}
-                {!rejoint && <span className="font-normal text-gris">(facultatif)</span>}
-              </label>
-              {/* L'explication n'apparait que pour celui qui rejoint : dans
-                  l'autre cas la mention "facultatif" suffit, et la ligne
-                  gagnee evite au formulaire de deborder de l'ecran. */}
-              {rejoint && (
-                <p className="mt-1 text-xs text-gris">
-                  Fourni par le propriétaire de l&apos;atelier.
-                </p>
-              )}
-              <input
-                id="code"
-                name="code"
-                type="text"
-                defaultValue={code ?? ""}
-                autoComplete="off"
-                spellCheck={false}
-                className="mt-1.5 w-full rounded-2xl border border-bordure px-4 py-3 text-base uppercase tracking-[0.2em]"
-              />
-            </div>
+            <ChampCode code={code} />
 
             <button
               type="submit"
