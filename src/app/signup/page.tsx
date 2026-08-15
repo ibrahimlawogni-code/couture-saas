@@ -31,13 +31,13 @@ export default async function SignupPage({
 
   return (
     <div className="flex flex-1 lg:grid lg:grid-cols-2">
-      <div className="flex flex-1 items-center justify-center bg-papier px-6 py-10">
+      <div className="flex flex-1 items-center justify-center bg-papier px-6 py-6">
         <div className="w-full max-w-xs">
           <Link href="/" className="text-lg font-semibold tracking-tight text-encre">
             TailorHub
           </Link>
 
-          <h1 className="mt-8 text-2xl font-semibold tracking-tight text-encre">
+          <h1 className="mt-6 text-2xl font-semibold tracking-tight text-encre">
             {rejoint ? "Rejoindre l'atelier" : "Créer votre atelier"}
           </h1>
           <p className="mt-1.5 text-sm text-gris">
@@ -52,7 +52,7 @@ export default async function SignupPage({
             </p>
           )}
 
-          <form action={signup} className="mt-6 flex flex-col gap-3.5">
+          <form action={signup} className="mt-5 flex flex-col gap-3">
             {champs.map((champ) => (
               <div key={champ.id}>
                 <label
@@ -78,11 +78,14 @@ export default async function SignupPage({
                 Code d&apos;invitation{" "}
                 {!rejoint && <span className="font-normal text-gris">(facultatif)</span>}
               </label>
-              <p className="mt-1 text-xs text-gris">
-                {rejoint
-                  ? "Fourni par le propriétaire de l'atelier."
-                  : "Si un atelier vous a invité, saisissez son code ici."}
-              </p>
+              {/* L'explication n'apparait que pour celui qui rejoint : dans
+                  l'autre cas la mention "facultatif" suffit, et la ligne
+                  gagnee evite au formulaire de deborder de l'ecran. */}
+              {rejoint && (
+                <p className="mt-1 text-xs text-gris">
+                  Fourni par le propriétaire de l&apos;atelier.
+                </p>
+              )}
               <input
                 id="code"
                 name="code"
@@ -90,7 +93,7 @@ export default async function SignupPage({
                 defaultValue={code ?? ""}
                 autoComplete="off"
                 spellCheck={false}
-                className="mt-2 w-full rounded-2xl border border-bordure px-4 py-3 text-base uppercase tracking-[0.2em]"
+                className="mt-1.5 w-full rounded-2xl border border-bordure px-4 py-3 text-base uppercase tracking-[0.2em]"
               />
             </div>
 
@@ -102,7 +105,7 @@ export default async function SignupPage({
             </button>
           </form>
 
-          <p className="mt-6 text-sm text-gris">
+          <p className="mt-5 text-sm text-gris">
             Déjà un compte ?{" "}
             <Link href="/login" className="font-medium text-encre underline">
               Se connecter

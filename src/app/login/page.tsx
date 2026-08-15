@@ -12,7 +12,7 @@ export default async function LoginPage({
   const { error, message } = await searchParams;
 
   return (
-    <div className="relative flex flex-1 items-center justify-center overflow-hidden bg-papier px-5 py-10">
+    <div className="relative flex flex-1 items-center justify-center overflow-hidden bg-papier px-5 py-6">
       {/*
         L'atelier passe derriere la carte, sur grand ecran seulement. Sur un
         telephone, le clavier couvre la moitie de l'ecran et la photo ne
@@ -31,17 +31,17 @@ export default async function LoginPage({
       </div>
 
       <div className="relative w-full max-w-sm">
-        <div className="rounded-3xl bg-foret p-8 text-white shadow-lg shadow-foret/20">
+        <div className="rounded-3xl bg-foret p-6 text-white shadow-lg shadow-foret/20">
           <div className="flex justify-center">
             {/* La marque occupe la place que la maquette reservait a un
                 portrait : c'est le produit qu'on identifie ici, pas la
                 personne, qui ne s'est pas encore annoncee. */}
-            <span className="flex h-20 w-20 items-center justify-center rounded-full bg-white/10 text-white">
-              <Marque taille={40} />
+            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/10 text-white">
+              <Marque taille={32} />
             </span>
           </div>
 
-          <p className="mt-5 text-center text-lg font-semibold tracking-tight">
+          <p className="mt-4 text-center text-lg font-semibold tracking-tight">
             TailorHub
           </p>
           <p className="mt-1 text-center text-sm text-vert-pale">
@@ -59,7 +59,7 @@ export default async function LoginPage({
             </p>
           )}
 
-          <form action={login} className="mt-8 flex flex-col gap-6">
+          <form action={login} className="mt-6 flex flex-col gap-5">
             <div>
               <label htmlFor="email" className="sr-only">
                 Email
@@ -112,7 +112,7 @@ export default async function LoginPage({
 
             <button
               type="submit"
-              className="mt-2 rounded-2xl bg-white px-4 py-4 text-base font-semibold tracking-wide text-foret transition-transform hover:bg-vert-clair active:translate-y-px"
+              className="mt-1 rounded-2xl bg-white px-4 py-3.5 text-base font-semibold tracking-wide text-foret transition-transform hover:bg-vert-clair active:translate-y-px"
             >
               Se connecter
             </button>
@@ -121,7 +121,7 @@ export default async function LoginPage({
 
         {/* Sur grand ecran cette ligne repose sur la photo assombrie : le gris
             du fond papier n'y aurait pas assez de contraste. */}
-        <p className="mt-6 text-center text-sm text-gris lg:text-vert-pale">
+        <p className="mt-5 text-center text-sm text-gris lg:text-vert-pale">
           Pas encore d&apos;atelier ?{" "}
           <Link
             href="/signup"
