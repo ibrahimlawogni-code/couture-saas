@@ -1,4 +1,5 @@
 import { envoyerVersSupabase } from "./envoi";
+import { poserDansMiroir } from "./miroir";
 import { mettreEnFile } from "./outbox";
 import type { PhotoEnAttente, TableSynchronisable } from "./db";
 
@@ -15,7 +16,10 @@ export async function enregistrer(
 ): Promise<ResultatEnregistrement> {
   if (navigator.onLine) {
     try {
-      await envoyerVersSupabase(table, donnees, photos);
+      const ligne = await envoyerVersSupabase(table, donnees, photos);
+      // Sans ce report, l'ecran de detail ouvert juste apres ne trouverait
+      // pas la ligne : il ne lit que la copie locale.
+      await poserDansMiroir(table, ligne);
       return { enFile: false };
     } catch {
       // Reseau annonce comme disponible mais injoignable : on met en file.

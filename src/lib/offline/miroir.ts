@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/client";
 import { listerFile } from "./outbox";
 import {
   ouvrirBase,
+  type TableSynchronisable,
   type LigneAtelier,
   type LigneClient,
   type LigneCommande,
@@ -84,6 +85,25 @@ export async function rafraichirMiroir() {
   notifier();
 
   return true;
+}
+
+/**
+ * Range une ligne dans la copie locale sans repasser par le serveur.
+ *
+ * Les ecrans de detail ne lisent que cette copie. Une ecriture partie
+ * directement vers Supabase doit donc y etre reportee, sinon la ligne
+ * existe en base mais reste invisible jusqu'au prochain rechargement
+ * complet de la page.
+ */
+export async function poserDansMiroir(
+  table: TableSynchronisable,
+  ligne: Record<string, unknown>
+) {
+  if (!ligne?.id) return;
+
+  const base = await ouvrirBase();
+  await base.put(table, ligne as never);
+  notifier();
 }
 
 /** Lignes de la file locale pour une table, presentees comme des lignes reelles. */

@@ -90,6 +90,10 @@ export function FormulaireCommande({
         atelier_id: atelierId,
         client_id: clientId,
         mesure_id: mesureId,
+        // Repete la valeur par defaut de la base : une commande saisie hors
+        // ligne s'affiche depuis la file, ou aucune colonne n'est calculee
+        // par Postgres, et se retrouverait donc sans statut dans le tableau.
+        statut: "recu",
         nom_modele: String(formulaire.get("nom_modele") ?? "").trim() || null,
         photo_modele_url: photoModèle?.chemin ?? null,
         photo_tissu_url: photoTissu?.chemin ?? null,

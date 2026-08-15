@@ -1,4 +1,5 @@
 import { envoyerVersSupabase } from "./envoi";
+import { poserDansMiroir } from "./miroir";
 import { listerFile, marquerTentative, retirerDeLaFile } from "./outbox";
 
 const TENTATIVES_MAX = 5;
@@ -28,11 +29,14 @@ export async function synchroniser(): Promise<ResultatSync> {
       if (operation.echec) continue;
 
       try {
-        await envoyerVersSupabase(
+        const ligne = await envoyerVersSupabase(
           operation.table,
           operation.donnees,
           operation.photos
         );
+        // La ligne passe de la file a la copie locale avant d'etre retiree
+        // de la file, sinon elle disparait de l'ecran entre les deux.
+        await poserDansMiroir(operation.table, ligne);
         await retirerDeLaFile(operation.id);
         envoyees += 1;
       } catch {

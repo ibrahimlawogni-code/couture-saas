@@ -25,9 +25,26 @@ export async function envoyerVersSupabase(
     if (error) throw error;
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from(table)
-    .upsert(donnees, { onConflict: "id", ignoreDuplicates: true });
+    .upsert(donnees, { onConflict: "id", ignoreDuplicates: true })
+    .select()
+    .maybeSingle();
 
   if (error) throw error;
+
+  // La ligne est renvoyee telle que la base l'a ecrite, valeurs par defaut
+  // comprises : c'est elle qu'on range dans la copie locale, sinon un
+  // statut ou une date calcules par Postgres manqueraient a l'affichage.
+  if (data) return data as Record<string, unknown>;
+
+  // Rejeu d'une operation deja passee : l'upsert n'a rien renvoye, on
+  // relit la ligne pour disposer quand meme de sa version reelle.
+  const { data: relue } = await supabase
+    .from(table)
+    .select()
+    .eq("id", String(donnees.id))
+    .maybeSingle();
+
+  return (relue as Record<string, unknown>) ?? donnees;
 }
