@@ -1,7 +1,15 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/signup", "/auth", "/mot-de-passe-oublie"];
+const PUBLIC_PATHS = [
+  "/login",
+  "/signup",
+  "/auth",
+  "/mot-de-passe-oublie",
+  // Redemander un lien de confirmation se fait justement quand on n'a pas
+  // encore pu se connecter : cette page doit rester ouverte.
+  "/renvoyer-confirmation",
+];
 
 // Accessibles dans le meme etat connecte ou non : la page de presentation
 // doit rester visible par un visiteur, et le repli du service worker doit

@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ChampCode } from "./champ-code";
+import { ChampMotDePasse } from "../champ-mot-de-passe";
 import { signup } from "./actions";
 
 export default async function SignupPage({
@@ -27,7 +28,6 @@ export default async function SignupPage({
         ]),
     { id: "nom", label: "Votre nom", type: "text", auto: "name" },
     { id: "email", label: "Email", type: "email", auto: "email" },
-    { id: "password", label: "Mot de passe", type: "password", auto: "new-password" },
   ];
 
   return (
@@ -68,11 +68,12 @@ export default async function SignupPage({
                   type={champ.type}
                   autoComplete={champ.auto}
                   required
-                  minLength={champ.id === "password" ? 6 : undefined}
                   className="mt-1.5 w-full rounded-2xl border border-bordure px-4 py-3 text-base"
                 />
               </div>
             ))}
+
+            <ChampMotDePasse />
 
             <ChampCode code={code} />
 

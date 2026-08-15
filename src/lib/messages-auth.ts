@@ -30,8 +30,15 @@ const TRADUCTIONS: { motif: RegExp; message: string }[] = [
       "Un compte existe déjà avec cet email. Connecte-toi ou utilise une autre adresse.",
   },
   {
-    motif: /invalid login credentials/i,
-    message: "Email ou mot de passe incorrect.",
+    /*
+     * Supabase repond la meme chose pour un mot de passe faux et pour une
+     * adresse jamais confirmee. Le message doit donc citer les deux causes,
+     * sinon quelqu'un qui vient de creer son atelier s'entend dire que son
+     * mot de passe est faux alors qu'il est bon.
+     */
+    motif: /invalid login credentials|invalid_credentials/i,
+    message:
+      "Email ou mot de passe incorrect. Si vous venez de créer votre atelier, ouvrez d'abord le lien de confirmation reçu par email.",
   },
   {
     motif: /password should be at least/i,

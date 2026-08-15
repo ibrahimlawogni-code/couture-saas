@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
-import { EnvelopeSimple, LockSimple } from "@phosphor-icons/react/dist/ssr";
+import { EnvelopeSimple } from "@phosphor-icons/react/dist/ssr";
+import { ChampMotDePasse } from "../champ-mot-de-passe";
 import { Marque } from "../marque";
 import { login } from "./actions";
 
@@ -48,10 +49,23 @@ export default async function LoginPage({
             Accédez à votre atelier
           </p>
 
+          {/* Un refus doit se distinguer d'une simple information, meme sur
+              fond sombre : teinte rouge et liseré, texte blanc pour rester
+              lisible. */}
           {error && (
-            <p className="mt-6 rounded-2xl bg-white/10 px-4 py-3 text-sm text-white">
-              {error}
-            </p>
+            <div className="mt-6 rounded-2xl bg-rouge/35 px-4 py-3 text-sm leading-relaxed text-white ring-1 ring-rouge/60">
+              <p>{error}</p>
+              {/* Le recours s'affiche la ou le probleme se pose, plutot que
+                  d'encombrer le formulaire en permanence. */}
+              {/confirmation/i.test(error) && (
+                <Link
+                  href="/renvoyer-confirmation"
+                  className="mt-2 inline-block font-medium text-white underline underline-offset-2"
+                >
+                  Renvoyer le lien
+                </Link>
+              )}
+            </div>
           )}
           {message && (
             <p className="mt-6 rounded-2xl bg-white/10 px-4 py-3 text-sm text-vert-pale">
@@ -78,23 +92,11 @@ export default async function LoginPage({
               </div>
             </div>
 
-            <div>
-              <label htmlFor="password" className="sr-only">
-                Mot de passe
-              </label>
-              <div className="flex items-center gap-3 border-b border-white/25 pb-2 focus-within:border-white">
-                <LockSimple size={20} weight="light" className="text-vert-pale" />
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  placeholder="Mot de passe"
-                  className="w-full border-0 bg-transparent p-0 text-base text-white placeholder:text-vert-pale focus:outline-none"
-                />
-              </div>
-            </div>
+            <ChampMotDePasse
+              autoComplete="current-password"
+              criteres={false}
+              surFondSombre
+            />
 
             {/*
               La maquette proposait une case "Se souvenir de moi". Elle est

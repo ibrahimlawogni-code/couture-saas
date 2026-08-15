@@ -1,4 +1,4 @@
-import { LockSimple } from "@phosphor-icons/react/dist/ssr";
+import { ChampMotDePasse } from "../../champ-mot-de-passe";
 import { definirMotDePasse } from "./actions";
 
 export default async function NouveauMotDePassePage({
@@ -24,23 +24,7 @@ export default async function NouveauMotDePassePage({
       )}
 
       <form action={definirMotDePasse} className="mt-8 flex flex-col gap-4">
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium text-encre">
-            Nouveau mot de passe
-          </label>
-          <div className="mt-1.5 flex items-center gap-3 rounded-2xl border border-bordure bg-white px-4 py-3">
-            <LockSimple size={20} weight="light" className="text-gris" />
-            <input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="new-password"
-              required
-              minLength={6}
-              className="w-full border-0 bg-transparent p-0 text-base focus:outline-none"
-            />
-          </div>
-        </div>
+        <ChampMotDePasse libelle="Nouveau mot de passe" />
 
         <button
           type="submit"
