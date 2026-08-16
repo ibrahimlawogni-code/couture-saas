@@ -20,12 +20,28 @@ export function BoutonRecu({ donnees }: { donnees: DonneesRecu }) {
       if (navigator.canShare?.({ files: [fichier] })) {
         await navigator.share({ files: [fichier], title: "Reçu" });
       } else {
+        /*
+         * Repli sans partage natif, sur ordinateur notamment.
+         *
+         * L'ancre est posee dans le document avant d'etre cliquee, et
+         * l'URL n'est liberee qu'au tour de boucle suivant. Le code
+         * precedent cliquait une ancre detachee puis revoquait aussitot :
+         * le navigateur pouvait liberer le blob avant de l'avoir lu, et le
+         * telechargement n'arrivait jamais. L'echec etait muet, le bouton
+         * revenant simplement a son etat de repos.
+         */
         const url = URL.createObjectURL(blob);
         const lien = document.createElement("a");
         lien.href = url;
         lien.download = nom;
+        lien.style.display = "none";
+        document.body.appendChild(lien);
         lien.click();
-        URL.revokeObjectURL(url);
+
+        setTimeout(() => {
+          lien.remove();
+          URL.revokeObjectURL(url);
+        }, 0);
       }
 
       setEtat("pret");
