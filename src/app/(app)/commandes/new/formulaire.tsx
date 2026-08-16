@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { enregistrer } from "@/lib/offline/enregistrer";
+import { messageRefus } from "@/lib/offline/erreurs";
 import { cheminPhoto, compresserPhoto } from "@/lib/offline/photo";
 import { useFileAttente } from "@/lib/offline/use-file-attente";
 import { useHydratation } from "@/lib/hydratation";
@@ -27,6 +28,7 @@ export function FormulaireCommande({
   const { enAttente } = useFileAttente();
   const pret = useHydratation();
   const [envoi, setEnvoi] = useState(false);
+  const [erreur, setErreur] = useState<string | null>(null);
 
   // Un client cree hors ligne doit pouvoir recevoir une commande
   // immediatement, sans attendre sa synchronisation.
@@ -50,6 +52,7 @@ export function FormulaireCommande({
 
   async function soumettre(evenement: React.FormEvent<HTMLFormElement>) {
     evenement.preventDefault();
+    setErreur(null);
     setEnvoi(true);
 
     const formulaire = new FormData(evenement.currentTarget);
@@ -82,28 +85,38 @@ export function FormulaireCommande({
     const prixTotal = Number(formulaire.get("prix_total") ?? 0);
     const acompte = Number(formulaire.get("acompte") ?? 0);
 
-    const { enFile } = await enregistrer(
-      "commandes",
-      {
-        id: commandeId,
-        created_at: new Date().toISOString(),
-        atelier_id: atelierId,
-        client_id: clientId,
-        mesure_id: mesureId,
-        // Repete la valeur par defaut de la base : une commande saisie hors
-        // ligne s'affiche depuis la file, ou aucune colonne n'est calculee
-        // par Postgres, et se retrouverait donc sans statut dans le tableau.
-        statut: "recu",
-        nom_modele: String(formulaire.get("nom_modele") ?? "").trim() || null,
-        photo_modele_url: photoModèle?.chemin ?? null,
-        photo_tissu_url: photoTissu?.chemin ?? null,
-        prix_total: prixTotal,
-        date_essayage: String(formulaire.get("date_essayage") ?? "") || null,
-        date_livraison: String(formulaire.get("date_livraison") ?? "") || null,
-        cree_par: utilisateurId,
-      },
-      photos
-    );
+    let enFile = false;
+
+    try {
+      ({ enFile } = await enregistrer(
+        "commandes",
+        {
+          id: commandeId,
+          created_at: new Date().toISOString(),
+          atelier_id: atelierId,
+          client_id: clientId,
+          mesure_id: mesureId,
+          // Repete la valeur par defaut de la base : une commande saisie hors
+          // ligne s'affiche depuis la file, ou aucune colonne n'est calculee
+          // par Postgres, et se retrouverait donc sans statut dans le tableau.
+          statut: "recu",
+          nom_modele: String(formulaire.get("nom_modele") ?? "").trim() || null,
+          photo_modele_url: photoModèle?.chemin ?? null,
+          photo_tissu_url: photoTissu?.chemin ?? null,
+          prix_total: prixTotal,
+          date_essayage: String(formulaire.get("date_essayage") ?? "") || null,
+          date_livraison: String(formulaire.get("date_livraison") ?? "") || null,
+          cree_par: utilisateurId,
+        },
+        photos
+      ));
+    } catch (erreur) {
+      // Refus de la base, une limite d'offre par exemple. Le paiement
+      // qui suit ne doit surtout pas partir sans sa commande.
+      setErreur(messageRefus(erreur));
+      setEnvoi(false);
+      return;
+    }
 
     if (acompte > 0) {
       await enregistrer("paiements", {
@@ -137,6 +150,15 @@ export function FormulaireCommande({
 
   return (
     <form onSubmit={soumettre} className="mt-6 flex flex-col gap-4">
+      {erreur && (
+        <div className="rounded-2xl bg-ambre-clair px-4 py-3 text-sm text-ambre">
+          <p>{erreur}</p>
+          <Link href="/#tarifs" className="mt-1 inline-block font-medium underline">
+            Voir les offres
+          </Link>
+        </div>
+      )}
+
       <div>
         <label htmlFor="client_id" className="block text-sm font-medium text-encre">
           Client

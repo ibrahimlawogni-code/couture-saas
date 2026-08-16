@@ -308,7 +308,7 @@ function Tarifs() {
   ];
 
   return (
-    <section className="bg-foret px-5 py-24 text-white">
+    <section id="tarifs" className="scroll-mt-8 bg-foret px-5 py-24 text-white">
       <div className="mx-auto max-w-6xl">
         <h2 className="text-3xl font-semibold tracking-tight md:text-4xl">
           Un prix, pas de surprise

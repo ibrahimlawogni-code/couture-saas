@@ -24,6 +24,8 @@ export type Operation = {
   photos: PhotoEnAttente[];
   tentatives: number;
   echec: boolean;
+  /** Raison du dernier refus, en francais, pour l'afficher telle quelle. */
+  motif?: string;
   creeLe: number;
 };
 
@@ -32,6 +34,8 @@ export type Operation = {
 export type LigneAtelier = {
   id: string;
   nom: string;
+  /** Code de la formule. La base reste seule juge des limites. */
+  formule: string;
 };
 
 export type LigneClient = {

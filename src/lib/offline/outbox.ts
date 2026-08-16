@@ -64,12 +64,17 @@ export async function retirerDeLaFile(id: string) {
   notifier();
 }
 
-export async function marquerTentative(operation: Operation, echec: boolean) {
+export async function marquerTentative(
+  operation: Operation,
+  echec: boolean,
+  motif?: string
+) {
   const base = await ouvrirBase();
   await base.put("outbox", {
     ...operation,
     tentatives: operation.tentatives + 1,
     echec,
+    motif,
   });
   notifier();
 }

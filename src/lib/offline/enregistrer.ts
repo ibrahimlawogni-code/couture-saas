@@ -1,4 +1,5 @@
 import { envoyerVersSupabase } from "./envoi";
+import { estRefusDefinitif } from "./erreurs";
 import { poserDansMiroir } from "./miroir";
 import { mettreEnFile } from "./outbox";
 import type { PhotoEnAttente, TableSynchronisable } from "./db";
@@ -21,7 +22,12 @@ export async function enregistrer(
       // pas la ligne : il ne lit que la copie locale.
       await poserDansMiroir(table, ligne);
       return { enFile: false };
-    } catch {
+    } catch (erreur) {
+      // Un refus de la base ne se rejouera jamais avec succes. Le mettre
+      // en file donnerait a la personne l'illusion d'avoir enregistre,
+      // puis bloquerait tout ce qui attend derriere.
+      if (estRefusDefinitif(erreur)) throw erreur;
+
       // Reseau annonce comme disponible mais injoignable : on met en file.
     }
   }

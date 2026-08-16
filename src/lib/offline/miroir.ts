@@ -13,7 +13,7 @@ import {
 export const EVENEMENT_MIROIR = "miroir-mis-a-jour";
 
 /** Une ligne encore dans la file locale : affichee, mais signalee. */
-export type AvecAttente<T> = T & { enAttente?: boolean };
+export type AvecAttente<T> = T & { enAttente?: boolean; enEchec?: boolean };
 
 function notifier() {
   window.dispatchEvent(new Event(EVENEMENT_MIROIR));
@@ -28,7 +28,7 @@ export async function rafraichirMiroir() {
   const supabase = createClient();
 
   const [ateliers, clients, mesures, commandes, paiements] = await Promise.all([
-    supabase.from("ateliers").select("id, nom"),
+    supabase.from("ateliers").select("id, nom, formule"),
     supabase.from("clients").select("id, nom, telephone, whatsapp, notes, created_at"),
     supabase.from("mesures").select("id, client_id, libelle, valeurs, created_at"),
     supabase
@@ -112,7 +112,11 @@ async function lignesEnAttente<T>(table: string): Promise<AvecAttente<T>[]> {
 
   return operations
     .filter((operation) => operation.table === table)
-    .map((operation) => ({ ...(operation.donnees as T), enAttente: true }));
+    .map((operation) => ({
+      ...(operation.donnees as T),
+      enAttente: !operation.echec,
+      enEchec: operation.echec,
+    }));
 }
 
 export async function lireAtelier(): Promise<LigneAtelier | null> {

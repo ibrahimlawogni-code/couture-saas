@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { enregistrer } from "@/lib/offline/enregistrer";
+import { estLimiteOffre, messageRefus } from "@/lib/offline/erreurs";
 import { useHydratation } from "@/lib/hydratation";
 
 export function FormulaireClient({ atelierId }: { atelierId: string }) {
@@ -10,10 +12,14 @@ export function FormulaireClient({ atelierId }: { atelierId: string }) {
   const pret = useHydratation();
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
+  // Une limite d'offre n'est pas une panne : elle se presente autrement,
+  // et surtout elle propose une issue.
+  const [limite, setLimite] = useState(false);
 
   async function soumettre(evenement: React.FormEvent<HTMLFormElement>) {
     evenement.preventDefault();
     setErreur(null);
+    setLimite(false);
 
     const formulaire = new FormData(evenement.currentTarget);
     const nom = String(formulaire.get("nom") ?? "").trim();
@@ -29,17 +35,28 @@ export function FormulaireClient({ atelierId }: { atelierId: string }) {
     // meme si l'enregistrement part plus tard.
     const id = crypto.randomUUID();
 
-    const { enFile } = await enregistrer("clients", {
-      id,
-      // Date posee ici : une saisie hors ligne doit garder l'heure a
-      // laquelle elle a ete faite, pas celle de son envoi.
-      created_at: new Date().toISOString(),
-      atelier_id: atelierId,
-      nom,
-      telephone: String(formulaire.get("telephone") ?? "").trim() || null,
-      whatsapp: String(formulaire.get("whatsapp") ?? "").trim() || null,
-      notes: String(formulaire.get("notes") ?? "").trim() || null,
-    });
+    let enFile = false;
+
+    try {
+      ({ enFile } = await enregistrer("clients", {
+        id,
+        // Date posee ici : une saisie hors ligne doit garder l'heure a
+        // laquelle elle a ete faite, pas celle de son envoi.
+        created_at: new Date().toISOString(),
+        atelier_id: atelierId,
+        nom,
+        telephone: String(formulaire.get("telephone") ?? "").trim() || null,
+        whatsapp: String(formulaire.get("whatsapp") ?? "").trim() || null,
+        notes: String(formulaire.get("notes") ?? "").trim() || null,
+      }));
+    } catch (erreur) {
+      // Refus de la base, une limite d'offre par exemple : la saisie
+      // reste a l'ecran pour ne rien perdre de ce qui a ete tape.
+      setErreur(messageRefus(erreur));
+      setLimite(estLimiteOffre(erreur));
+      setEnvoi(false);
+      return;
+    }
 
     router.push(enFile ? "/clients" : `/clients/${id}`);
     router.refresh();
@@ -47,9 +64,17 @@ export function FormulaireClient({ atelierId }: { atelierId: string }) {
 
   return (
     <form onSubmit={soumettre} className="mt-6 flex flex-col gap-4">
-      {erreur && (
-        <p className="rounded-2xl bg-rouge-clair px-3 py-2 text-sm text-rouge">{erreur}</p>
-      )}
+      {erreur &&
+        (limite ? (
+          <div className="rounded-2xl bg-ambre-clair px-4 py-3 text-sm text-ambre">
+            <p>{erreur}</p>
+            <Link href="/#tarifs" className="mt-1 inline-block font-medium underline">
+              Voir les offres
+            </Link>
+          </div>
+        ) : (
+          <p className="rounded-2xl bg-rouge-clair px-3 py-2 text-sm text-rouge">{erreur}</p>
+        ))}
 
       <div>
         <label htmlFor="nom" className="block text-sm font-medium text-encre">

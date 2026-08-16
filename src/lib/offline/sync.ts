@@ -1,4 +1,5 @@
 import { envoyerVersSupabase } from "./envoi";
+import { estRefusDefinitif, messageRefus } from "./erreurs";
 import { poserDansMiroir } from "./miroir";
 import { listerFile, marquerTentative, retirerDeLaFile } from "./outbox";
 
@@ -39,7 +40,15 @@ export async function synchroniser(): Promise<ResultatSync> {
         await poserDansMiroir(operation.table, ligne);
         await retirerDeLaFile(operation.id);
         envoyees += 1;
-      } catch {
+      } catch (erreur) {
+        // Refus de principe : inutile de compter les tentatives, et
+        // inutile d'arreter la file. Les operations qui dependaient de
+        // celle-ci seront refusees a leur tour, les autres passeront.
+        if (estRefusDefinitif(erreur)) {
+          await marquerTentative(operation, true, messageRefus(erreur));
+          continue;
+        }
+
         const definitif = operation.tentatives + 1 >= TENTATIVES_MAX;
         await marquerTentative(operation, definitif);
         break;

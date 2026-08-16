@@ -111,7 +111,7 @@ export function TableauCommandes() {
                     <li
                       key={commande.id}
                       className={`rounded-2xl p-3 ${
-                        commande.enAttente
+                        commande.enAttente || commande.enEchec
                           ? "border border-dashed border-bordure bg-white"
                           : "bg-white shadow-sm"
                       }`}
@@ -126,12 +126,16 @@ export function TableauCommandes() {
                         <div className="mt-2 flex items-center justify-between gap-2">
                           <span
                             className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                              commande.enAttente
-                                ? "bg-bleu-clair text-bleu"
-                                : PRIORITE_STYLES[niveau]
+                              commande.enEchec
+                                ? "bg-rouge-clair text-rouge"
+                                : commande.enAttente
+                                  ? "bg-bleu-clair text-bleu"
+                                  : PRIORITE_STYLES[niveau]
                             }`}
                           >
-                            {commande.enAttente
+                            {commande.enEchec
+                              ? "Refusé"
+                              : commande.enAttente
                               ? "En attente"
                               : commande.date_livraison
                                 ? new Date(commande.date_livraison).toLocaleDateString(
@@ -146,7 +150,7 @@ export function TableauCommandes() {
                         </div>
                       </Link>
 
-                      {suivant && !commande.enAttente && (
+                      {suivant && !commande.enAttente && !commande.enEchec && (
                         <button
                           type="button"
                           onClick={() => avancer(commande.id, suivant)}

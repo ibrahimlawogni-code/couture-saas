@@ -36,7 +36,7 @@ export function ListeClients() {
             <Link
               href={`/clients/${client.id}`}
               className={`flex items-center justify-between gap-3 rounded-2xl px-4 py-4 active:bg-papier ${
-                client.enAttente
+                client.enAttente || client.enEchec
                   ? "border border-dashed border-bordure bg-white"
                   : "bg-white shadow-sm"
               }`}
@@ -44,7 +44,11 @@ export function ListeClients() {
               <span className="min-w-0 truncate text-base font-medium text-encre">
                 {client.nom}
               </span>
-              {client.enAttente ? (
+              {client.enEchec ? (
+                <span className="shrink-0 rounded-full bg-rouge-clair px-2 py-1 text-xs font-medium text-rouge">
+                  Refusé
+                </span>
+              ) : client.enAttente ? (
                 <span className="shrink-0 rounded-full bg-bleu-clair px-2 py-1 text-xs font-medium text-bleu">
                   En attente
                 </span>
