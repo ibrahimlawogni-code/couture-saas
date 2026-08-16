@@ -30,7 +30,14 @@
      contraste, il faut une teinte claire de la meme famille. */
   --color-vert-pale: #9bc4b3;
   --color-encre: #111e1a;
-  --color-gris: #6b7a74;
+  /*
+   * Gris assombri depuis #6b7a74, qui ne donnait que 4,26:1 sur le papier
+   * et echouait donc au seuil AA de 4,5:1. C'est la couleur de presque
+   * tout le texte secondaire de l'application : la faute se payait partout.
+   * Cette valeur donne 4,78:1 sur le papier et 5,06:1 sur le blanc, sans
+   * quitter la famille verdie.
+   */
+  --color-gris: #63726c;
   --color-papier: #f7f9f8;
   --color-bordure: #e3e8e6;
   --color-bleu: #1b4f72;
@@ -41,6 +48,31 @@
   --color-rouge-clair: #f6dedc;
 
   --font-sans: var(--font-dm-sans);
+
+  /*
+   * Trois rayons, un par niveau de surface. L'application melangeait
+   * rounded-2xl et rounded-3xl sur des elements de meme nature ; nommer le
+   * rayon par le role qu'il sert supprime l'arbitrage a chaque usage.
+   *
+   * Ces valeurs sont plus serrees que les precedentes. La marque se veut
+   * "precise, calme, discretement haut de gamme", dans le registre de
+   * Stripe et Linear ; un rayon de 24 px sur une vignette de statistique
+   * parle au contraire le langage des applications grand public.
+   */
+  --radius-controle: 0.625rem;
+  --radius-carte: 0.875rem;
+  --radius-panneau: 1.25rem;
+
+  /*
+   * L'elevation se lit d'abord au filet, ensuite a l'ombre. Une ombre
+   * seule flotte sans se poser ; un filet donne l'arete nette qui fait
+   * l'impression d'outil de precision.
+   */
+  --shadow-carte: 0 1px 2px -1px rgb(17 30 26 / 0.06);
+  --shadow-leve: 0 4px 12px -4px rgb(17 30 26 / 0.1);
+  --shadow-flottant: 0 12px 32px -12px rgb(17 30 26 / 0.28);
+
+  --ease-doux: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 body {
@@ -75,5 +107,91 @@ body {
 
   ::placeholder {
     color: var(--color-gris);
+  }
+
+  /*
+   * Aucun etat de focus n'existait dans l'application : la parcourir au
+   * clavier revenait a naviguer a l'aveugle. Pose ici plutot que composant
+   * par composant, pour qu'un element ajoute plus tard en herite sans que
+   * personne ait a y penser.
+   *
+   * focus-visible et non focus : le navigateur reserve ainsi l'anneau au
+   * clavier, sans le faire apparaitre sous chaque doigt sur telephone.
+   */
+  :focus-visible {
+    outline: 2px solid var(--color-vert);
+    outline-offset: 2px;
+  }
+
+  /* Sur les aplats sombres, le vert de l'anneau disparait dans le fond. */
+  .sur-fond-sombre :focus-visible {
+    outline-color: #ffffff;
+  }
+
+  /*
+   * Android dessine un rectangle gris a chaque appui, qui deborde des coins
+   * arrondis et trahit la forme reelle de la zone tactile. Nos composants
+   * signalent l'appui eux-memes, par un changement de fond.
+   */
+  a,
+  button {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Evite les lignes veuves dans les titres et les paragraphes courts. */
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+}
+
+@layer utilities {
+  /*
+   * La barre de navigation est en position fixe en bas de l'ecran. Sans
+   * cette reserve, l'indicateur d'accueil de l'iPhone se pose par-dessus
+   * des que l'application est installee en PWA, et le dernier onglet
+   * devient difficile a atteindre.
+   */
+  .pb-securite {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .pt-securite {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  /*
+   * Chasse fixe, reservee aux chiffres qui s'alignent verticalement :
+   * montants empiles dans une colonne du Kanban, lignes de paiement,
+   * graduations d'un graphique. La ou les chiffres se lisent les uns
+   * sous les autres, la chasse variable les fait danser.
+   *
+   * A ne pas poser sur une grande valeur isolee - vignette de
+   * statistique, chiffre d'accroche. La chasse fixe donne a chaque
+   * chiffre la largeur d'un zero, et un « 121 » y parait distendu.
+   * Ces valeurs-la gardent les chiffres proportionnels de la fonte.
+   */
+  .chiffres {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/*
+ * Certaines personnes desactivent les animations pour raison medicale. La
+ * regle vaut pour tout le document, y compris ce qui sera ajoute plus tard.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
