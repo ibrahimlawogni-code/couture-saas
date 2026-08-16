@@ -18,6 +18,8 @@ import { Etiquette } from "@/ui/etiquette";
 import { EnTeteSection } from "@/ui/page";
 import { Squelette, SqueletteLigne } from "@/ui/squelette";
 
+const nombre = new Intl.NumberFormat("fr-FR");
+
 const CHAMPS_LABELS: Record<string, string> = {
   poitrine: "Poitrine",
   taille: "Taille",
@@ -34,7 +36,7 @@ export function FicheClient() {
   // designeraient un autre client.
   const clientId = useIdentifiantUrl();
 
-  const { clients, mesures, commandes, chargee } = useDonnees();
+  const { clients, mesures, commandes, paiements, chargee } = useDonnees();
 
   const client = clients.find((candidat) => candidat.id === clientId);
 
@@ -61,6 +63,39 @@ export function FicheClient() {
         ),
     [commandes, clientId]
   );
+
+  /*
+   * Ce que ce client doit, et ce qu'il a en atelier.
+   *
+   * La liste des clients affichait deja ces deux chiffres par ligne,
+   * quand la fiche du meme client, elle, les taisait : il fallait
+   * compter les commandes a la main et additionner les restes soi-meme.
+   * La liste en disait plus que la page dediee.
+   */
+  const suivi = useMemo(() => {
+    const verse = new Map<string, number>();
+    for (const paiement of paiements) {
+      verse.set(
+        paiement.commande_id,
+        (verse.get(paiement.commande_id) ?? 0) + Number(paiement.montant)
+      );
+    }
+
+    const restes = new Map<string, number>();
+    let du = 0;
+    let enCours = 0;
+
+    for (const commande of commandesClient) {
+      const reste =
+        Number(commande.prix_total) - (verse.get(commande.id) ?? 0);
+      restes.set(commande.id, reste);
+
+      if (reste > 0) du += reste;
+      if (commande.statut !== "livre") enCours += 1;
+    }
+
+    return { restes, du, enCours };
+  }, [commandesClient, paiements]);
 
   if (!chargee) return <SqueletteFiche />;
 
@@ -127,7 +162,32 @@ export function FicheClient() {
         )}
       </div>
 
-      <div className="mt-5 grid grid-cols-2 gap-2">
+      {/*
+       * Le bandeau de synthese, dans la meme grammaire que les autres
+       * ecrans : libelle en petites capitales, valeur en grand, unite en
+       * retrait. Il repond aux deux questions qu'on se pose en ouvrant une
+       * fiche - combien me doit-il, et qu'est-ce que j'ai de lui en
+       * atelier.
+       */}
+      <div className="mt-5 grid grid-cols-3 gap-2">
+        <Vignette
+          libelle="Doit"
+          valeur={suivi.du > 0 ? nombre.format(suivi.du) : "0"}
+          unite="FCFA"
+          alerte={suivi.du > 0}
+        />
+        <Vignette libelle="En cours" valeur={String(suivi.enCours)} />
+        <Vignette
+          libelle="Client depuis"
+          valeur={new Date(client.created_at).toLocaleDateString("fr-FR", {
+            month: "short",
+            year: "2-digit",
+          })}
+          petit
+        />
+      </div>
+
+      <div className="mt-3 grid grid-cols-2 gap-2">
         <LienBouton
           href={`/clients/${client.id}/mesures/new`}
           allure="secondaire"
@@ -171,10 +231,17 @@ export function FicheClient() {
                    * et le filet disparaissait d'un cote seulement des que
                    * le nombre de mesures etait impair.
                    */
-                  className="flex items-baseline justify-between gap-2 border-b border-bordure py-1.5 text-sm"
+                  className="flex items-baseline justify-between gap-2 border-b border-bordure py-2"
                 >
-                  <dt className="truncate text-gris">{CHAMPS_LABELS[cle] ?? cle}</dt>
-                  <dd className="chiffres shrink-0 font-medium text-encre">
+                  <dt className="truncate text-xs text-gris">
+                    {CHAMPS_LABELS[cle] ?? cle}
+                  </dt>
+                  {/*
+                   * La mesure pesait autant que son libelle. C'est
+                   * pourtant le chiffre qu'on vient chercher : le libelle
+                   * ne sert qu'a savoir de quoi il parle.
+                   */}
+                  <dd className="chiffres shrink-0 text-base font-semibold text-encre">
                     {String(valeur)}
                   </dd>
                 </div>
@@ -236,9 +303,23 @@ export function FicheClient() {
                         : ""}
                     </span>
                   </span>
-                  <span className="chiffres shrink-0 text-sm text-gris">
-                    {formaterMontant(Number(commande.prix_total))}
-                  </span>
+                  {/*
+                   * Le reste du plutot que le prix, comme sur le Kanban et
+                   * la liste des clients. Le prix seul ne dit pas s'il y a
+                   * de l'argent a reclamer avec le vetement.
+                   */}
+                  {(() => {
+                    const reste = suivi.restes.get(commande.id) ?? 0;
+                    return (
+                      <span
+                        className={`chiffres shrink-0 text-sm font-medium ${
+                          reste > 0 ? "text-rouge" : "text-vert"
+                        }`}
+                      >
+                        {reste > 0 ? formaterMontant(reste) : "soldé"}
+                      </span>
+                    );
+                  })()}
                 </CarteLien>
               </li>
             ))}
@@ -255,6 +336,42 @@ export function FicheClient() {
         )}
       </section>
     </>
+  );
+}
+
+/** Vignette de synthese, alignee sur celles du tableau de bord. */
+function Vignette({
+  libelle,
+  valeur,
+  unite,
+  alerte = false,
+  petit = false,
+}: {
+  libelle: string;
+  valeur: string;
+  unite?: string;
+  alerte?: boolean;
+  /** Une date ne supporte pas la taille d'un montant sur trois colonnes. */
+  petit?: boolean;
+}) {
+  return (
+    <Carte classe="p-3">
+      <p className="text-[10px] font-medium tracking-[0.1em] text-gris uppercase">
+        {libelle}
+      </p>
+      <p className="mt-1.5 flex items-baseline gap-1">
+        <span
+          className={`leading-none font-semibold tracking-tight ${
+            petit ? "text-base" : "text-lg sm:text-xl"
+          } ${alerte ? "text-rouge" : "text-encre"}`}
+        >
+          {valeur}
+        </span>
+        {unite && (
+          <span className="text-[10px] font-medium text-gris">{unite}</span>
+        )}
+      </p>
+    </Carte>
   );
 }
 
