@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { CaretRight } from "@phosphor-icons/react/dist/ssr";
 import { createClient } from "@/lib/supabase/server";
+import { Marque } from "../marque";
 import { signOut } from "./actions";
 import { BarreLaterale } from "./barre-laterale";
 import { NavigationPrincipale } from "./navigation";
@@ -41,23 +43,62 @@ export default async function AppLayout({
       <div className="flex min-w-0 flex-1 flex-col">
         {/* En-tete du telephone seulement : sur grand ecran, la barre
             laterale porte deja le nom de l'atelier et la deconnexion. */}
-        <header className="flex items-center justify-between border-b border-bordure bg-white px-4 py-4 lg:hidden">
-          <Link href="/reglages" className="-m-2 rounded-2xl p-2 active:bg-papier">
-            <p className="text-sm font-semibold text-encre">{nomAtelier}</p>
-            <p className="text-xs text-gris">{nomUtilisateur}</p>
+        {/*
+         * En-tete non collant, volontairement. La bande d'etat du reseau
+         * occupe deja le haut de l'ecran en position collante ; deux
+         * elements colles a top-0 se recouvrent des le premier defilement,
+         * et c'est le plus haut en z qui gagne - la bande, donc, qui
+         * masquerait le nom de l'atelier et la deconnexion.
+         *
+         * C'est la bande qui merite la place : elle dit si le travail part
+         * ou reste en attente. L'en-tete ne porte qu'un lien vers les
+         * reglages et la deconnexion, dont aucun n'a besoin d'etre a
+         * portee permanente.
+         */}
+        <header className="flex items-center justify-between gap-3 border-b border-bordure bg-white px-4 py-3 lg:hidden">
+          <Link
+            href="/reglages"
+            className="-m-1.5 flex min-w-0 items-center gap-2.5 rounded-controle p-1.5 active:bg-papier"
+          >
+            <span className="shrink-0 text-foret">
+              <Marque taille={26} />
+            </span>
+            <span className="min-w-0">
+              <span className="flex items-center gap-1">
+                <span className="truncate text-sm font-semibold text-encre">
+                  {nomAtelier}
+                </span>
+                <CaretRight
+                  size={12}
+                  weight="bold"
+                  className="shrink-0 text-gris"
+                />
+              </span>
+              <span className="block truncate text-xs text-gris">
+                {nomUtilisateur || "Réglages"}
+              </span>
+            </span>
           </Link>
+
           <form action={signOut}>
             <button
               type="submit"
-              className="rounded-2xl px-3 py-2 text-sm font-medium text-gris active:bg-papier"
+              className="min-h-11 rounded-controle px-3 text-sm font-medium text-gris active:bg-papier"
             >
               Déconnexion
             </button>
           </form>
         </header>
 
-        {/* pb-20 laisse la place a la barre du bas, inutile sur grand ecran. */}
-        <main className="flex flex-1 flex-col pb-20 lg:pb-0">{children}</main>
+        {/*
+         * La reserve du bas vaut la hauteur de la barre d'onglets plus
+         * celle de l'indicateur d'accueil de l'iPhone. Une valeur fixe
+         * laissait le dernier element de chaque liste sous la barre sur
+         * les telephones a encoche.
+         */}
+        <main className="flex flex-1 flex-col pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-0">
+          {children}
+        </main>
       </div>
 
       <NavigationPrincipale />

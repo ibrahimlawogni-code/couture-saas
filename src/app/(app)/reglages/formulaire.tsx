@@ -6,6 +6,9 @@ import { createClient } from "@/lib/supabase/client";
 import { rafraichirMiroir } from "@/lib/offline/miroir";
 import { useFileAttente } from "@/lib/offline/use-file-attente";
 import { useHydratation } from "@/lib/hydratation";
+import { Bouton } from "@/ui/bouton";
+import { Champ } from "@/ui/champ";
+import { Message } from "@/ui/message";
 
 type Etat = "repos" | "envoi" | "enregistre" | "echec";
 
@@ -59,60 +62,49 @@ export function FormulaireReglages({
 
   return (
     <form onSubmit={soumettre} className="mt-6 flex flex-col gap-4">
-      <div>
-        <label htmlFor="atelier" className="block text-sm font-medium text-encre">
-          Nom de l&apos;atelier
-        </label>
-        <p className="mt-1 text-xs text-gris">
-          Il apparaît sur les reçus et les messages envoyés à vos clients.
-        </p>
-        <input
-          id="atelier"
-          name="atelier"
-          type="text"
-          defaultValue={nomAtelier}
-          required
-          className="mt-2 w-full rounded-2xl border border-bordure px-4 py-3 text-base"
-        />
-      </div>
+      <Champ
+        id="atelier"
+        name="atelier"
+        type="text"
+        libelle="Nom de l'atelier"
+        aide="Il apparaît sur les reçus et les messages envoyés à vos clients."
+        defaultValue={nomAtelier}
+        required
+      />
 
-      <div>
-        <label htmlFor="utilisateur" className="block text-sm font-medium text-encre">
-          Votre nom
-        </label>
-        <input
-          id="utilisateur"
-          name="utilisateur"
-          type="text"
-          defaultValue={nomUtilisateur}
-          required
-          className="mt-2 w-full rounded-2xl border border-bordure px-4 py-3 text-base"
-        />
-      </div>
+      <Champ
+        id="utilisateur"
+        name="utilisateur"
+        type="text"
+        libelle="Votre nom"
+        defaultValue={nomUtilisateur}
+        autoComplete="name"
+        required
+      />
 
       {etat === "echec" && (
-        <p className="rounded-2xl bg-rouge-clair px-4 py-3 text-sm text-rouge">
+        <Message ton="probleme">
           L&apos;enregistrement n&apos;a pas abouti. Réessayez.
-        </p>
+        </Message>
       )}
 
       {etat === "enregistre" && (
-        <p className="rounded-2xl bg-vert-clair px-4 py-3 text-sm text-foret">
-          Modifications enregistrées.
-        </p>
+        <Message ton="metier">Modifications enregistrées.</Message>
       )}
 
-      <button
+      <Bouton
         type="submit"
         disabled={!pret || horsLigne || etat === "envoi"}
-        className="mt-2 rounded-2xl bg-foret px-4 py-4 text-base font-medium text-white active:bg-vert disabled:opacity-40"
+        pleineLargeur
+        classe="mt-2 min-h-12"
       >
         {etat === "envoi" ? "Enregistrement..." : "Enregistrer"}
-      </button>
+      </Bouton>
 
       {horsLigne && (
         <p className="text-xs text-gris">
-          Cette modification demande une connexion.
+          Cette modification demande une connexion : elle change des lignes déjà
+          enregistrées, et la file locale ne sait rejouer que des créations.
         </p>
       )}
     </form>

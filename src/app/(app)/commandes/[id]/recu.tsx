@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { Receipt } from "@phosphor-icons/react/dist/ssr";
 import { genererRecu, type DonneesRecu } from "@/lib/recu";
+import { Bouton } from "@/ui/bouton";
 
 export function BoutonRecu({ donnees }: { donnees: DonneesRecu }) {
   const [etat, setEtat] = useState<"pret" | "generation" | "erreur">("pret");
@@ -34,13 +36,15 @@ export function BoutonRecu({ donnees }: { donnees: DonneesRecu }) {
   }
 
   return (
-    <button
+    <Bouton
       type="button"
+      allure="secondaire"
+      pleineLargeur
       onClick={partager}
       disabled={etat === "generation"}
-      className="w-full rounded-2xl border border-bordure bg-white px-4 py-3 text-sm font-medium text-encre active:bg-papier disabled:opacity-60"
     >
+      <Receipt size={16} />
       {etat === "generation" ? "Préparation..." : "Partager le reçu"}
-    </button>
+    </Bouton>
   );
 }

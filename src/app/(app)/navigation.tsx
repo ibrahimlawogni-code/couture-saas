@@ -4,25 +4,64 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ONGLETS } from "./onglets";
 
-/** Barre du bas, atteignable au pouce. Remplacee par la barre laterale
- *  au-dela de 1024 px. */
+/**
+ * Barre du bas, atteignable au pouce. Remplacee par la barre laterale
+ * au-dela de 1024 px.
+ */
 export function NavigationPrincipale() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 border-t border-bordure bg-white lg:hidden">
+    <nav
+      aria-label="Navigation principale"
+      /*
+       * pb-securite reserve la hauteur de l'indicateur d'accueil de
+       * l'iPhone. Sans elle, une fois l'application installee en PWA, le
+       * trait blanc du systeme se pose sur les onglets et les rend
+       * difficiles a viser.
+       */
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-bordure bg-white/95 pb-securite backdrop-blur-sm lg:hidden"
+    >
       <ul className="mx-auto flex max-w-2xl">
-        {ONGLETS.map((onglet) => {
-          const actif = pathname.startsWith(onglet.href);
+        {ONGLETS.map(({ href, label, icone: Icone }) => {
+          const actif = pathname.startsWith(href);
+
           return (
-            <li key={onglet.href} className="flex-1">
+            <li key={href} className="flex-1">
               <Link
-                href={onglet.href}
-                className={`block py-4 text-center text-sm font-medium ${
-                  actif ? "text-encre" : "text-gris"
-                }`}
+                href={href}
+                aria-current={actif ? "page" : undefined}
+                className="group relative flex min-h-14 flex-col items-center justify-center gap-1 px-1 py-2"
               >
-                {onglet.label}
+                {/*
+                 * Trait au-dessus de l'onglet actif. La couleur seule ne
+                 * suffit pas a designer l'onglet courant : elle echappe a
+                 * une partie des daltonismes, et se voit mal en plein
+                 * soleil sur un ecran de telephone.
+                 */}
+                <span
+                  aria-hidden
+                  className={`absolute inset-x-4 top-0 h-0.5 rounded-full transition-colors duration-150 ease-doux ${
+                    actif ? "bg-foret" : "bg-transparent"
+                  }`}
+                />
+
+                <Icone
+                  size={22}
+                  weight={actif ? "fill" : "regular"}
+                  className={
+                    actif
+                      ? "text-foret"
+                      : "text-gris transition-colors group-active:text-encre"
+                  }
+                />
+                <span
+                  className={`text-[11px] leading-none font-medium ${
+                    actif ? "text-foret" : "text-gris"
+                  }`}
+                >
+                  {label}
+                </span>
               </Link>
             </li>
           );

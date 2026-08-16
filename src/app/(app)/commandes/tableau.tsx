@@ -2,11 +2,12 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
+import { ArrowRight, ClipboardText } from "@phosphor-icons/react/dist/ssr";
 import { createClient } from "@/lib/supabase/client";
 import {
-  PRIORITE_STYLES,
   STATUTS,
   STATUT_LABELS,
+  TON_PRIORITE,
   formaterMontant,
   priorite,
   statutSuivant,
@@ -15,6 +16,11 @@ import {
 import { rafraichirMiroir } from "@/lib/offline/miroir";
 import { useDonnees } from "@/lib/offline/use-donnees";
 import { useFileAttente } from "@/lib/offline/use-file-attente";
+import { Carte } from "@/ui/carte";
+import { Compteur, Etiquette } from "@/ui/etiquette";
+import { EtatVide } from "@/ui/etat-vide";
+import { LienBouton } from "@/ui/bouton";
+import { Squelette } from "@/ui/squelette";
 
 const LIVREES_AFFICHEES = 20;
 
@@ -64,39 +70,66 @@ export function TableauCommandes() {
     if (!error) await rafraichirMiroir();
   }
 
-  if (!chargee) {
-    return <p className="mt-8 px-4 text-sm text-gris">Chargement...</p>;
-  }
+  if (!chargee) return <SqueletteTableau />;
 
   if (commandes.length === 0) {
     return (
-      <p className="mt-10 px-4 text-center text-sm text-gris">
-        Aucune commande pour l&apos;instant.
-      </p>
+      <div className="mx-auto w-full max-w-2xl px-4">
+        <EtatVide
+          icone={ClipboardText}
+          titre="Aucune commande"
+          texte="Chaque commande suit son avancement ici, de la réception à la livraison."
+          action={
+            <LienBouton href="/commandes/new">Créer la première commande</LienBouton>
+          }
+        />
+      </div>
     );
   }
 
   return (
     <>
-      <p className="mx-auto w-full max-w-2xl px-4 text-sm text-gris">
-        {enCours} en cours
-      </p>
+      <div className="mx-auto w-full max-w-2xl px-4">
+        <p className="text-sm text-gris">{enCours} en cours</p>
 
-      {/* Colonnes qui defilent au doigt : sept colonnes ne tiennent pas
-          sur un ecran de telephone. */}
-      <div className="mt-4 flex gap-3 overflow-x-auto px-4 pb-4">
+        {/*
+         * Posee avant le tableau, et non apres : c'est elle qui explique
+         * les boutons grises, et placee en fin d'ecran elle se serait
+         * trouvee derriere sept colonnes a defilement horizontal.
+         */}
+        {horsLigne && (
+          <p className="mt-1 text-xs text-gris">
+            Hors connexion : l&apos;avancement des commandes reprendra au retour
+            du réseau.
+          </p>
+        )}
+      </div>
+
+      {/*
+       * Colonnes qui defilent au doigt : sept colonnes ne tiennent pas
+       * sur un ecran de telephone. L'accroche au defilement les fait se
+       * poser bord a bord plutot que de s'arreter a mi-chemin, ce qui
+       * laissait deux demi-colonnes a l'ecran et perdait le fil.
+       */}
+      <div className="mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-px-4 px-4 pb-4">
         {STATUTS.map((statut) => {
           const cartes = parStatut.get(statut) ?? [];
 
           return (
-            <section key={statut} className="w-64 shrink-0">
-              <div className="flex items-center justify-between px-1">
-                <h2 className="text-sm font-semibold text-encre">
+            <section key={statut} className="w-64 shrink-0 snap-start">
+              <div className="flex items-center justify-between gap-2 px-1">
+                <h2 className="truncate text-sm font-semibold text-encre">
                   {STATUT_LABELS[statut]}
                 </h2>
-                <span className="rounded-full bg-vert-clair px-2 py-0.5 text-xs font-medium text-gris">
+                {/*
+                 * Le compteur portait du gris sur du vert clair, soit
+                 * 3,71:1 - sous le seuil AA. Le ton « metier » de
+                 * l'etiquette pose du vert foret sur le meme fond, a
+                 * 10,3:1.
+                 */}
+                <Compteur ton={cartes.length > 0 ? "metier" : "neutre"}>
                   {cartes.length}
-                </span>
+                </Compteur>
               </div>
 
               <ul className="mt-2 flex flex-col gap-2">
@@ -106,66 +139,77 @@ export function TableauCommandes() {
                     commande.statut as Statut
                   );
                   const suivant = statutSuivant(commande.statut as Statut);
+                  const provisoire = commande.enAttente || commande.enEchec;
 
                   return (
-                    <li
-                      key={commande.id}
-                      className={`rounded-2xl p-3 ${
-                        commande.enAttente || commande.enEchec
-                          ? "border border-dashed border-bordure bg-white"
-                          : "bg-white shadow-sm"
-                      }`}
-                    >
-                      <Link href={`/commandes/${commande.id}`} className="block">
-                        <p className="truncate text-sm font-medium text-encre">
-                          {nomsClients.get(commande.client_id) ?? "Client inconnu"}
-                        </p>
-                        <p className="truncate text-xs text-gris">
-                          {commande.nom_modele ?? "Sans modèle"}
-                        </p>
-                        <div className="mt-2 flex items-center justify-between gap-2">
-                          <span
-                            className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                              commande.enEchec
-                                ? "bg-rouge-clair text-rouge"
-                                : commande.enAttente
-                                  ? "bg-bleu-clair text-bleu"
-                                  : PRIORITE_STYLES[niveau]
-                            }`}
-                          >
-                            {commande.enEchec
-                              ? "Refusé"
-                              : commande.enAttente
-                              ? "En attente"
-                              : commande.date_livraison
-                                ? new Date(commande.date_livraison).toLocaleDateString(
-                                    "fr-FR",
-                                    { day: "2-digit", month: "2-digit" }
-                                  )
-                                : "Sans date"}
-                          </span>
-                          <span className="text-xs text-gris">
-                            {formaterMontant(Number(commande.prix_total))}
-                          </span>
-                        </div>
-                      </Link>
-
-                      {suivant && !commande.enAttente && !commande.enEchec && (
-                        <button
-                          type="button"
-                          onClick={() => avancer(commande.id, suivant)}
-                          disabled={horsLigne}
-                          className="mt-2 w-full rounded-2xl border border-bordure py-2 text-xs font-medium text-gris active:bg-papier disabled:opacity-40"
+                    <li key={commande.id}>
+                      <Carte provisoire={provisoire} classe="p-3">
+                        <Link
+                          href={`/commandes/${commande.id}`}
+                          className="block rounded-controle"
                         >
-                          {STATUT_LABELS[suivant]} &rarr;
-                        </button>
-                      )}
+                          <p className="truncate text-sm font-medium text-encre">
+                            {nomsClients.get(commande.client_id) ?? "Client inconnu"}
+                          </p>
+                          <p className="truncate text-xs text-gris">
+                            {commande.nom_modele ?? "Sans modèle"}
+                          </p>
+
+                          <div className="mt-2.5 flex items-center justify-between gap-2">
+                            {commande.enEchec ? (
+                              <Etiquette ton="probleme">Refusé</Etiquette>
+                            ) : commande.enAttente ? (
+                              <Etiquette ton="systeme">En attente</Etiquette>
+                            ) : (
+                              <Etiquette ton={TON_PRIORITE[niveau]}>
+                                {commande.date_livraison
+                                  ? new Date(
+                                      commande.date_livraison
+                                    ).toLocaleDateString("fr-FR", {
+                                      day: "2-digit",
+                                      month: "2-digit",
+                                    })
+                                  : "Sans date"}
+                              </Etiquette>
+                            )}
+                            {/*
+                             * Les montants d'une colonne se lisent les uns
+                             * sous les autres : chasse fixe pour qu'ils
+                             * s'alignent au chiffre pres.
+                             */}
+                            <span className="chiffres text-xs text-gris">
+                              {formaterMontant(Number(commande.prix_total))}
+                            </span>
+                          </div>
+                        </Link>
+
+                        {suivant && !provisoire && (
+                          <button
+                            type="button"
+                            onClick={() => avancer(commande.id, suivant)}
+                            disabled={horsLigne}
+                            /*
+                             * L'explication du grisage est en clair sous
+                             * le tableau, pas dans un title. Un title sur
+                             * un bouton desactive ne s'affiche jamais :
+                             * le survol n'atteint pas l'element, d'autant
+                             * moins ici que la classe pose
+                             * pointer-events-none - et sur un telephone
+                             * il n'y a de toute facon pas de survol.
+                             */
+                            className="mt-2.5 flex min-h-9 w-full items-center justify-center gap-1.5 rounded-controle border border-bordure text-xs font-medium text-gris transition-colors duration-150 ease-doux hover:border-vert-clair hover:bg-papier hover:text-encre disabled:pointer-events-none disabled:opacity-40"
+                          >
+                            {STATUT_LABELS[suivant]}
+                            <ArrowRight size={12} weight="bold" />
+                          </button>
+                        )}
+                      </Carte>
                     </li>
                   );
                 })}
 
                 {cartes.length === 0 && (
-                  <li className="rounded-2xl border border-dashed border-bordure py-6 text-center text-xs text-gris">
+                  <li className="rounded-carte border border-dashed border-bordure py-8 text-center text-xs text-gris">
                     Vide
                   </li>
                 )}
@@ -174,6 +218,38 @@ export function TableauCommandes() {
           );
         })}
       </div>
+
     </>
+  );
+}
+
+function SqueletteTableau() {
+  return (
+    <div
+      role="status"
+      aria-label="Chargement des commandes"
+      className="mt-4 flex gap-3 overflow-hidden px-4"
+    >
+      {[0, 1, 2].map((colonne) => (
+        <div key={colonne} className="w-64 shrink-0">
+          <div className="flex items-center justify-between px-1">
+            <Squelette classe="h-3.5 w-20" />
+            <Squelette classe="size-5 rounded-full" />
+          </div>
+          <div className="mt-2 flex flex-col gap-2">
+            {[0, 1].map((carte) => (
+              <div
+                key={carte}
+                className="flex flex-col gap-2 rounded-carte border border-bordure bg-white p-3"
+              >
+                <Squelette classe="h-3.5 w-3/5" />
+                <Squelette classe="h-3 w-2/5" />
+                <Squelette classe="mt-1 h-6 w-full" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }

@@ -18,7 +18,7 @@ export default async function NouveauMotDePassePage({
       </p>
 
       {error && (
-        <p className="mt-6 rounded-2xl bg-rouge-clair px-4 py-3 text-sm text-rouge">
+        <p className="mt-6 rounded-carte bg-rouge-clair px-4 py-3 text-sm text-rouge">
           {error}
         </p>
       )}
@@ -28,7 +28,7 @@ export default async function NouveauMotDePassePage({
 
         <button
           type="submit"
-          className="mt-2 rounded-2xl bg-foret px-4 py-3.5 text-base font-medium text-white active:bg-vert"
+          className="mt-2 rounded-controle bg-foret px-4 py-3.5 text-base font-medium text-white active:bg-vert"
         >
           Enregistrer
         </button>

@@ -1,21 +1,27 @@
+import { EnTetePage, Page } from "@/ui/page";
 import { BandeauQuota, BoutonAjout } from "../quota";
 import { TableauCommandes } from "./tableau";
 
 export default function CommandesPage() {
   return (
-    <div className="flex flex-1 flex-col py-6">
-      <div className="mx-auto flex w-full max-w-2xl items-center justify-between gap-3 px-4">
-        <h1 className="text-xl font-semibold text-encre">Commandes</h1>
-        <BoutonAjout ressource="commandes" href="/commandes/new">
-          + Nouvelle
-        </BoutonAjout>
-      </div>
-
+    // Pleine largeur : les colonnes du Kanban doivent filer jusqu'aux bords
+    // de l'ecran, sans quoi le defilement parait bute. Le titre et le
+    // bandeau, eux, restent dans la colonne etroite commune aux autres
+    // ecrans pour que l'alignement ne saute pas d'un onglet a l'autre.
+    <Page largeur="pleine">
       <div className="mx-auto w-full max-w-2xl px-4">
+        <EnTetePage
+          titre="Commandes"
+          action={
+            <BoutonAjout ressource="commandes" href="/commandes/new">
+              Nouvelle
+            </BoutonAjout>
+          }
+        />
         <BandeauQuota ressource="commandes" />
       </div>
 
       <TableauCommandes />
-    </div>
+    </Page>
   );
 }

@@ -1,10 +1,11 @@
+import { EnTetePage, Page } from "@/ui/page";
 import { BilanFinancier } from "./bilan";
 
 export default function FinancesPage() {
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 py-6">
-      <h1 className="text-xl font-semibold text-encre">Finances</h1>
+    <Page>
+      <EnTetePage titre="Finances" />
       <BilanFinancier />
-    </div>
+    </Page>
   );
 }

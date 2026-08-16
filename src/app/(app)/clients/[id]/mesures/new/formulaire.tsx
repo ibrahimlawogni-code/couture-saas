@@ -4,15 +4,23 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { enregistrer } from "@/lib/offline/enregistrer";
 import { useHydratation } from "@/lib/hydratation";
+import { Bouton } from "@/ui/bouton";
+import { Champ } from "@/ui/champ";
 
+/*
+ * L'unite ne figure plus dans chaque libelle. Sept « (cm) » empiles dans
+ * une grille a deux colonnes allongeaient les libelles jusqu'au retour a
+ * la ligne, pour repeter sept fois la meme chose ; elle est dite une fois,
+ * au-dessus de la grille.
+ */
 const CHAMPS_STANDARDS: { cle: string; label: string }[] = [
-  { cle: "poitrine", label: "Poitrine (cm)" },
-  { cle: "taille", label: "Taille (cm)" },
-  { cle: "hanches", label: "Hanches (cm)" },
-  { cle: "longueur_bras", label: "Longueur bras (cm)" },
-  { cle: "longueur_jambe", label: "Longueur jambe (cm)" },
-  { cle: "col", label: "Col (cm)" },
-  { cle: "epaule", label: "Épaule (cm)" },
+  { cle: "poitrine", label: "Poitrine" },
+  { cle: "taille", label: "Taille" },
+  { cle: "hanches", label: "Hanches" },
+  { cle: "longueur_bras", label: "Longueur bras" },
+  { cle: "longueur_jambe", label: "Longueur jambe" },
+  { cle: "col", label: "Col" },
+  { cle: "epaule", label: "Épaule" },
 ];
 
 export function FormulaireMesure({
@@ -61,67 +69,80 @@ export function FormulaireMesure({
 
   return (
     <form onSubmit={soumettre} className="mt-6 flex flex-col gap-4">
-      <div>
-        <label htmlFor="libelle" className="block text-sm font-medium text-encre">
-          Libellé
-        </label>
-        <input
-          id="libelle"
-          name="libelle"
-          type="text"
-          defaultValue="Mesures"
-          className="mt-1 w-full rounded-2xl border border-bordure px-4 py-3 text-base"
-        />
-      </div>
+      <Champ
+        id="libelle"
+        name="libelle"
+        type="text"
+        libelle="Libellé"
+        aide="Pour retrouver ces mesures plus tard : « Boubou », « Costume »…"
+        defaultValue="Mesures"
+      />
 
-      <div className="grid grid-cols-2 gap-4">
-        {CHAMPS_STANDARDS.map((champ) => (
-          <div key={champ.cle}>
-            <label
-              htmlFor={champ.cle}
-              className="block text-sm font-medium text-encre"
-            >
-              {champ.label}
-            </label>
-            <input
+      <fieldset>
+        <legend className="text-sm font-medium text-encre">
+          Mesures standard
+        </legend>
+        <p className="mt-1 text-xs text-gris">
+          Toutes les valeurs en centimètres. Laissez vide ce que vous ne prenez
+          pas.
+        </p>
+
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          {CHAMPS_STANDARDS.map((champ) => (
+            <Champ
+              key={champ.cle}
               id={champ.cle}
               name={champ.cle}
               type="number"
+              libelle={champ.label}
               step="0.5"
+              min="0"
               inputMode="decimal"
-              className="mt-1 w-full rounded-2xl border border-bordure px-4 py-3 text-base"
             />
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      </fieldset>
 
-      <div className="rounded-2xl border border-dashed border-bordure p-4">
-        <p className="text-sm font-medium text-encre">
-          Champ personnalisé (optionnel)
+      {/*
+       * Les deux champs n'avaient qu'un texte d'invite, pas de libelle :
+       * une fois remplis, plus rien ne disait ce qu'ils contenaient, et un
+       * lecteur d'ecran ne les annoncait pas du tout.
+       */}
+      <fieldset className="rounded-carte border border-dashed border-bordure p-4">
+        <legend className="px-1 text-sm font-medium text-encre">
+          Champ personnalisé
+        </legend>
+        <p className="text-xs text-gris">
+          Pour une mesure propre à votre pratique. Les deux cases doivent être
+          remplies pour être enregistrées.
         </p>
-        <div className="mt-2 grid grid-cols-2 gap-4">
-          <input
+
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          <Champ
+            id="champ_custom_nom"
             name="champ_custom_nom"
             type="text"
-            placeholder="Nom du champ"
-            className="rounded-2xl border border-bordure px-4 py-3 text-base"
+            libelle="Nom"
+            placeholder="Tour de cuisse"
           />
-          <input
+          <Champ
+            id="champ_custom_valeur"
             name="champ_custom_valeur"
             type="text"
-            placeholder="Valeur"
-            className="rounded-2xl border border-bordure px-4 py-3 text-base"
+            libelle="Valeur"
+            placeholder="58"
           />
         </div>
-      </div>
+      </fieldset>
 
-      <button
+      <Bouton
         type="submit"
         disabled={!pret || envoi}
-        className="mt-2 rounded-2xl bg-foret px-4 py-4 text-base font-medium text-white active:bg-vert disabled:opacity-60"
+        pleineLargeur
+        classe="mt-2 min-h-12"
       >
         {!pret ? "Chargement..." : envoi ? "Enregistrement..." : "Enregistrer"}
-      </button>
+      </Bouton>
     </form>
   );
 }

@@ -6,6 +6,9 @@ import { useRouter } from "next/navigation";
 import { enregistrer } from "@/lib/offline/enregistrer";
 import { estLimiteOffre, messageRefus } from "@/lib/offline/erreurs";
 import { useHydratation } from "@/lib/hydratation";
+import { Bouton } from "@/ui/bouton";
+import { Champ, ZoneTexte } from "@/ui/champ";
+import { Message } from "@/ui/message";
 
 export function FormulaireClient({ atelierId }: { atelierId: string }) {
   const router = useRouter();
@@ -15,17 +18,22 @@ export function FormulaireClient({ atelierId }: { atelierId: string }) {
   // Une limite d'offre n'est pas une panne : elle se presente autrement,
   // et surtout elle propose une issue.
   const [limite, setLimite] = useState(false);
+  // Faute de saisie rattachee au champ concerne, et non affichee en tete
+  // de formulaire : un lecteur d'ecran l'annonce ainsi au moment ou la
+  // personne arrive sur le champ, pas avant.
+  const [fauteNom, setFauteNom] = useState<string | null>(null);
 
   async function soumettre(evenement: React.FormEvent<HTMLFormElement>) {
     evenement.preventDefault();
     setErreur(null);
     setLimite(false);
+    setFauteNom(null);
 
     const formulaire = new FormData(evenement.currentTarget);
     const nom = String(formulaire.get("nom") ?? "").trim();
 
     if (!nom) {
-      setErreur("Le nom est obligatoire");
+      setFauteNom("Le nom est obligatoire");
       return;
     }
 
@@ -63,72 +71,51 @@ export function FormulaireClient({ atelierId }: { atelierId: string }) {
   }
 
   return (
-    <form onSubmit={soumettre} className="mt-6 flex flex-col gap-4">
+    <form onSubmit={soumettre} noValidate className="mt-6 flex flex-col gap-4">
       {erreur &&
         (limite ? (
-          <div className="rounded-2xl bg-ambre-clair px-4 py-3 text-sm text-ambre">
-            <p>{erreur}</p>
-            <Link href="/#tarifs" className="mt-1 inline-block font-medium underline">
-              Voir les offres
-            </Link>
-          </div>
+          <Message ton="attention" titre={erreur}>
+            <Link href="/#tarifs">Voir les offres</Link>
+          </Message>
         ) : (
-          <p className="rounded-2xl bg-rouge-clair px-3 py-2 text-sm text-rouge">{erreur}</p>
+          <Message ton="probleme">{erreur}</Message>
         ))}
 
-      <div>
-        <label htmlFor="nom" className="block text-sm font-medium text-encre">
-          Nom
-        </label>
-        <input
-          id="nom"
-          name="nom"
-          type="text"
-          required
-          className="mt-1 w-full rounded-2xl border border-bordure px-4 py-3 text-base"
-        />
-      </div>
-      <div>
-        <label htmlFor="telephone" className="block text-sm font-medium text-encre">
-          Téléphone
-        </label>
-        <input
-          id="telephone"
-          name="telephone"
-          type="tel"
-          className="mt-1 w-full rounded-2xl border border-bordure px-4 py-3 text-base"
-        />
-      </div>
-      <div>
-        <label htmlFor="whatsapp" className="block text-sm font-medium text-encre">
-          WhatsApp
-        </label>
-        <input
-          id="whatsapp"
-          name="whatsapp"
-          type="tel"
-          className="mt-1 w-full rounded-2xl border border-bordure px-4 py-3 text-base"
-        />
-      </div>
-      <div>
-        <label htmlFor="notes" className="block text-sm font-medium text-encre">
-          Notes
-        </label>
-        <textarea
-          id="notes"
-          name="notes"
-          rows={3}
-          className="mt-1 w-full rounded-2xl border border-bordure px-4 py-3 text-base"
-        />
-      </div>
+      <Champ
+        id="nom"
+        name="nom"
+        type="text"
+        libelle="Nom"
+        required
+        autoComplete="name"
+        erreur={fauteNom}
+      />
+      <Champ
+        id="telephone"
+        name="telephone"
+        type="tel"
+        libelle="Téléphone"
+        inputMode="tel"
+        autoComplete="tel"
+      />
+      <Champ
+        id="whatsapp"
+        name="whatsapp"
+        type="tel"
+        libelle="WhatsApp"
+        aide="Laissez vide si c'est le même numéro que le téléphone."
+        inputMode="tel"
+      />
+      <ZoneTexte id="notes" name="notes" libelle="Notes" rows={3} />
 
-      <button
+      <Bouton
         type="submit"
         disabled={!pret || envoi}
-        className="mt-2 rounded-2xl bg-foret px-4 py-4 text-base font-medium text-white active:bg-vert disabled:opacity-60"
+        pleineLargeur
+        classe="mt-2 min-h-12"
       >
         {!pret ? "Chargement..." : envoi ? "Enregistrement..." : "Enregistrer"}
-      </button>
+      </Bouton>
     </form>
   );
 }

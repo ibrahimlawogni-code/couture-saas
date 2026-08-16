@@ -3,12 +3,17 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Users } from "@phosphor-icons/react/dist/ssr";
 import { createClient } from "@/lib/supabase/client";
 import { enregistrer } from "@/lib/offline/enregistrer";
-import { messageRefus } from "@/lib/offline/erreurs";
+import { estLimiteOffre, messageRefus } from "@/lib/offline/erreurs";
 import { cheminPhoto, compresserPhoto } from "@/lib/offline/photo";
 import { useFileAttente } from "@/lib/offline/use-file-attente";
 import { useHydratation } from "@/lib/hydratation";
+import { Bouton, LienBouton } from "@/ui/bouton";
+import { Champ, Selecteur } from "@/ui/champ";
+import { EtatVide } from "@/ui/etat-vide";
+import { Message } from "@/ui/message";
 import type { PhotoEnAttente } from "@/lib/offline/db";
 
 type ClientOption = { id: string; nom: string };
@@ -29,6 +34,7 @@ export function FormulaireCommande({
   const pret = useHydratation();
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
+  const [limite, setLimite] = useState(false);
 
   // Un client cree hors ligne doit pouvoir recevoir une commande
   // immediatement, sans attendre sa synchronisation.
@@ -53,6 +59,7 @@ export function FormulaireCommande({
   async function soumettre(evenement: React.FormEvent<HTMLFormElement>) {
     evenement.preventDefault();
     setErreur(null);
+    setLimite(false);
     setEnvoi(true);
 
     const formulaire = new FormData(evenement.currentTarget);
@@ -114,6 +121,7 @@ export function FormulaireCommande({
       // Refus de la base, une limite d'offre par exemple. Le paiement
       // qui suit ne doit surtout pas partir sans sa commande.
       setErreur(messageRefus(erreur));
+      setLimite(estLimiteOffre(erreur));
       setEnvoi(false);
       return;
     }
@@ -134,175 +142,132 @@ export function FormulaireCommande({
 
   if (tousLesClients.length === 0) {
     return (
-      <div className="mt-6 rounded-2xl bg-white p-6 text-center shadow-sm">
-        <p className="text-sm text-gris">
-          Il faut au moins un client pour créer une commande.
-        </p>
-        <Link
-          href="/clients/new"
-          className="mt-4 inline-block rounded-2xl bg-foret px-4 py-3 text-sm font-medium text-white"
-        >
-          Créer un client
-        </Link>
-      </div>
+      <EtatVide
+        classe="mt-6"
+        icone={Users}
+        titre="Aucun client à qui rattacher la commande"
+        texte="Une commande appartient toujours à un client : c'est sa fiche qui porte les mesures."
+        action={<LienBouton href="/clients/new">Créer un client</LienBouton>}
+      />
     );
   }
 
   return (
     <form onSubmit={soumettre} className="mt-6 flex flex-col gap-4">
-      {erreur && (
-        <div className="rounded-2xl bg-ambre-clair px-4 py-3 text-sm text-ambre">
-          <p>{erreur}</p>
-          <Link href="/#tarifs" className="mt-1 inline-block font-medium underline">
-            Voir les offres
-          </Link>
-        </div>
-      )}
+      {erreur &&
+        (limite ? (
+          <Message ton="attention" titre={erreur}>
+            <Link href="/#tarifs">Voir les offres</Link>
+          </Message>
+        ) : (
+          <Message ton="probleme">{erreur}</Message>
+        ))}
 
-      <div>
-        <label htmlFor="client_id" className="block text-sm font-medium text-encre">
-          Client
-        </label>
-        <select
-          id="client_id"
-          name="client_id"
-          required
-          defaultValue={clientPreselectionne ?? ""}
-          className="mt-1 w-full rounded-2xl border border-bordure bg-white px-4 py-3 text-base"
-        >
-          <option value="" disabled>
-            Choisir un client
+      <Selecteur
+        id="client_id"
+        name="client_id"
+        libelle="Client"
+        required
+        defaultValue={clientPreselectionne ?? ""}
+      >
+        <option value="" disabled>
+          Choisir un client
+        </option>
+        {tousLesClients.map((client) => (
+          <option key={client.id} value={client.id}>
+            {client.nom}
           </option>
-          {tousLesClients.map((client) => (
-            <option key={client.id} value={client.id}>
-              {client.nom}
-            </option>
-          ))}
-        </select>
+        ))}
+      </Selecteur>
+
+      <Champ
+        id="nom_modele"
+        name="nom_modele"
+        type="text"
+        libelle="Modèle"
+        placeholder="Boubou brodé, chemise..."
+      />
+
+      <div className="grid grid-cols-2 gap-3">
+        <ChampPhoto id="photo_modele" libelle="Photo modèle" />
+        <ChampPhoto id="photo_tissu" libelle="Photo tissu" />
       </div>
 
-      <div>
-        <label htmlFor="nom_modele" className="block text-sm font-medium text-encre">
-          Modèle
-        </label>
-        <input
-          id="nom_modele"
-          name="nom_modele"
-          type="text"
-          placeholder="Boubou brodé, chemise..."
-          className="mt-1 w-full rounded-2xl border border-bordure px-4 py-3 text-base"
+      <div className="grid grid-cols-2 gap-3">
+        <Champ
+          id="prix_total"
+          name="prix_total"
+          type="number"
+          libelle="Prix total (FCFA)"
+          min="0"
+          step="1"
+          inputMode="numeric"
+          required
+        />
+        <Champ
+          id="acompte"
+          name="acompte"
+          type="number"
+          libelle="Acompte versé"
+          min="0"
+          step="1"
+          inputMode="numeric"
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label
-            htmlFor="photo_modele"
-            className="block text-sm font-medium text-encre"
-          >
-            Photo modèle
-          </label>
-          <input
-            id="photo_modele"
-            name="photo_modele"
-            type="file"
-            accept="image/*"
-            capture="environment"
-            className="mt-1 w-full rounded-2xl border border-bordure px-3 py-3 text-sm"
-          />
-        </div>
-        <div>
-          <label
-            htmlFor="photo_tissu"
-            className="block text-sm font-medium text-encre"
-          >
-            Photo tissu
-          </label>
-          <input
-            id="photo_tissu"
-            name="photo_tissu"
-            type="file"
-            accept="image/*"
-            capture="environment"
-            className="mt-1 w-full rounded-2xl border border-bordure px-3 py-3 text-sm"
-          />
-        </div>
+      <div className="grid grid-cols-2 gap-3">
+        <Champ
+          id="date_essayage"
+          name="date_essayage"
+          type="date"
+          libelle="Date d'essayage"
+        />
+        <Champ
+          id="date_livraison"
+          name="date_livraison"
+          type="date"
+          libelle="Date de livraison"
+        />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label htmlFor="prix_total" className="block text-sm font-medium text-encre">
-            Prix total (FCFA)
-          </label>
-          <input
-            id="prix_total"
-            name="prix_total"
-            type="number"
-            min="0"
-            step="1"
-            inputMode="numeric"
-            required
-            className="mt-1 w-full rounded-2xl border border-bordure px-4 py-3 text-base"
-          />
-        </div>
-        <div>
-          <label htmlFor="acompte" className="block text-sm font-medium text-encre">
-            Acompte verse
-          </label>
-          <input
-            id="acompte"
-            name="acompte"
-            type="number"
-            min="0"
-            step="1"
-            inputMode="numeric"
-            className="mt-1 w-full rounded-2xl border border-bordure px-4 py-3 text-base"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label
-            htmlFor="date_essayage"
-            className="block text-sm font-medium text-encre"
-          >
-            Date d&apos;essayage
-          </label>
-          <input
-            id="date_essayage"
-            name="date_essayage"
-            type="date"
-            className="mt-1 w-full rounded-2xl border border-bordure px-4 py-3 text-base"
-          />
-        </div>
-        <div>
-          <label
-            htmlFor="date_livraison"
-            className="block text-sm font-medium text-encre"
-          >
-            Date de livraison
-          </label>
-          <input
-            id="date_livraison"
-            name="date_livraison"
-            type="date"
-            className="mt-1 w-full rounded-2xl border border-bordure px-4 py-3 text-base"
-          />
-        </div>
-      </div>
-
-      <button
+      <Bouton
         type="submit"
         disabled={!pret || envoi}
-        className="mt-2 rounded-2xl bg-foret px-4 py-4 text-base font-medium text-white active:bg-vert disabled:opacity-60"
+        pleineLargeur
+        classe="mt-2 min-h-12"
       >
         {!pret
           ? "Chargement..."
           : envoi
             ? "Enregistrement..."
             : "Enregistrer la commande"}
-      </button>
+      </Bouton>
     </form>
+  );
+}
+
+/**
+ * Champ photo.
+ *
+ * Le controle natif affiche « Choisir un fichier / Aucun fichier
+ * selectionne » dans la police du systeme, ce qui jurait au milieu des
+ * autres champs. Les variantes file: de Tailwind habillent le seul bouton
+ * sans toucher au reste, et l'appareil photo reste celui du telephone.
+ */
+function ChampPhoto({ id, libelle }: { id: string; libelle: string }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={id} className="text-sm font-medium text-encre">
+        {libelle}
+      </label>
+      <input
+        id={id}
+        name={id}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="w-full rounded-controle border border-bordure bg-white p-2 text-xs text-gris transition-colors duration-150 ease-doux hover:border-vert-pale file:mr-2 file:rounded-md file:border-0 file:bg-vert-clair file:px-2.5 file:py-1.5 file:text-xs file:font-medium file:text-foret"
+      />
+    </div>
   );
 }

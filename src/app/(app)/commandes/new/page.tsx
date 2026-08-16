@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getAtelierId } from "@/lib/atelier";
+import { EnTetePage, LienRetour, Page } from "@/ui/page";
 import { FormulaireCommande } from "./formulaire";
 
 export default async function NewCommandePage({
@@ -27,11 +27,9 @@ export default async function NewCommandePage({
     .order("nom");
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 py-6">
-      <Link href="/commandes" className="text-sm text-gris">
-        &larr; Retour
-      </Link>
-      <h1 className="mt-2 text-xl font-semibold text-encre">Nouvelle commande</h1>
+    <Page>
+      <LienRetour href="/commandes">Commandes</LienRetour>
+      <EnTetePage titre="Nouvelle commande" />
 
       <FormulaireCommande
         atelierId={atelierId}
@@ -39,6 +37,6 @@ export default async function NewCommandePage({
         clients={clients ?? []}
         clientPreselectionne={clientPreselectionne}
       />
-    </div>
+    </Page>
   );
 }

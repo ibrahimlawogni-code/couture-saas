@@ -1,9 +1,12 @@
 "use client";
 
 import { useMemo } from "react";
-import Link from "next/link";
+import { CheckCircle } from "@phosphor-icons/react/dist/ssr";
 import { STATUT_LABELS, formaterMontant, type Statut } from "@/lib/commandes";
 import { useDonnees } from "@/lib/offline/use-donnees";
+import { Carte, CarteLien, Panneau } from "@/ui/carte";
+import { EnTeteSection } from "@/ui/page";
+import { Squelette, SqueletteLigne, SqueletteVignette } from "@/ui/squelette";
 
 function debutDuMois() {
   const date = new Date();
@@ -68,13 +71,11 @@ export function BilanFinancier() {
     };
   }, [clients, commandes, paiements]);
 
-  if (!chargee) {
-    return <p className="mt-8 text-sm text-gris">Chargement...</p>;
-  }
+  if (!chargee) return <SqueletteBilan />;
 
   return (
     <>
-      <p className="text-sm text-gris">
+      <p className="mt-1 text-sm text-gris">
         Mois de{" "}
         {bilan.debutMois.toLocaleDateString("fr-FR", {
           month: "long",
@@ -82,81 +83,126 @@ export function BilanFinancier() {
         })}
       </p>
 
-      <section className="mt-4 rounded-3xl bg-foret p-5 text-white shadow-sm">
-        <p className="text-xs uppercase tracking-wide text-vert-pale">
+      {/*
+       * Le chiffre d'accroche de l'ecran, et le seul : tout le reste est
+       * en retrait.
+       *
+       * Il est plus petit que ce qu'une regle generale recommanderait pour
+       * un chiffre d'accroche. Cette regle suppose une valeur compacte,
+       * du genre « 12,9K » ; ici le montant est ecrit en entier et suivi
+       * de sa devise - « 1 250 000 FCFA » fait quinze caracteres, qui ne
+       * tiennent pas sur la largeur d'un telephone a cette taille. Il
+       * grandit donc des que l'ecran le permet.
+       *
+       * Chiffres proportionnels et non tabulaires : la chasse fixe donne a
+       * chaque chiffre la largeur d'un zero et distend visiblement une
+       * valeur isolee de cette taille.
+       */}
+      <Panneau classe="mt-4 p-5">
+        <p className="text-xs tracking-wide text-vert-pale uppercase">
           Encaissé ce mois
         </p>
-        <p className="mt-1 text-3xl font-semibold">
+        <p className="mt-1.5 text-3xl font-semibold tracking-tight sm:text-4xl">
           {formaterMontant(bilan.encaisseMois)}
         </p>
-        <p className="mt-1 text-sm text-vert-pale">
+        <p className="mt-1.5 text-sm text-vert-pale">
           dont {formaterMontant(bilan.acomptesMois)} d&apos;acomptes
         </p>
-      </section>
+      </Panneau>
 
-      <div className="mt-3 grid grid-cols-2 gap-3">
-        <section className="rounded-2xl bg-white p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-wide text-gris">
-            Commandes du mois
-          </p>
-          <p className="mt-1 text-xl font-semibold text-encre">
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <Carte classe="p-4">
+          <p className="text-xs text-gris">Commandes du mois</p>
+          <p className="mt-1 text-lg font-semibold tracking-tight text-encre">
             {formaterMontant(bilan.valeurCommandesMois)}
           </p>
-          <p className="text-sm text-gris">
+          <p className="mt-0.5 text-xs text-gris">
             {bilan.commandesMois.length} commande
             {bilan.commandesMois.length > 1 ? "s" : ""}
           </p>
-        </section>
+        </Carte>
 
-        <section className="rounded-2xl bg-white p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-wide text-gris">
-            Créances en attente
-          </p>
+        <Carte classe="p-4">
+          <p className="text-xs text-gris">Créances en attente</p>
           <p
-            className={`mt-1 text-xl font-semibold ${
+            className={`mt-1 text-lg font-semibold tracking-tight ${
               bilan.totalCreances > 0 ? "text-rouge" : "text-vert"
             }`}
           >
             {formaterMontant(bilan.totalCreances)}
           </p>
-          <p className="text-sm text-gris">
+          <p className="mt-0.5 text-xs text-gris">
             {bilan.impayes.length} commande{bilan.impayes.length > 1 ? "s" : ""}
           </p>
-        </section>
+        </Carte>
       </div>
 
       <section className="mt-6">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-gris">
-          À recouvrer
-        </h2>
+        <EnTeteSection titre="À recouvrer" />
+
         {bilan.impayes.length === 0 ? (
-          <p className="mt-2 text-sm text-gris">Aucun impayé, tout est soldé.</p>
+          <Carte classe="mt-2 flex items-center gap-3 px-4 py-4">
+            <CheckCircle
+              size={20}
+              weight="fill"
+              className="shrink-0 text-vert"
+              aria-hidden
+            />
+            <p className="text-sm text-gris">
+              Aucun impayé. Toutes les commandes sont soldées.
+            </p>
+          </Carte>
         ) : (
           <ul className="mt-2 flex flex-col gap-2">
             {bilan.impayes.map((commande) => (
               <li key={commande.id}>
-                <Link
+                <CarteLien
                   href={`/commandes/${commande.id}`}
-                  className="flex items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3 shadow-sm active:bg-papier"
+                  classe="flex items-center justify-between gap-3 px-4 py-3.5"
                 >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-encre">
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-medium text-encre">
                       {commande.client}
-                    </p>
-                    <p className="truncate text-xs text-gris">
+                    </span>
+                    <span className="block truncate text-xs text-gris">
                       {commande.nom_modele ?? "Sans modèle"} ·{" "}
                       {STATUT_LABELS[commande.statut as Statut]}
-                    </p>
-                  </div>
-                  <span className="shrink-0 text-sm font-semibold text-rouge">
+                    </span>
+                  </span>
+                  {/*
+                   * Les restes dus se lisent les uns sous les autres, du
+                   * plus gros au plus petit : chasse fixe pour que les
+                   * ordres de grandeur s'alignent a l'oeil.
+                   */}
+                  <span className="chiffres shrink-0 text-sm font-semibold text-rouge">
                     {formaterMontant(commande.reste)}
                   </span>
-                </Link>
+                </CarteLien>
               </li>
             ))}
           </ul>
         )}
       </section>
     </>
+  );
+}
+
+function SqueletteBilan() {
+  return (
+    <div role="status" aria-label="Chargement du bilan">
+      <Squelette classe="mt-2 h-3.5 w-32" />
+      <Squelette classe="mt-4 h-32 rounded-panneau" />
+
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <SqueletteVignette />
+        <SqueletteVignette />
+      </div>
+
+      <div className="mt-6 flex flex-col gap-2">
+        <Squelette classe="h-3.5 w-28" />
+        <SqueletteLigne />
+        <SqueletteLigne />
+      </div>
+    </div>
   );
 }
