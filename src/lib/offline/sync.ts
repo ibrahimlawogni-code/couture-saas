@@ -1,5 +1,5 @@
 import { envoyerVersSupabase } from "./envoi";
-import { estRefusDefinitif, messageRefus } from "./erreurs";
+import { estRefusDefinitif, estRefusDeDroit, messageRefus } from "./erreurs";
 import { poserDansMiroir } from "./miroir";
 import { listerFile, marquerTentative, retirerDeLaFile } from "./outbox";
 
@@ -49,8 +49,19 @@ export async function synchroniser(): Promise<ResultatSync> {
           continue;
         }
 
+        // Le motif n'est pose qu'a l'epuisement des tentatives : tant
+        // qu'il en reste, rien n'est encore refuse et l'ecran n'a pas a
+        // annoncer un echec qui ne s'est pas produit.
+        //
+        // Un echec de droit est marque comme rejouable : la reconnexion
+        // le remettra dans la file plutot que de le laisser mort.
         const definitif = operation.tentatives + 1 >= TENTATIVES_MAX;
-        await marquerTentative(operation, definitif);
+        await marquerTentative(
+          operation,
+          definitif,
+          definitif ? messageRefus(erreur) : undefined,
+          definitif ? estRefusDeDroit(erreur) : undefined
+        );
         break;
       }
     }

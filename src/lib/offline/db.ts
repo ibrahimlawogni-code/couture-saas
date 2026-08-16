@@ -26,6 +26,23 @@ export type Operation = {
   echec: boolean;
   /** Raison du dernier refus, en francais, pour l'afficher telle quelle. */
   motif?: string;
+  /**
+   * Vrai si l'echec tient a la session et non a la saisie : une
+   * reconnexion remet alors l'operation dans la file.
+   *
+   * Tous les echecs ne se valent pas. Une limite d'offre atteinte ou une
+   * contrainte violee ne changera pas d'avis parce qu'on se reconnecte ;
+   * la rejouer ferait resurgir une fiche que la personne a deja vue
+   * refusee et sur laquelle elle est passee a autre chose.
+   */
+  rejouable?: boolean;
+  /**
+   * Nombre de fois que l'operation a deja ete remise dans la file par une
+   * reconnexion. Borne : sans elle, une ligne reellement interdite serait
+   * ressuscitee a chaque restauration de session, echouerait a nouveau, et
+   * bloquerait la file a chaque chargement de page sans jamais aboutir.
+   */
+  reprises?: number;
   creeLe: number;
 };
 
