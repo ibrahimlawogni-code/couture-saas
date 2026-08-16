@@ -32,6 +32,35 @@ supabase/
   migrations/     schema SQL (a appliquer manuellement dans le SQL editor Supabase, ou via la CLI Supabase plus tard)
 ```
 
+## Suppression de compte et purge
+
+Supprimer le dernier compte d'un atelier ne suffit pas a effacer ses
+donnees : l'atelier devient seulement inatteignable. Un declencheur pose
+donc `ateliers.orphelin_depuis`, et l'atelier est efface trente jours plus
+tard. Le delai laisse le temps de revenir sur une suppression faite par
+erreur ; un compte qui rejoint l'atelier remet le compteur a zero.
+
+L'effacement passe par `/api/purge-ateliers`, appelee chaque nuit par la
+planification declaree dans `vercel.json`. Il ne se fait pas en SQL parce
+que Postgres refuse toute suppression directe dans `storage.objects` : les
+photos ne partent que par l'API Storage. La route vide les fichiers avant
+d'effacer les lignes, pour qu'une interruption ne laisse jamais de fichier
+que plus aucune ligne ne designe.
+
+Deux variables sont necessaires au deploiement, en plus de celles du
+client :
+
+| Variable | Role |
+|---|---|
+| `SUPABASE_SERVICE_ROLE_KEY` | Acces au bucket et aux fonctions de purge, hors RLS |
+| `CRON_SECRET` | Presente en en-tete par la planification ; sans lui la route repond 401 |
+
+Purge manuelle en developpement :
+
+```bash
+curl http://localhost:3000/api/purge-ateliers -H "Authorization: Bearer $CRON_SECRET"
+```
+
 ## Modele de donnees
 
 Voir `supabase/migrations/0001_init.sql`. Entites principales : `ateliers` (tenant), `utilisateurs`, `clients`, `gabarits_mesure`, `mesures`, `commandes`, `historique_statuts`, `paiements`, `notifications`. Isolation multi-tenant geree par Row Level Security sur `atelier_id`.

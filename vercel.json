@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/purge-ateliers",
+      "schedule": "0 3 * * *"
+    }
+  ]
+}

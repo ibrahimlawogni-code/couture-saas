@@ -9,6 +9,9 @@ const PUBLIC_PATHS = [
   // Redemander un lien de confirmation se fait justement quand on n'a pas
   // encore pu se connecter : cette page doit rester ouverte.
   "/renvoyer-confirmation",
+  // Appelee par la planification, sans session : elle verifie elle-meme un
+  // secret en en-tete. Le controle de session la renverrait vers /login.
+  "/api/purge-ateliers",
 ];
 
 // Accessibles dans le meme etat connecte ou non : la page de presentation
