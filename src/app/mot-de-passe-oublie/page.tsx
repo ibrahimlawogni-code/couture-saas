@@ -7,7 +7,7 @@ export default function MotDePasseOubliePage() {
   return (
     <div className="flex flex-1 items-center justify-center bg-papier px-5 py-10">
       <div className="w-full max-w-sm">
-        <div className="rounded-3xl bg-foret p-8 text-white shadow-lg shadow-foret/20">
+        <div className="sur-fond-sombre rounded-panneau bg-foret p-8 text-white shadow-flottant">
           <div className="flex justify-center">
             <span className="flex h-20 w-20 items-center justify-center rounded-full bg-white/10 text-white">
               <Marque taille={40} />
@@ -42,7 +42,7 @@ export default function MotDePasseOubliePage() {
 
             <button
               type="submit"
-              className="mt-2 rounded-2xl bg-white px-4 py-4 text-base font-semibold tracking-wide text-foret transition-transform hover:bg-vert-clair active:translate-y-px"
+              className="mt-2 rounded-controle bg-white px-4 py-4 text-base font-semibold tracking-wide text-foret transition-transform hover:bg-vert-clair active:translate-y-px"
             >
               Envoyer le lien
             </button>

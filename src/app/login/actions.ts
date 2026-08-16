@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { messageAuth } from "@/lib/messages-auth";
+import { meriteRenvoiConfirmation, messageAuth } from "@/lib/messages-auth";
 
 export async function login(formData: FormData) {
   const email = String(formData.get("email") ?? "");
@@ -12,7 +12,18 @@ export async function login(formData: FormData) {
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
-    redirect(`/login?error=${encodeURIComponent(messageAuth(error.message))}`);
+    /*
+     * Le besoin d'un nouveau lien se decide ici, sur l'erreur brute, et
+     * voyage jusqu'a la page. Celle-ci le devinait en cherchant le mot
+     * « confirmation » dans le message traduit, qui dit « confirmée » :
+     * le recours ne s'affichait donc jamais.
+     */
+    const parametres = new URLSearchParams({ error: messageAuth(error.message) });
+    if (meriteRenvoiConfirmation(error.message)) {
+      parametres.set("aide", "confirmation");
+    }
+
+    redirect(`/login?${parametres}`);
   }
 
   redirect("/tableau-de-bord");

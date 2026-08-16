@@ -8,9 +8,9 @@ import { login } from "./actions";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; message?: string }>;
+  searchParams: Promise<{ error?: string; message?: string; aide?: string }>;
 }) {
-  const { error, message } = await searchParams;
+  const { error, message, aide } = await searchParams;
 
   return (
     <div className="relative flex flex-1 items-center justify-center overflow-hidden bg-papier px-5 py-6">
@@ -32,7 +32,9 @@ export default async function LoginPage({
       </div>
 
       <div className="relative w-full max-w-sm">
-        <div className="rounded-3xl bg-foret p-6 text-white shadow-lg shadow-foret/20">
+        {/* sur-fond-sombre bascule l'anneau de focus en blanc : le vert de
+            l'anneau par defaut est invisible sur le vert forêt. */}
+        <div className="sur-fond-sombre rounded-panneau bg-foret p-6 text-white shadow-flottant">
           <div className="flex justify-center">
             {/* La marque occupe la place que la maquette reservait a un
                 portrait : c'est le produit qu'on identifie ici, pas la
@@ -53,11 +55,14 @@ export default async function LoginPage({
               fond sombre : teinte rouge et liseré, texte blanc pour rester
               lisible. */}
           {error && (
-            <div className="mt-6 rounded-2xl bg-rouge/35 px-4 py-3 text-sm leading-relaxed text-white ring-1 ring-rouge/60">
+            <div
+              role="alert"
+              className="mt-6 rounded-carte bg-rouge/35 px-4 py-3 text-sm leading-relaxed text-white ring-1 ring-rouge/60"
+            >
               <p>{error}</p>
               {/* Le recours s'affiche la ou le probleme se pose, plutot que
                   d'encombrer le formulaire en permanence. */}
-              {/confirmation/i.test(error) && (
+              {aide === "confirmation" && (
                 <Link
                   href="/renvoyer-confirmation"
                   className="mt-2 inline-block font-medium text-white underline underline-offset-2"
@@ -68,7 +73,10 @@ export default async function LoginPage({
             </div>
           )}
           {message && (
-            <p className="mt-6 rounded-2xl bg-white/10 px-4 py-3 text-sm text-vert-pale">
+            <p
+              role="status"
+              className="mt-6 rounded-carte bg-white/10 px-4 py-3 text-sm text-vert-pale"
+            >
               {message}
             </p>
           )}
@@ -114,7 +122,7 @@ export default async function LoginPage({
 
             <button
               type="submit"
-              className="mt-1 rounded-2xl bg-white px-4 py-3.5 text-base font-semibold tracking-wide text-foret transition-transform hover:bg-vert-clair active:translate-y-px"
+              className="mt-1 flex min-h-12 items-center justify-center rounded-controle bg-white px-4 text-base font-semibold tracking-wide text-foret transition-colors duration-150 ease-doux hover:bg-vert-clair active:translate-y-px"
             >
               Se connecter
             </button>

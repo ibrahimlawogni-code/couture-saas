@@ -9,6 +9,7 @@ import {
   WifiSlash,
   WhatsappLogo,
 } from "@phosphor-icons/react/dist/ssr";
+import { Marque } from "./marque";
 
 // Adresse professionnelle, hebergee sur le domaine colossalebusiness.fr.
 const WHATSAPP = "2290197970999";
@@ -24,26 +25,37 @@ export const metadata: Metadata = {
     "Gardez les mesures de vos clients, suivez vos commandes et vos acomptes, envoyez reçus et rappels par WhatsApp. Fonctionne même sans connexion.",
 };
 
-/* Un seul système de formes sur toute la page : boutons en rounded-2xl,
-   blocs et cartes en rounded-3xl, images en rounded-3xl. */
+/*
+ * Les formes viennent des tokens partages avec l'application, et non d'un
+ * systeme propre a cette page : controle pour ce qu'on actionne, panneau
+ * pour les grandes surfaces et les captures. Une page de vente qui
+ * n'arrondit pas comme le produit qu'elle vend se trahit des le premier
+ * ecran passe apres l'inscription.
+ */
 
 function Navigation() {
   return (
     <header className="sticky top-0 z-40 border-b border-bordure bg-white/90 backdrop-blur">
       <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
-        <span className="text-lg font-semibold tracking-tight text-encre">
-          TailorHub
-        </span>
+        {/* La marque accompagne le nom, comme dans la barre laterale et
+            l'en-tete du telephone : c'est la meme identite des l'accueil. */}
+        <Link
+          href="/"
+          className="flex items-center gap-2.5 rounded-controle text-encre"
+        >
+          <Marque taille={26} />
+          <span className="text-lg font-semibold tracking-tight">TailorHub</span>
+        </Link>
         <div className="flex items-center gap-2">
           <Link
             href="/login"
-            className="rounded-2xl px-3 py-2 text-sm font-medium text-gris transition-colors hover:text-encre"
+            className="rounded-controle px-3 py-2 text-sm font-medium text-gris transition-colors hover:text-encre"
           >
             Se connecter
           </Link>
           <Link
             href="/signup"
-            className="rounded-2xl bg-foret px-4 py-2.5 text-sm font-medium text-white transition-transform hover:bg-vert active:translate-y-px"
+            className="rounded-controle bg-foret px-4 py-2.5 text-sm font-medium text-white transition-transform hover:bg-vert active:translate-y-px"
           >
             Essayer gratuitement
           </Link>
@@ -69,7 +81,7 @@ function Hero() {
         <div className="mt-9 flex flex-col gap-3 sm:flex-row">
           <Link
             href="/signup"
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-vert px-6 py-4 text-base font-medium text-white transition-transform hover:bg-foret active:translate-y-px"
+            className="inline-flex items-center justify-center gap-2 rounded-controle bg-vert px-6 py-4 text-base font-medium text-white transition-transform hover:bg-foret active:translate-y-px"
           >
             Essayer gratuitement
             <ArrowRight size={18} weight="bold" />
@@ -78,7 +90,7 @@ function Hero() {
             href={lienWhatsApp}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-bordure bg-white px-6 py-4 text-base font-medium text-encre transition-colors hover:bg-papier active:translate-y-px"
+            className="inline-flex items-center justify-center gap-2 rounded-controle border border-bordure bg-white px-6 py-4 text-base font-medium text-encre transition-colors hover:bg-papier active:translate-y-px"
           >
             <WhatsappLogo size={18} weight="fill" />
             Poser une question
@@ -94,7 +106,7 @@ function Hero() {
           width={1170}
           height={2133}
           priority
-          className="w-full rounded-3xl border border-bordure shadow-xl"
+          className="w-full rounded-panneau border border-bordure shadow-xl"
         />
       </div>
     </section>
@@ -103,7 +115,7 @@ function Hero() {
 
 function Constat() {
   return (
-    <section className="bg-foret px-5 py-24 text-white">
+    <section className="sur-fond-sombre bg-foret px-5 py-24 text-white">
       <div className="mx-auto max-w-3xl text-center">
         <p className="text-2xl font-medium leading-snug tracking-tight md:text-3xl">
           Soixante commandes dans la tête, des mesures notées sur un bout de
@@ -127,7 +139,7 @@ function Fonctions() {
       </h2>
 
       <div className="mt-12 grid gap-5 md:grid-cols-3">
-        <article className="md:col-span-2 overflow-hidden rounded-3xl border border-bordure bg-white">
+        <article className="md:col-span-2 overflow-hidden rounded-panneau border border-bordure bg-white">
           <div className="p-8">
             <h3 className="text-xl font-semibold text-encre">
               Voyez où en est chaque commande
@@ -139,7 +151,7 @@ function Fonctions() {
           </div>
           {/* Hauteur fixe : une capture de telephone entiere allongerait la
               page et desequilibrerait la grille. On n'en montre que le haut. */}
-          <div className="ml-8 h-56 overflow-hidden rounded-tl-2xl border-l border-t border-bordure">
+          <div className="ml-8 h-56 overflow-hidden rounded-tl-panneau border-l border-t border-bordure">
             <Image
               src="/captures/commandes.png"
               alt="Suivi des commandes par étape"
@@ -150,7 +162,7 @@ function Fonctions() {
           </div>
         </article>
 
-        <article className="flex flex-col justify-between rounded-3xl bg-vert p-8 text-white">
+        <article className="flex flex-col justify-between rounded-panneau bg-vert p-8 text-white">
           <Ruler size={32} weight="light" />
           <div className="mt-10">
             <h3 className="text-xl font-semibold">
@@ -163,7 +175,7 @@ function Fonctions() {
           </div>
         </article>
 
-        <article className="rounded-3xl border border-bordure bg-white p-8">
+        <article className="rounded-panneau border border-bordure bg-white p-8">
           <ClockCounterClockwise size={32} weight="light" className="text-gris" />
           <h3 className="mt-10 text-xl font-semibold text-encre">
             Deux dates par commande
@@ -174,7 +186,7 @@ function Fonctions() {
           </p>
         </article>
 
-        <article className="md:col-span-2 overflow-hidden rounded-3xl border border-bordure bg-papier">
+        <article className="md:col-span-2 overflow-hidden rounded-panneau border border-bordure bg-papier">
           <div className="p-8">
             <h3 className="text-xl font-semibold text-encre">
               Le client reçoit son reçu sur WhatsApp
@@ -184,7 +196,7 @@ function Fonctions() {
               conversation, en deux gestes.
             </p>
           </div>
-          <div className="ml-8 h-56 overflow-hidden rounded-tl-2xl border-l border-t border-bordure bg-white">
+          <div className="ml-8 h-56 overflow-hidden rounded-tl-panneau border-l border-t border-bordure bg-white">
             <Image
               src="/captures/fiche-client.png"
               alt="Fiche client avec ses mesures et ses commandes"
@@ -209,7 +221,7 @@ function Argent() {
             alt="Bilan financier du mois et liste des impayés"
             width={1170}
             height={2628}
-            className="w-full rounded-3xl border border-bordure shadow-lg"
+            className="w-full rounded-panneau border border-bordure shadow-lg"
           />
         </div>
 
@@ -308,7 +320,10 @@ function Tarifs() {
   ];
 
   return (
-    <section id="tarifs" className="scroll-mt-8 bg-foret px-5 py-24 text-white">
+    <section
+      id="tarifs"
+      className="sur-fond-sombre scroll-mt-8 bg-foret px-5 py-24 text-white"
+    >
       <div className="mx-auto max-w-6xl">
         <h2 className="text-3xl font-semibold tracking-tight md:text-4xl">
           Un prix, pas de surprise
@@ -321,7 +336,7 @@ function Tarifs() {
           {offres.map((offre) => (
             <article
               key={offre.nom}
-              className={`relative flex flex-col rounded-3xl p-7 ${
+              className={`relative flex flex-col rounded-panneau p-7 ${
                 offre.mis ? "bg-white text-encre" : "border border-vert bg-foret"
               }`}
             >
@@ -366,7 +381,7 @@ function Tarifs() {
 
               <Link
                 href="/signup"
-                className={`mt-8 block rounded-2xl px-6 py-3.5 text-center text-base font-medium transition-transform active:translate-y-px ${
+                className={`mt-8 block rounded-controle px-6 py-3.5 text-center text-base font-medium transition-transform active:translate-y-px ${
                   offre.mis
                     ? "bg-vert text-white hover:bg-foret"
                     : "border border-vert text-white hover:bg-vert"
@@ -446,7 +461,7 @@ function AppelFinal() {
         <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
           <Link
             href="/signup"
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-vert px-6 py-4 text-base font-medium text-white transition-transform hover:bg-foret active:translate-y-px"
+            className="inline-flex items-center justify-center gap-2 rounded-controle bg-vert px-6 py-4 text-base font-medium text-white transition-transform hover:bg-foret active:translate-y-px"
           >
             Essayer gratuitement
             <ArrowRight size={18} weight="bold" />
@@ -455,7 +470,7 @@ function AppelFinal() {
             href={lienWhatsApp}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-bordure bg-white px-6 py-4 text-base font-medium text-encre transition-colors hover:bg-papier active:translate-y-px"
+            className="inline-flex items-center justify-center gap-2 rounded-controle border border-bordure bg-white px-6 py-4 text-base font-medium text-encre transition-colors hover:bg-papier active:translate-y-px"
           >
             <WhatsappLogo size={18} weight="fill" />
             Poser une question
