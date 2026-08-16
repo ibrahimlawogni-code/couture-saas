@@ -37,6 +37,8 @@ import { BoutonRecu } from "./recu";
 const BUCKET = "commandes";
 const HEURE_EN_SECONDES = 3600;
 
+const nombre = new Intl.NumberFormat("fr-FR");
+
 export function DetailCommande() {
   // Lu dans l'adresse du navigateur : hors ligne, la page vient d'un cache
   // partage entre toutes les commandes, et les donnees de navigation de Next
@@ -264,20 +266,25 @@ export function DetailCommande() {
         />
       </Bloc>
 
-      <Bloc titre="Paiement" classe="mt-3">
-        <Ligne libelle="Prix total" valeur={formaterMontant(prixTotal)} />
-        <Ligne libelle="Déjà versé" valeur={formaterMontant(totalPaye)} />
-
-        <div className="mt-2 flex items-baseline justify-between gap-3 border-t border-bordure pt-2.5">
-          <span className="text-sm font-medium text-encre">Reste à payer</span>
+      <Bloc titre={resteAPayer > 0 ? "Reste à payer" : "Paiement"} classe="mt-3">
+        {/*
+         * Le solde en grand, le detail en dessous. C'est la seule question
+         * qui se pose au moment de remettre la piece, et elle se lisait
+         * jusqu'ici sur la troisieme ligne d'un bloc, de la meme taille que
+         * le prix total et ce qui avait deja ete verse.
+         */}
+        <p className="flex items-baseline gap-2">
           <span
-            className={`chiffres text-base font-semibold ${
+            className={`text-[1.75rem] leading-none font-semibold tracking-tight ${
               resteAPayer > 0 ? "text-rouge" : "text-vert"
             }`}
           >
-            {formaterMontant(resteAPayer)}
+            {resteAPayer > 0 ? nombre.format(resteAPayer) : "Soldé"}
           </span>
-        </div>
+          {resteAPayer > 0 && (
+            <span className="text-xs font-medium text-gris">FCFA</span>
+          )}
+        </p>
 
         {/*
          * Jauge d'encaissement. Le remplissage porte ce qui est acquis, la
@@ -300,6 +307,14 @@ export function DetailCommande() {
             />
           </div>
         )}
+
+        <div className="mt-3 border-t border-bordure pt-2.5">
+          <Ligne libelle="Prix total" valeur={formaterMontant(prixTotal)} />
+          <Ligne
+            libelle={`Déjà versé · ${Math.round(partPayee)} %`}
+            valeur={formaterMontant(totalPaye)}
+          />
+        </div>
 
         {resteAPayer > 0 && (
           <form onSubmit={ajouterPaiement} className="mt-3 flex gap-2">
@@ -400,7 +415,9 @@ function Bloc({
 }) {
   return (
     <Carte classe={`p-4 ${classe ?? ""}`}>
-      <h2 className="text-xs tracking-wide text-gris uppercase">{titre}</h2>
+      <h2 className="text-[10px] font-medium tracking-[0.1em] text-gris uppercase">
+        {titre}
+      </h2>
       <div className="mt-2">{children}</div>
     </Carte>
   );

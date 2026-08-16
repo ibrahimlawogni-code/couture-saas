@@ -6,6 +6,7 @@ import {
   Users,
   X,
 } from "@phosphor-icons/react/dist/ssr";
+import { formaterMontant } from "@/lib/commandes";
 import { useDonnees } from "@/lib/offline/use-donnees";
 import { LienBouton } from "@/ui/bouton";
 import { CarteLien } from "@/ui/carte";
@@ -14,8 +15,39 @@ import { EtatVide } from "@/ui/etat-vide";
 import { SqueletteListe } from "@/ui/squelette";
 
 export function ListeClients() {
-  const { clients, chargee } = useDonnees();
+  const { clients, commandes, paiements, chargee } = useDonnees();
   const [recherche, setRecherche] = useState("");
+
+  /*
+   * Ce que chaque client doit, et ce qu'il a en cours.
+   *
+   * La liste ne portait qu'un nom et un numero. On ne consulte pourtant
+   * pas son carnet pour lire des numeros : on y cherche qui a une piece
+   * en atelier et qui doit encore de l'argent. Les deux se calculaient
+   * deja ailleurs, il fallait juste les amener ici.
+   */
+  const parClient = useMemo(() => {
+    const verse = new Map<string, number>();
+    for (const paiement of paiements) {
+      verse.set(
+        paiement.commande_id,
+        (verse.get(paiement.commande_id) ?? 0) + Number(paiement.montant)
+      );
+    }
+
+    const agregat = new Map<string, { enCours: number; reste: number }>();
+    for (const commande of commandes) {
+      const courant = agregat.get(commande.client_id) ?? { enCours: 0, reste: 0 };
+      const du = Number(commande.prix_total) - (verse.get(commande.id) ?? 0);
+
+      agregat.set(commande.client_id, {
+        enCours: courant.enCours + (commande.statut !== "livre" ? 1 : 0),
+        reste: courant.reste + (du > 0 ? du : 0),
+      });
+    }
+
+    return agregat;
+  }, [commandes, paiements]);
 
   const resultats = useMemo(() => {
     const terme = recherche.trim().toLowerCase();
@@ -98,28 +130,52 @@ export function ListeClients() {
       )}
 
       <ul className="mt-3 flex flex-col gap-2">
-        {resultats.map((client) => (
-          <li key={client.id}>
-            <CarteLien
-              href={`/clients/${client.id}`}
-              provisoire={client.enAttente || client.enEchec}
-              classe="flex items-center justify-between gap-3 px-4 py-3.5"
-            >
-              <span className="min-w-0 truncate text-base font-medium text-encre">
-                {client.nom}
-              </span>
-              {client.enEchec ? (
-                <Etiquette ton="probleme">Refusé</Etiquette>
-              ) : client.enAttente ? (
-                <Etiquette ton="systeme">En attente</Etiquette>
-              ) : (
-                <span className="chiffres shrink-0 text-sm text-gris">
-                  {client.telephone}
+        {resultats.map((client) => {
+          const suivi = parClient.get(client.id);
+          const provisoire = client.enAttente || client.enEchec;
+
+          return (
+            <li key={client.id}>
+              <CarteLien
+                href={`/clients/${client.id}`}
+                provisoire={provisoire}
+                classe="px-4 py-3"
+              >
+                <span className="flex items-baseline justify-between gap-3">
+                  <span className="min-w-0 truncate text-base font-medium text-encre">
+                    {client.nom}
+                  </span>
+
+                  {client.enEchec ? (
+                    <Etiquette ton="probleme">Refusé</Etiquette>
+                  ) : client.enAttente ? (
+                    <Etiquette ton="systeme">En attente</Etiquette>
+                  ) : (
+                    suivi &&
+                    suivi.reste > 0 && (
+                      <span className="chiffres shrink-0 text-sm font-semibold text-rouge">
+                        {formaterMontant(suivi.reste)}
+                      </span>
+                    )
+                  )}
                 </span>
-              )}
-            </CarteLien>
-          </li>
-        ))}
+
+                {!provisoire && (
+                  <span className="mt-0.5 flex items-baseline justify-between gap-3 text-xs text-gris">
+                    <span className="chiffres truncate">
+                      {client.telephone ?? "Pas de téléphone"}
+                    </span>
+                    {suivi && suivi.enCours > 0 && (
+                      <span className="shrink-0">
+                        {suivi.enCours} en cours
+                      </span>
+                    )}
+                  </span>
+                )}
+              </CarteLien>
+            </li>
+          );
+        })}
       </ul>
 
       {/*

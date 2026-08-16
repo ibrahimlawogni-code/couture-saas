@@ -25,13 +25,31 @@ import { Squelette } from "@/ui/squelette";
 const LIVREES_AFFICHEES = 20;
 
 export function TableauCommandes() {
-  const { clients, commandes, chargee } = useDonnees();
+  const { clients, commandes, paiements, chargee } = useDonnees();
   const { horsLigne } = useFileAttente();
 
   const nomsClients = useMemo(
     () => new Map(clients.map((client) => [client.id, client.nom])),
     [clients]
   );
+
+  /*
+   * Ce qui a deja ete verse, commande par commande.
+   *
+   * La carte n'affichait que le prix total, ce qui ne dit rien de ce
+   * qu'il reste a encaisser. Or c'est la question qui se pose au moment
+   * de remettre le vetement, et elle obligeait a ouvrir la commande.
+   */
+  const verseParCommande = useMemo(() => {
+    const total = new Map<string, number>();
+    for (const paiement of paiements) {
+      total.set(
+        paiement.commande_id,
+        (total.get(paiement.commande_id) ?? 0) + Number(paiement.montant)
+      );
+    }
+    return total;
+  }, [paiements]);
 
   const parStatut = useMemo(() => {
     const groupes = new Map<Statut, typeof commandes>();
@@ -140,6 +158,9 @@ export function TableauCommandes() {
                   );
                   const suivant = statutSuivant(commande.statut as Statut);
                   const provisoire = commande.enAttente || commande.enEchec;
+                  const reste =
+                    Number(commande.prix_total) -
+                    (verseParCommande.get(commande.id) ?? 0);
 
                   return (
                     <li key={commande.id}>
@@ -181,6 +202,26 @@ export function TableauCommandes() {
                               {formaterMontant(Number(commande.prix_total))}
                             </span>
                           </div>
+
+                          {/*
+                           * Le solde restant, sous le prix. « Soldé » est
+                           * dit en toutes lettres plutot que laisse a
+                           * deviner d'une absence : sur la colonne « Prêt
+                           * à retirer », savoir s'il reste a encaisser
+                           * change ce qu'on dit au client en lui remettant
+                           * sa piece.
+                           */}
+                          {!provisoire && Number(commande.prix_total) > 0 && (
+                            <p
+                              className={`chiffres mt-1 text-right text-[11px] font-medium ${
+                                reste > 0 ? "text-rouge" : "text-vert"
+                              }`}
+                            >
+                              {reste > 0
+                                ? `reste ${formaterMontant(reste)}`
+                                : "soldé"}
+                            </p>
+                          )}
                         </Link>
 
                         {suivant && !provisoire && (
