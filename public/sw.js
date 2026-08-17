@@ -2,7 +2,11 @@
 // Strategie reseau d'abord, avec repli sur le cache, pour ne jamais
 // afficher une page perimee tant que la connexion repond.
 
-const CACHE = "couture-v5";
+// A changer a chaque refonte de l'interface. activate supprime tout cache
+// dont le nom differe de celui-ci : garder le meme nom laisserait les
+// anciennes pages en place, et un telephone hors ligne continuerait
+// d'afficher l'interface precedente apres le deploiement.
+const CACHE = "couture-v6";
 const PAGE_HORS_LIGNE = "/hors-ligne";
 
 const PRECACHE = [PAGE_HORS_LIGNE, "/icon-192.png", "/icon-512.png"];

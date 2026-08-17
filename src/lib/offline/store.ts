@@ -1,4 +1,5 @@
-import { EVENEMENT_OUTBOX, listerFile } from "./outbox";
+import { createClient } from "@/lib/supabase/client";
+import { EVENEMENT_OUTBOX, listerFile, reprendreLesEchecs } from "./outbox";
 import { synchroniser } from "./sync";
 import type { Operation } from "./db";
 
@@ -47,6 +48,24 @@ function initialiser() {
   setInterval(() => {
     if (etat.operations.length > 0) tenterSynchronisation();
   }, RELANCE_MS);
+
+  /*
+   * Une session retrouvee relance ce qu'un defaut de droit avait fait
+   * echouer. Sans cela, une saisie faite hors ligne pendant que le jeton
+   * expirait restait morte dans la file : la personne voyait « Refusé »
+   * et n'avait plus qu'a la retaper, alors que sa reconnexion venait
+   * precisement de lever l'obstacle.
+   *
+   * SIGNED_IN couvre la reconnexion manuelle, TOKEN_REFRESHED le
+   * rafraichissement automatique du jeton.
+   */
+  createClient().auth.onAuthStateChange((evenement) => {
+    if (evenement !== "SIGNED_IN" && evenement !== "TOKEN_REFRESHED") return;
+
+    reprendreLesEchecs().then((reprises) => {
+      if (reprises > 0) tenterSynchronisation();
+    });
+  });
 
   tenterSynchronisation();
 }

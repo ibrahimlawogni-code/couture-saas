@@ -1,8 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { Plus } from "@phosphor-icons/react/dist/ssr";
 import { plafonds } from "@/lib/formules";
 import { useDonnees } from "@/lib/offline/use-donnees";
+import { LienBouton } from "@/ui/bouton";
+import { Message } from "@/ui/message";
 
 export type Ressource = "clients" | "commandes";
 
@@ -55,22 +58,17 @@ export function BoutonAjout({
 
   if (quota.atteint) {
     return (
-      <Link
-        href="/#tarifs"
-        className="shrink-0 rounded-2xl bg-ambre-clair px-4 py-3 text-sm font-medium text-ambre"
-      >
+      <LienBouton href="/#tarifs" allure="attention">
         Limite atteinte
-      </Link>
+      </LienBouton>
     );
   }
 
   return (
-    <Link
-      href={href}
-      className="shrink-0 rounded-2xl bg-foret px-4 py-3 text-sm font-medium text-white active:bg-vert"
-    >
+    <LienBouton href={href}>
+      <Plus size={15} weight="bold" />
       {children}
-    </Link>
+    </LienBouton>
   );
 }
 
@@ -88,20 +86,18 @@ export function BandeauQuota({ ressource }: { ressource: Ressource }) {
 
   if (quota.atteint) {
     return (
-      <div className="mt-4 rounded-2xl bg-ambre-clair px-4 py-3 text-sm text-ambre">
-        <p className="font-medium">
-          Vous avez atteint {quota.plafond} {libelle.pluriel}.
-        </p>
-        <p className="mt-1">
+      <Message
+        ton="attention"
+        classe="mt-4"
+        titre={`Vous avez atteint ${quota.plafond} ${libelle.pluriel}.`}
+      >
+        <p>
           {ressource === "commandes"
             ? "Marquez une commande comme livrée pour en démarrer une autre, ou "
             : "Pour continuer, "}
-          <Link href="/#tarifs" className="font-medium underline">
-            passez à l&apos;offre Atelier
-          </Link>
-          .
+          <Link href="/#tarifs">passez à l&apos;offre Atelier</Link>.
         </p>
-      </div>
+      </Message>
     );
   }
 
@@ -109,7 +105,10 @@ export function BandeauQuota({ ressource }: { ressource: Ressource }) {
     <p className="mt-4 text-sm text-gris">
       Offre {quota.formule} : il vous reste {quota.restants}{" "}
       {quota.restants === 1 ? libelle.singulier : libelle.pluriel}.{" "}
-      <Link href="/#tarifs" className="underline">
+      <Link
+        href="/#tarifs"
+        className="font-medium text-vert underline underline-offset-2"
+      >
         Voir les offres
       </Link>
     </p>

@@ -47,14 +47,18 @@ export function priorite(dateLivraison: string | null, statut: Statut): Priorite
 }
 
 /*
- * Trois degres d'urgence, trois teintes distinctes. Le bleu est exclu ici :
+ * Trois degres d'urgence, trois tons distincts. Le bleu est exclu ici :
  * il est reserve aux messages du systeme, alors qu'une echeance concerne le
  * metier du tailleur.
+ *
+ * Le ton plutot que les classes : l'etiquette tient la correspondance
+ * entre un ton et ses deux couleurs, et c'est elle qui garantit que le
+ * texte reste lisible sur son fond.
  */
-export const PRIORITE_STYLES: Record<Priorite, string> = {
-  en_retard: "bg-rouge-clair text-rouge",
-  urgent: "bg-ambre-clair text-ambre",
-  normal: "bg-vert-clair text-foret",
+export const TON_PRIORITE: Record<Priorite, "probleme" | "attention" | "metier"> = {
+  en_retard: "probleme",
+  urgent: "attention",
+  normal: "metier",
 };
 
 export const PRIORITE_LABELS: Record<Priorite, string> = {

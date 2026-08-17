@@ -3,16 +3,29 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import {
-  PRIORITE_STYLES,
+  CheckCircle,
+  Plus,
+  TrendDown,
+  TrendUp,
+  UserPlus,
+} from "@phosphor-icons/react/dist/ssr";
+import {
   STATUT_LABELS,
   formaterMontant,
   priorite,
   type Statut,
 } from "@/lib/commandes";
 import { useDonnees } from "@/lib/offline/use-donnees";
+import { Carte, CarteLien, Panneau } from "@/ui/carte";
+import { Compteur, Etiquette, type TonEtiquette } from "@/ui/etiquette";
+import { EnTeteSection } from "@/ui/page";
+import { Squelette, SqueletteLigne } from "@/ui/squelette";
 import { GraphiqueEncaissements, type PointMensuel } from "./graphique";
 
 const MOIS_AFFICHES = 6;
+const A_TRAITER_MAX = 6;
+
+const nombre = new Intl.NumberFormat("fr-FR");
 
 function memeJour(a: string | null, b: Date) {
   if (!a) return false;
@@ -24,12 +37,36 @@ function memeJour(a: string | null, b: Date) {
   );
 }
 
+/*
+ * Ce qui fait remonter une commande dans « A traiter », et sous quel ton.
+ *
+ * L'ordre compte : une commande en retard qui a aussi un essayage
+ * aujourd'hui est d'abord en retard. Le retard est le seul des trois cas
+ * ou quelque chose a deja mal tourne.
+ */
+function motif(commande: {
+  niveau: string;
+  essayageAujourdhui: boolean;
+  statut: string;
+}): { texte: string; ton: TonEtiquette } | null {
+  if (commande.niveau === "en_retard")
+    return { texte: "En retard", ton: "probleme" };
+  if (commande.essayageAujourdhui)
+    return { texte: "Essayage", ton: "attention" };
+  if (commande.statut === "pret") return { texte: "À retirer", ton: "metier" };
+  return null;
+}
+
 export function TableauDeBord() {
   const { atelier, clients, commandes, paiements, chargee } = useDonnees();
 
   const bilan = useMemo(() => {
     const maintenant = new Date();
-    const debutMois = new Date(maintenant.getFullYear(), maintenant.getMonth(), 1);
+    const debutMois = new Date(
+      maintenant.getFullYear(),
+      maintenant.getMonth(),
+      1,
+    );
 
     const encaisseMois = paiements
       .filter((p) => new Date(p.created_at) >= debutMois)
@@ -41,15 +78,20 @@ export function TableauDeBord() {
     for (const paiement of paiements) {
       verseParCommande.set(
         paiement.commande_id,
-        (verseParCommande.get(paiement.commande_id) ?? 0) + Number(paiement.montant)
+        (verseParCommande.get(paiement.commande_id) ?? 0) +
+          Number(paiement.montant),
       );
     }
 
-    const creances = commandes.reduce((somme, commande) => {
-      const reste =
-        Number(commande.prix_total) - (verseParCommande.get(commande.id) ?? 0);
-      return somme + (reste > 0 ? reste : 0);
-    }, 0);
+    const restes = commandes.map(
+      (commande) =>
+        Number(commande.prix_total) - (verseParCommande.get(commande.id) ?? 0),
+    );
+    const creances = restes.reduce(
+      (somme, reste) => somme + (reste > 0 ? reste : 0),
+      0,
+    );
+    const nbImpayes = restes.filter((reste) => reste > 0).length;
 
     // Ce qui reclame une decision aujourd'hui, dans l'ordre d'urgence.
     const nomsClients = new Map(clients.map((c) => [c.id, c.nom]));
@@ -59,21 +101,39 @@ export function TableauDeBord() {
         client: nomsClients.get(commande.client_id) ?? "Client inconnu",
         niveau: priorite(commande.date_livraison, commande.statut as Statut),
         essayageAujourdhui: memeJour(commande.date_essayage, maintenant),
+        reste:
+          Number(commande.prix_total) -
+          (verseParCommande.get(commande.id) ?? 0),
       }))
       .filter(
-        (c) => c.niveau === "en_retard" || c.essayageAujourdhui || c.statut === "pret"
+        (c) =>
+          c.niveau === "en_retard" ||
+          c.essayageAujourdhui ||
+          c.statut === "pret",
       )
-      .sort((a, b) => (a.date_livraison ?? "9999").localeCompare(b.date_livraison ?? "9999"));
+      .sort((a, b) =>
+        (a.date_livraison ?? "9999").localeCompare(b.date_livraison ?? "9999"),
+      );
 
     // Six derniers mois d'encaissements, mois courant inclus.
     const points: PointMensuel[] = [];
     for (let recul = MOIS_AFFICHES - 1; recul >= 0; recul--) {
-      const debut = new Date(maintenant.getFullYear(), maintenant.getMonth() - recul, 1);
-      const fin = new Date(maintenant.getFullYear(), maintenant.getMonth() - recul + 1, 1);
+      const debut = new Date(
+        maintenant.getFullYear(),
+        maintenant.getMonth() - recul,
+        1,
+      );
+      const fin = new Date(
+        maintenant.getFullYear(),
+        maintenant.getMonth() - recul + 1,
+        1,
+      );
 
       points.push({
         mois: debut.toISOString().slice(0, 7),
-        libelle: debut.toLocaleDateString("fr-FR", { month: "short" }).replace(".", ""),
+        libelle: debut
+          .toLocaleDateString("fr-FR", { month: "short" })
+          .replace(".", ""),
         montant: paiements
           .filter((p) => {
             const date = new Date(p.created_at);
@@ -83,125 +143,300 @@ export function TableauDeBord() {
       });
     }
 
-    return { encaisseMois, enCours, creances, aTraiter, points };
+    /*
+     * L'ecart avec le mois precedent. Sans lui, un montant seul ne dit pas
+     * si le mois est bon : c'est la comparaison qui porte l'information,
+     * pas le nombre.
+     *
+     * Un mois precedent a zero ne donne pas un ecart infini mais pas
+     * d'ecart du tout : « +∞ % » ne veut rien dire pour personne.
+     */
+    const precedent = points[points.length - 2];
+    const ecart =
+      precedent && precedent.montant > 0
+        ? ((encaisseMois - precedent.montant) / precedent.montant) * 100
+        : null;
+
+    return {
+      encaisseMois,
+      enCours,
+      creances,
+      nbImpayes,
+      aTraiter,
+      points,
+      ecart,
+      moisPrecedent: precedent?.libelle ?? "",
+    };
   }, [clients, commandes, paiements]);
 
-  if (!chargee) {
-    return <p className="mt-8 text-sm text-gris">Chargement...</p>;
-  }
+  if (!chargee) return <SqueletteBord />;
 
   const heure = new Date().getHours();
   const salutation = heure < 18 ? "Bonjour" : "Bonsoir";
+  const enRetard = bilan.aTraiter.filter(
+    (c) => c.niveau === "en_retard",
+  ).length;
 
   return (
     <>
-      <section className="rounded-3xl bg-foret p-6 text-white">
-        <p className="text-2xl font-semibold tracking-tight">
-          {salutation}
-          {atelier?.nom ? `, ${atelier.nom}` : ""}
-        </p>
-        <p className="mt-1.5 text-vert-pale">
-          {new Date().toLocaleDateString("fr-FR", {
-            weekday: "long",
-            day: "numeric",
-            month: "long",
-          })}
-        </p>
-        <div className="mt-5 flex flex-col gap-2 sm:flex-row">
-          <Link
-            href="/commandes/new"
-            className="rounded-2xl bg-white px-5 py-3 text-center text-sm font-medium text-foret active:translate-y-px"
-          >
-            Nouvelle commande
-          </Link>
-          <Link
-            href="/clients/new"
-            className="rounded-2xl border border-white/25 px-5 py-3 text-center text-sm font-medium text-white active:translate-y-px"
-          >
-            Nouveau client
-          </Link>
+      {/*
+       * Le panneau porte le chiffre d'accroche de l'ecran, et le graphique
+       * qui lui donne son sens. Ils vivaient dans deux cartes distinctes :
+       * le montant du mois d'un cote, sa courbe de l'autre, ce qui obligeait
+       * a faire l'aller-retour pour savoir si le mois etait bon.
+       */}
+      <Panneau classe="p-5 lg:p-6">
+        <div className="lg:flex lg:items-start lg:gap-8">
+          <div className="lg:min-w-0 lg:flex-1">
+            <p className="text-sm text-vert-pale">
+              {salutation}
+              {atelier?.nom ? `, ${atelier.nom}` : ""} ·{" "}
+              {new Date().toLocaleDateString("fr-FR", {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+              })}
+            </p>
+
+            <p className="mt-4 text-[11px] font-medium tracking-[0.12em] text-vert-pale uppercase">
+              Encaissé ce mois
+            </p>
+
+            {/*
+             * Chiffres proportionnels, jamais tabulaires : la chasse fixe donne
+             * a chaque chiffre la largeur d'un zero, ce qui distend visiblement
+             * une valeur de cette taille. La devise est en retrait, elle se
+             * repete a chaque lecture et n'a pas a peser autant que le montant.
+             */}
+            <p className="mt-0.5 flex items-baseline gap-2">
+              <span className="text-[2.125rem] leading-none font-semibold tracking-tight sm:text-5xl">
+                {nombre.format(bilan.encaisseMois)}
+              </span>
+              <span className="text-sm font-medium text-vert-pale">FCFA</span>
+            </p>
+
+            {bilan.ecart !== null && (
+              <p
+                className={`mt-2 flex items-center gap-1.5 text-sm ${
+                  bilan.ecart >= 0 ? "text-vert-pale" : "text-ambre-clair"
+                }`}
+              >
+                {bilan.ecart >= 0 ? (
+                  <TrendUp size={15} weight="bold" aria-hidden />
+                ) : (
+                  <TrendDown size={15} weight="bold" aria-hidden />
+                )}
+                <span>
+                  {bilan.ecart >= 0 ? "+" : "−"}
+                  {Math.abs(Math.round(bilan.ecart))} % sur{" "}
+                  {bilan.moisPrecedent}
+                </span>
+              </p>
+            )}
+
+            <div className="mt-5 flex flex-col gap-2 sm:flex-row lg:mt-6">
+              <Link
+                href="/commandes/new"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-controle bg-white px-5 text-sm font-medium text-foret transition-colors duration-150 ease-doux hover:bg-vert-clair"
+              >
+                <Plus size={16} weight="bold" />
+                Nouvelle commande
+              </Link>
+              <Link
+                href="/clients/new"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-controle border border-white/25 px-5 text-sm font-medium text-white transition-colors duration-150 ease-doux hover:bg-white/10"
+              >
+                <UserPlus size={16} />
+                Nouveau client
+              </Link>
+            </div>
+          </div>
+
+          {/*
+           * Le graphique passe a cote du chiffre sur grand ecran, dans une
+           * colonne bornee. Etale sur toute la largeur du panneau, ses six
+           * bandes depassaient 150 px chacune pour des barres plafonnees a
+           * 24 px : les barres flottaient dans le vide et l'ensemble ne se
+           * lisait plus comme un graphique. Le plafond est bon, c'est la
+           * largeur offerte qui ne l'etait pas.
+           */}
+          <div className="mt-5 border-t border-white/15 pt-4 lg:mt-0 lg:w-72 lg:shrink-0 lg:border-t-0 lg:border-l lg:border-white/15 lg:pt-0 lg:pl-8">
+            <GraphiqueEncaissements points={bilan.points} ton="sombre" />
+          </div>
         </div>
+      </Panneau>
+
+      <section className="mt-6">
+        <EnTeteSection
+          titre="À traiter"
+          action={
+            bilan.aTraiter.length > 0 && (
+              <Compteur ton={enRetard > 0 ? "probleme" : "attention"}>
+                {bilan.aTraiter.length}
+              </Compteur>
+            )
+          }
+        />
+
+        {bilan.aTraiter.length === 0 ? (
+          <Carte classe="mt-2 flex items-center gap-3 px-4 py-4">
+            <CheckCircle
+              size={20}
+              weight="fill"
+              className="shrink-0 text-vert"
+              aria-hidden
+            />
+            <p className="text-sm text-gris">
+              Rien d&apos;urgent aujourd&apos;hui. Aucun retard, aucun essayage
+              prévu, aucune commande en attente de retrait.
+            </p>
+          </Carte>
+        ) : (
+          <ul className="mt-2 grid gap-2 lg:grid-cols-2">
+            {bilan.aTraiter.slice(0, A_TRAITER_MAX).map((commande) => {
+              const raison = motif(commande);
+
+              return (
+                <li key={commande.id}>
+                  <CarteLien
+                    href={`/commandes/${commande.id}`}
+                    classe="px-4 py-3"
+                  >
+                    <span className="flex items-center justify-between gap-3">
+                      <span className="truncate text-sm font-medium text-encre">
+                        {commande.client}
+                      </span>
+                      {raison && (
+                        <Etiquette ton={raison.ton}>{raison.texte}</Etiquette>
+                      )}
+                    </span>
+
+                    {/*
+                     * La ligne du bas porte le metier : le modele, l'etape,
+                     * et surtout ce qui reste du. Sans le reste a payer, il
+                     * fallait ouvrir la commande pour savoir s'il y avait de
+                     * l'argent a reclamer en meme temps que le vetement.
+                     */}
+                    <span className="mt-1 flex items-baseline justify-between gap-3">
+                      <span className="truncate text-xs text-gris">
+                        {commande.nom_modele ?? "Sans modèle"} ·{" "}
+                        {STATUT_LABELS[commande.statut as Statut]}
+                      </span>
+                      <span
+                        className={`chiffres shrink-0 text-xs font-medium ${
+                          commande.reste > 0 ? "text-rouge" : "text-vert"
+                        }`}
+                      >
+                        {commande.reste > 0
+                          ? `reste ${formaterMontant(commande.reste)}`
+                          : "soldé"}
+                      </span>
+                    </span>
+                  </CarteLien>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+
+        {bilan.aTraiter.length > A_TRAITER_MAX && (
+          <Link
+            href="/commandes"
+            className="mt-2 inline-block text-sm font-medium text-vert underline underline-offset-2"
+          >
+            Voir les {bilan.aTraiter.length - A_TRAITER_MAX} autres
+          </Link>
+        )}
       </section>
 
-      {bilan.aTraiter.length > 0 && (
-        <section className="mt-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-gris">
-            À traiter
-          </h2>
-          <ul className="mt-2 grid gap-2 lg:grid-cols-2">
-            {bilan.aTraiter.slice(0, 6).map((commande) => (
-              <li key={commande.id}>
-                <Link
-                  href={`/commandes/${commande.id}`}
-                  className="flex items-center justify-between gap-3 rounded-3xl bg-white px-4 py-3.5 shadow-sm active:bg-papier"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-encre">
-                      {commande.client}
-                    </p>
-                    <p className="truncate text-xs text-gris">
-                      {commande.nom_modele ?? "Sans modèle"} ·{" "}
-                      {STATUT_LABELS[commande.statut as Statut]}
-                    </p>
-                  </div>
-                  <span
-                    className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${
-                      commande.statut === "pret"
-                        ? "bg-vert-clair text-foret"
-                        : PRIORITE_STYLES[commande.niveau]
-                    }`}
-                  >
-                    {commande.statut === "pret"
-                      ? "À retirer"
-                      : commande.essayageAujourdhui
-                        ? "Essayage"
-                        : "En retard"}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      <div className="mt-6 grid grid-cols-3 gap-2">
+        <Vignette
+          libelle="Créances"
+          valeur={nombre.format(bilan.creances)}
+          unite="FCFA"
+          precision={
+            bilan.nbImpayes > 0
+              ? `${bilan.nbImpayes} commande${bilan.nbImpayes > 1 ? "s" : ""}`
+              : "tout est soldé"
+          }
+          alerte={bilan.creances > 0}
+        />
+        <Vignette
+          libelle="En cours"
+          valeur={String(bilan.enCours.length)}
+          precision={
+            enRetard > 0 ? `dont ${enRetard} en retard` : "aucune en retard"
+          }
+        />
+        <Vignette
+          libelle="Clients"
+          valeur={String(clients.length)}
+          precision="au total"
+        />
+      </div>
+    </>
+  );
+}
 
-      <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <article className="rounded-3xl bg-white p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-wide text-gris">Encaissé ce mois</p>
-          <p className="mt-1 text-xl font-semibold tracking-tight text-encre">
-            {formaterMontant(bilan.encaisseMois)}
-          </p>
-        </article>
-        <article className="rounded-3xl bg-white p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-wide text-gris">Créances</p>
-          <p
-            className={`mt-1 text-xl font-semibold tracking-tight ${
-              bilan.creances > 0 ? "text-rouge" : "text-vert"
-            }`}
-          >
-            {formaterMontant(bilan.creances)}
-          </p>
-        </article>
-        <article className="rounded-3xl bg-white p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-wide text-gris">En cours</p>
-          <p className="mt-1 text-xl font-semibold tracking-tight text-encre">
-            {bilan.enCours.length}
-          </p>
-        </article>
-        <article className="rounded-3xl bg-white p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-wide text-gris">Clients</p>
-          <p className="mt-1 text-xl font-semibold tracking-tight text-encre">
-            {clients.length}
-          </p>
-        </article>
+/**
+ * Vignette de statistique : un libelle, une valeur, et la precision qui
+ * lui donne son sens.
+ *
+ * La precision n'est pas decorative. « Créances 231 000 » ne dit pas s'il
+ * s'agit d'un gros impaye ou de dix petits, et c'est pourtant ce qui
+ * decide de la matinee.
+ */
+function Vignette({
+  libelle,
+  valeur,
+  unite,
+  precision,
+  alerte = false,
+}: {
+  libelle: string;
+  valeur: string;
+  unite?: string;
+  precision: string;
+  alerte?: boolean;
+}) {
+  return (
+    <Carte classe="p-3.5">
+      <p className="text-[10px] font-medium tracking-[0.1em] text-gris uppercase">
+        {libelle}
+      </p>
+      <p className="mt-1.5 flex items-baseline gap-1">
+        <span
+          className={`text-xl leading-none font-semibold tracking-tight sm:text-2xl ${
+            alerte ? "text-rouge" : "text-encre"
+          }`}
+        >
+          {valeur}
+        </span>
+        {unite && (
+          <span className="text-[10px] font-medium text-gris">{unite}</span>
+        )}
+      </p>
+      <p className="mt-1.5 text-[11px] leading-tight text-gris">{precision}</p>
+    </Carte>
+  );
+}
+
+function SqueletteBord() {
+  return (
+    <div role="status" aria-label="Chargement du tableau de bord">
+      <Squelette classe="h-72 rounded-panneau" />
+
+      <div className="mt-6 flex flex-col gap-2">
+        <Squelette classe="h-3.5 w-24" />
+        <SqueletteLigne />
+        <SqueletteLigne />
       </div>
 
-      <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm">
-        <h2 className="text-sm font-semibold text-encre">Encaissements par mois</h2>
-        <p className="mt-0.5 text-xs text-gris">
-          Touchez une barre pour voir le montant exact.
-        </p>
-        <GraphiqueEncaissements points={bilan.points} />
-      </section>
-    </>
+      <div className="mt-6 grid grid-cols-3 gap-2">
+        <Squelette classe="h-24 rounded-carte" />
+        <Squelette classe="h-24 rounded-carte" />
+        <Squelette classe="h-24 rounded-carte" />
+      </div>
+    </div>
   );
 }

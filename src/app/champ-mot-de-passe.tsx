@@ -73,7 +73,7 @@ export function ChampMotDePasse({
       <label htmlFor={nom} className="block text-sm font-medium text-encre">
         {libelle}
       </label>
-      <div className="mt-1.5 flex items-center gap-2 rounded-2xl border border-bordure bg-white px-4 focus-within:border-vert">
+      <div className="mt-1.5 flex items-center gap-2 rounded-controle border border-bordure bg-white px-4 focus-within:border-vert">
         <input
           id={nom}
           name={nom}

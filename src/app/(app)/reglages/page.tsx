@@ -2,6 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getAtelierId } from "@/lib/atelier";
+import { Carte } from "@/ui/carte";
+import { EnTetePage, EnTeteSection, LienRetour, Page } from "@/ui/page";
 import { Equipe, type Invitation, type Membre } from "./equipe";
 import { FormulaireReglages } from "./formulaire";
 
@@ -35,11 +37,9 @@ export default async function ReglagesPage() {
   const moi = (membres ?? []).find((membre) => membre.id === user.id);
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 py-6">
-      <Link href="/tableau-de-bord" className="text-sm text-gris">
-        &larr; Retour
-      </Link>
-      <h1 className="mt-2 text-xl font-semibold text-encre">Réglages</h1>
+    <Page>
+      <LienRetour href="/tableau-de-bord">Accueil</LienRetour>
+      <EnTetePage titre="Réglages" />
 
       <FormulaireReglages
         atelierId={atelierId}
@@ -57,21 +57,24 @@ export default async function ReglagesPage() {
         places={atelier?.limite_utilisateurs ?? 6}
       />
 
-      <section className="mt-10 rounded-3xl bg-white p-5 shadow-sm">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-gris">
-          Compte
-        </h2>
-        <div className="mt-3 flex justify-between text-sm">
-          <span className="text-gris">Email</span>
-          <span className="font-medium text-encre">{user.email}</span>
-        </div>
-        <div className="mt-2 flex justify-between text-sm">
-          <span className="text-gris">Mot de passe</span>
-          <Link href="/nouveau-mot-de-passe" className="font-medium text-vert underline">
-            Modifier
-          </Link>
-        </div>
+      <section className="mt-10">
+        <EnTeteSection titre="Compte" />
+        <Carte classe="mt-2 p-4">
+          <div className="flex items-baseline justify-between gap-3 py-0.5 text-sm">
+            <span className="text-gris">Email</span>
+            <span className="truncate font-medium text-encre">{user.email}</span>
+          </div>
+          <div className="mt-1.5 flex items-baseline justify-between gap-3 py-0.5 text-sm">
+            <span className="text-gris">Mot de passe</span>
+            <Link
+              href="/nouveau-mot-de-passe"
+              className="font-medium text-vert underline underline-offset-2"
+            >
+              Modifier
+            </Link>
+          </div>
+        </Carte>
       </section>
-    </div>
+    </Page>
   );
 }

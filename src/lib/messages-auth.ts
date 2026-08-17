@@ -17,17 +17,17 @@ const TRADUCTIONS: { motif: RegExp; message: string }[] = [
   {
     motif: /error sending confirmation email|error sending email/i,
     message:
-      "L'email de confirmation n'a pas pu partir. Contacte-nous et nous activerons ton atelier à la main.",
+      "L'email de confirmation n'a pas pu partir. Contactez-nous et nous activerons votre atelier à la main.",
   },
   {
     motif: /email rate limit exceeded|over_email_send_rate_limit/i,
     message:
-      "Trop de tentatives d'envoi. Patiente une heure, ou contacte-nous pour qu'on active ton atelier.",
+      "Trop de tentatives d'envoi. Patientez une heure, ou contactez-nous pour que nous activions votre atelier.",
   },
   {
     motif: /user already registered|already been registered/i,
     message:
-      "Un compte existe déjà avec cet email. Connecte-toi ou utilise une autre adresse.",
+      "Un compte existe déjà avec cet email. Connectez-vous ou utilisez une autre adresse.",
   },
   {
     /*
@@ -51,7 +51,7 @@ const TRADUCTIONS: { motif: RegExp; message: string }[] = [
   {
     motif: /email not confirmed/i,
     message:
-      "Ton adresse n'est pas encore confirmée. Ouvre le lien reçu par email, ou contacte-nous.",
+      "Votre adresse n'est pas encore confirmée. Ouvrez le lien reçu par email, ou contactez-nous.",
   },
 ];
 
@@ -59,6 +59,23 @@ export function messageAuth(brut: string): string {
   const trouve = TRADUCTIONS.find((t) => t.motif.test(brut));
   return (
     trouve?.message ??
-    "L'opération n'a pas abouti. Réessaie, et contacte-nous si cela persiste."
+    "L'opération n'a pas abouti. Réessayez, et contactez-nous si cela persiste."
+  );
+}
+
+/**
+ * Vrai quand renvoyer le lien de confirmation peut debloquer la situation.
+ *
+ * A tester sur l'erreur brute de Supabase, jamais sur le message traduit.
+ * La page de connexion cherchait « confirmation » dans le texte francais,
+ * qui dit « confirmée » : le lien de secours ne s'affichait donc jamais
+ * pour le cas meme qui l'avait fait ecrire.
+ *
+ * Les identifiants invalides en font partie : Supabase repond la meme
+ * chose pour un mot de passe faux et pour une adresse jamais confirmee.
+ */
+export function meriteRenvoiConfirmation(brut: string): boolean {
+  return /email not confirmed|email_not_confirmed|invalid login credentials|invalid_credentials/i.test(
+    brut
   );
 }

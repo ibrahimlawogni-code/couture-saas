@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
+import { EnTetePage, LienRetour, Page } from "@/ui/page";
 import { getAtelierId } from "@/lib/atelier";
 import { FormulaireClient } from "./formulaire";
 
@@ -11,13 +11,11 @@ export default async function NewClientPage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 py-6">
-      <Link href="/clients" className="text-sm text-gris">
-        &larr; Retour
-      </Link>
-      <h1 className="mt-2 text-xl font-semibold text-encre">Nouveau client</h1>
+    <Page>
+      <LienRetour href="/clients">Clients</LienRetour>
+      <EnTetePage titre="Nouveau client" />
 
       <FormulaireClient atelierId={atelierId} />
-    </div>
+    </Page>
   );
 }

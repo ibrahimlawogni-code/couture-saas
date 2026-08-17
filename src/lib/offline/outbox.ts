@@ -67,7 +67,8 @@ export async function retirerDeLaFile(id: string) {
 export async function marquerTentative(
   operation: Operation,
   echec: boolean,
-  motif?: string
+  motif?: string,
+  rejouable?: boolean
 ) {
   const base = await ouvrirBase();
   await base.put("outbox", {
@@ -75,6 +76,59 @@ export async function marquerTentative(
     tentatives: operation.tentatives + 1,
     echec,
     motif,
+    rejouable,
   });
   notifier();
+}
+
+/**
+ * Au-dela, l'echec est tenu pour acquis.
+ *
+ * La reconnexion emet aussi a la simple restauration de session, donc a
+ * chaque chargement de page. Sans plafond, une ligne que la base refuse
+ * vraiment repartirait indefiniment : cinq tentatives a chaque ouverture
+ * de l'application, en bloquant la file a chaque fois.
+ */
+const REPRISES_MAX = 3;
+
+/**
+ * Remet dans la file les operations dont l'echec tenait a la session.
+ *
+ * Le compteur de tentatives repart de zero : ce qui a echoue faute de
+ * droit n'a jamais eu sa chance, et lui laisser ses cinq essais deja
+ * consommes la ferait retomber en echec au premier hoquet suivant.
+ *
+ * Renvoie le nombre d'operations reprises, pour que l'appelant sache s'il
+ * vaut la peine de relancer une synchronisation.
+ */
+export async function reprendreLesEchecs() {
+  const base = await ouvrirBase();
+  const operations = await listerFile();
+
+  const reprises = operations.filter(
+    (operation) =>
+      operation.echec &&
+      operation.rejouable &&
+      (operation.reprises ?? 0) < REPRISES_MAX
+  );
+
+  if (reprises.length === 0) return 0;
+
+  const transaction = base.transaction("outbox", "readwrite");
+  await Promise.all(
+    reprises.map((operation) =>
+      transaction.store.put({
+        ...operation,
+        echec: false,
+        rejouable: undefined,
+        motif: undefined,
+        tentatives: 0,
+        reprises: (operation.reprises ?? 0) + 1,
+      })
+    )
+  );
+  await transaction.done;
+
+  notifier();
+  return reprises.length;
 }

@@ -3,11 +3,20 @@ import Link from "next/link";
 export default function VerifierEmailPage() {
   return (
     <div className="flex flex-1 items-center justify-center bg-papier px-4">
-      <div className="w-full max-w-sm rounded-3xl bg-white p-8 text-center shadow-sm">
-        <h1 className="text-2xl font-semibold text-encre">Vérifie tes emails</h1>
+      <div className="w-full max-w-sm rounded-panneau border border-bordure bg-white p-8 text-center shadow-carte">
+        {/*
+         * Vouvoiement, comme partout ailleurs dans l'application : cette
+         * page etait la derniere a tutoyer.
+         *
+         * Et rien sur « votre atelier est cree » : la meme page sert a qui
+         * ouvre un atelier et a qui en rejoint un par code d'invitation.
+         * Pour ce dernier aucun atelier n'a ete cree, il a ete rattache a
+         * celui de son patron.
+         */}
+        <h1 className="text-2xl font-semibold text-encre">Vérifiez vos emails</h1>
         <p className="mt-3 text-sm leading-relaxed text-gris">
-          Ton atelier est créé. Clique sur le lien de confirmation qu&apos;on vient de
-          t&apos;envoyer pour activer ton compte.
+          Votre compte est enregistré. Cliquez sur le lien de confirmation qui
+          vient de vous être envoyé pour l&apos;activer.
         </p>
 
         {/*
@@ -17,7 +26,7 @@ export default function VerifierEmailPage() {
           Supabase repond alors "identifiants invalides", ce qui laisse croire
           a un mot de passe faux.
         */}
-        <p className="mt-4 rounded-2xl bg-ambre-clair px-4 py-3 text-sm leading-relaxed text-ambre">
+        <p className="mt-4 rounded-carte bg-ambre-clair px-4 py-3 text-sm leading-relaxed text-ambre">
           Le lien n&apos;est valable que quelques minutes, et la connexion ne
           fonctionnera qu&apos;une fois le compte confirmé.
         </p>

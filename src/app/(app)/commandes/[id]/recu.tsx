@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { Receipt } from "@phosphor-icons/react/dist/ssr";
 import { genererRecu, type DonneesRecu } from "@/lib/recu";
+import { Bouton } from "@/ui/bouton";
 
 export function BoutonRecu({ donnees }: { donnees: DonneesRecu }) {
   const [etat, setEtat] = useState<"pret" | "generation" | "erreur">("pret");
@@ -18,12 +20,28 @@ export function BoutonRecu({ donnees }: { donnees: DonneesRecu }) {
       if (navigator.canShare?.({ files: [fichier] })) {
         await navigator.share({ files: [fichier], title: "Reçu" });
       } else {
+        /*
+         * Repli sans partage natif, sur ordinateur notamment.
+         *
+         * L'ancre est posee dans le document avant d'etre cliquee, et
+         * l'URL n'est liberee qu'au tour de boucle suivant. Le code
+         * precedent cliquait une ancre detachee puis revoquait aussitot :
+         * le navigateur pouvait liberer le blob avant de l'avoir lu, et le
+         * telechargement n'arrivait jamais. L'echec etait muet, le bouton
+         * revenant simplement a son etat de repos.
+         */
         const url = URL.createObjectURL(blob);
         const lien = document.createElement("a");
         lien.href = url;
         lien.download = nom;
+        lien.style.display = "none";
+        document.body.appendChild(lien);
         lien.click();
-        URL.revokeObjectURL(url);
+
+        setTimeout(() => {
+          lien.remove();
+          URL.revokeObjectURL(url);
+        }, 0);
       }
 
       setEtat("pret");
@@ -34,13 +52,15 @@ export function BoutonRecu({ donnees }: { donnees: DonneesRecu }) {
   }
 
   return (
-    <button
+    <Bouton
       type="button"
+      allure="secondaire"
+      pleineLargeur
       onClick={partager}
       disabled={etat === "generation"}
-      className="w-full rounded-2xl border border-bordure bg-white px-4 py-3 text-sm font-medium text-encre active:bg-papier disabled:opacity-60"
     >
+      <Receipt size={16} />
       {etat === "generation" ? "Préparation..." : "Partager le reçu"}
-    </button>
+    </Bouton>
   );
 }

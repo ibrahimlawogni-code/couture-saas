@@ -1,15 +1,21 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Check, Copy, UserPlus } from "@phosphor-icons/react/dist/ssr";
 import { createClient } from "@/lib/supabase/client";
 import { useFileAttente } from "@/lib/offline/use-file-attente";
+import { Bouton } from "@/ui/bouton";
+import { Carte } from "@/ui/carte";
+import { EnTeteSection } from "@/ui/page";
 
 export type Membre = { id: string; nom: string; role: string };
 export type Invitation = { id: string; code: string; expire_le: string };
 
 // Sans I, O, 0 ni 1 : un code se dicte au telephone ou se recopie a la main.
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+const DELAI_CONFIRMATION_MS = 5000;
 
 function genererCode() {
   return Array.from(
@@ -37,6 +43,19 @@ export function Equipe({
   const { horsLigne } = useFileAttente();
   const [occupe, setOccupe] = useState(false);
   const [copie, setCopie] = useState<string | null>(null);
+  /*
+   * Retirer un compte effacait la ligne au premier appui, sans rien
+   * demander. C'est la seule action irreversible de l'application, et
+   * elle etait a un doigt d'un bouton « Copier ». Le premier appui
+   * demande maintenant confirmation, et la demande retombe seule.
+   */
+  const [aConfirmer, setAConfirmer] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!aConfirmer) return;
+    const minuterie = setTimeout(() => setAConfirmer(null), DELAI_CONFIRMATION_MS);
+    return () => clearTimeout(minuterie);
+  }, [aConfirmer]);
 
   const occupees = membres.length + invitations.length;
   const complet = occupees >= places;
@@ -66,6 +85,7 @@ export function Equipe({
 
   async function retirer(id: string) {
     setOccupe(true);
+    setAConfirmer(null);
     const supabase = createClient();
     await supabase.from("utilisateurs").delete().eq("id", id);
     setOccupe(false);
@@ -80,93 +100,128 @@ export function Equipe({
 
   return (
     <section className="mt-10">
-      <div className="flex items-baseline justify-between gap-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-gris">
-          Atelier
-        </h2>
-        <span className="text-xs text-gris">
-          {occupees} place{occupees > 1 ? "s" : ""} sur {places}
-        </span>
-      </div>
+      <EnTeteSection
+        titre="Atelier"
+        action={
+          <span className="chiffres text-xs text-gris">
+            {occupees} place{occupees > 1 ? "s" : ""} sur {places}
+          </span>
+        }
+      />
 
       <ul className="mt-2 flex flex-col gap-2">
         {membres.map((membre) => (
-          <li
-            key={membre.id}
-            className="flex items-center justify-between gap-3 rounded-3xl bg-white px-4 py-3.5 shadow-sm"
-          >
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-encre">{membre.nom}</p>
-              <p className="text-xs text-gris">
-                {membre.role === "proprietaire" ? "Propriétaire" : "Apprenti"}
-                {membre.id === utilisateurId ? " · vous" : ""}
+          <li key={membre.id}>
+            <Carte classe="flex items-center justify-between gap-3 px-4 py-3.5">
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-medium text-encre">
+                  {membre.nom}
+                </span>
+                <span className="block text-xs text-gris">
+                  {membre.role === "proprietaire" ? "Propriétaire" : "Apprenti"}
+                  {membre.id === utilisateurId ? " · vous" : ""}
+                </span>
+              </span>
+
+              {estProprietaire && membre.id !== utilisateurId && (
+                <Bouton
+                  type="button"
+                  taille="compact"
+                  allure={aConfirmer === membre.id ? "danger" : "discret"}
+                  onClick={() =>
+                    aConfirmer === membre.id
+                      ? retirer(membre.id)
+                      : setAConfirmer(membre.id)
+                  }
+                  disabled={occupe || horsLigne}
+                  classe="shrink-0"
+                >
+                  {aConfirmer === membre.id ? "Confirmer" : "Retirer"}
+                </Bouton>
+              )}
+            </Carte>
+
+            {aConfirmer === membre.id && (
+              <p role="alert" className="mt-1.5 px-1 text-xs text-rouge">
+                Le compte de {membre.nom} sera supprimé définitivement. Appuyez
+                de nouveau pour confirmer.
               </p>
-            </div>
-            {estProprietaire && membre.id !== utilisateurId && (
-              <button
-                type="button"
-                onClick={() => retirer(membre.id)}
-                disabled={occupe || horsLigne}
-                className="shrink-0 rounded-2xl px-3 py-2 text-xs font-medium text-rouge active:bg-rouge-clair disabled:opacity-40"
-              >
-                Retirer
-              </button>
             )}
           </li>
         ))}
 
         {invitations.map((invitation) => (
-          <li
-            key={invitation.id}
-            className="flex items-center justify-between gap-3 rounded-3xl border border-dashed border-bordure bg-white px-4 py-3.5"
-          >
-            <div className="min-w-0">
-              <p className="font-mono text-base font-semibold tracking-[0.25em] text-encre">
-                {invitation.code}
-              </p>
-              <p className="text-xs text-gris">
-                En attente · expire le{" "}
-                {new Date(invitation.expire_le).toLocaleDateString("fr-FR")}
-              </p>
-            </div>
-            <div className="flex shrink-0 gap-1">
-              <button
-                type="button"
-                onClick={() => copier(invitation.code)}
-                className="rounded-2xl px-3 py-2 text-xs font-medium text-vert active:bg-vert-clair"
-              >
-                {copie === invitation.code ? "Copié" : "Copier"}
-              </button>
-              {estProprietaire && (
-                <button
+          <li key={invitation.id}>
+            <Carte provisoire classe="flex items-center justify-between gap-3 px-4 py-3.5">
+              <span className="min-w-0">
+                {/* Chasse fixe : un code se recopie caractere par caractere. */}
+                <span className="chiffres block font-mono text-base font-semibold tracking-[0.25em] text-encre">
+                  {invitation.code}
+                </span>
+                <span className="block text-xs text-gris">
+                  En attente · expire le{" "}
+                  {new Date(invitation.expire_le).toLocaleDateString("fr-FR")}
+                </span>
+              </span>
+
+              <span className="flex shrink-0 gap-1">
+                <Bouton
                   type="button"
-                  onClick={() => annuler(invitation.id)}
-                  disabled={occupe || horsLigne}
-                  className="rounded-2xl px-3 py-2 text-xs font-medium text-gris active:bg-papier disabled:opacity-40"
+                  taille="compact"
+                  allure="discret"
+                  onClick={() => copier(invitation.code)}
+                  classe={copie === invitation.code ? "text-vert" : undefined}
                 >
-                  Annuler
-                </button>
-              )}
-            </div>
+                  {copie === invitation.code ? (
+                    <>
+                      <Check size={12} weight="bold" />
+                      Copié
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={12} />
+                      Copier
+                    </>
+                  )}
+                </Bouton>
+
+                {estProprietaire && (
+                  <Bouton
+                    type="button"
+                    taille="compact"
+                    allure="discret"
+                    onClick={() => annuler(invitation.id)}
+                    disabled={occupe || horsLigne}
+                  >
+                    Annuler
+                  </Bouton>
+                )}
+              </span>
+            </Carte>
           </li>
         ))}
       </ul>
 
       {estProprietaire && (
         <>
-          <button
+          <Bouton
             type="button"
+            allure="secondaire"
+            pleineLargeur
             onClick={inviter}
             disabled={occupe || horsLigne || complet}
-            className="mt-3 w-full rounded-2xl border border-bordure bg-white px-4 py-3.5 text-sm font-medium text-encre active:bg-papier disabled:opacity-40"
+            classe="mt-3"
           >
+            {!complet && <UserPlus size={15} />}
             {complet ? "Toutes les places sont prises" : "Inviter un apprenti"}
-          </button>
+          </Bouton>
 
           <p className="mt-2 text-xs text-gris">
             {complet
               ? "Retirez un compte ou une invitation pour libérer une place."
-              : "Un code est généré. Transmettez-le à votre apprenti : il le saisira en créant son compte."}
+              : horsLigne
+                ? "L'invitation demande une connexion."
+                : "Un code est généré. Transmettez-le à votre apprenti : il le saisira en créant son compte."}
           </p>
         </>
       )}

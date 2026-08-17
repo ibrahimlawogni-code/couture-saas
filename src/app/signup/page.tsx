@@ -1,8 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ChampCode } from "./champ-code";
-import { ChampMotDePasse } from "../champ-mot-de-passe";
-import { signup } from "./actions";
+import { FormulaireInscription } from "./formulaire";
 
 export default async function SignupPage({
   searchParams,
@@ -10,25 +8,6 @@ export default async function SignupPage({
   searchParams: Promise<{ error?: string; code?: string }>;
 }) {
   const { error, code } = await searchParams;
-
-  // Arrive avec un code : la personne rejoint un atelier existant, elle n'a
-  // donc pas a le nommer.
-  const rejoint = Boolean(code);
-
-  const champs = [
-    ...(rejoint
-      ? []
-      : [
-          {
-            id: "atelier",
-            label: "Nom de l'atelier",
-            type: "text",
-            auto: "organization",
-          },
-        ]),
-    { id: "nom", label: "Votre nom", type: "text", auto: "name" },
-    { id: "email", label: "Email", type: "email", auto: "email" },
-  ];
 
   return (
     <div className="flex flex-1 lg:grid lg:grid-cols-2">
@@ -38,52 +17,12 @@ export default async function SignupPage({
             TailorHub
           </Link>
 
-          <h1 className="mt-6 text-2xl font-semibold tracking-tight text-encre">
-            {rejoint ? "Rejoindre l'atelier" : "Créer votre atelier"}
-          </h1>
-          <p className="mt-1.5 text-sm text-gris">
-            {rejoint
-              ? "Vous avez été invité, il ne reste qu'à créer votre compte"
-              : "Quelques informations et c'est parti"}
-          </p>
-
-          {error && (
-            <p className="mt-6 rounded-2xl bg-rouge-clair px-4 py-3 text-sm text-rouge">
-              {error}
-            </p>
-          )}
-
-          <form action={signup} className="mt-5 flex flex-col gap-3">
-            {champs.map((champ) => (
-              <div key={champ.id}>
-                <label
-                  htmlFor={champ.id}
-                  className="block text-sm font-medium text-encre"
-                >
-                  {champ.label}
-                </label>
-                <input
-                  id={champ.id}
-                  name={champ.id}
-                  type={champ.type}
-                  autoComplete={champ.auto}
-                  required
-                  className="mt-1.5 w-full rounded-2xl border border-bordure px-4 py-3 text-base"
-                />
-              </div>
-            ))}
-
-            <ChampMotDePasse />
-
-            <ChampCode code={code} />
-
-            <button
-              type="submit"
-              className="mt-2 rounded-2xl bg-vert px-4 py-3.5 text-base font-medium text-white transition-colors hover:bg-foret active:translate-y-px"
-            >
-              {rejoint ? "Rejoindre l'atelier" : "Créer mon atelier"}
-            </button>
-          </form>
+          {/*
+           * Titre, champs et bouton dependent tous du code d'invitation,
+           * qui peut arriver par le lien comme etre tape a la main. Ils
+           * sont donc rendus ensemble, cote client, la ou cet etat vit.
+           */}
+          <FormulaireInscription code={code} erreur={error} />
 
           <p className="mt-5 text-sm text-gris">
             Déjà un compte ?{" "}

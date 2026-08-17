@@ -28,12 +28,12 @@ export default function RenvoyerConfirmationPage() {
               type="email"
               autoComplete="email"
               required
-              className="mt-1.5 w-full rounded-2xl border border-bordure px-4 py-3 text-base"
+              className="mt-1.5 w-full rounded-controle border border-bordure px-4 py-3 text-base"
             />
           </div>
           <button
             type="submit"
-            className="mt-2 rounded-2xl bg-vert px-4 py-3.5 text-base font-medium text-white transition-colors hover:bg-foret active:translate-y-px"
+            className="mt-2 rounded-controle bg-vert px-4 py-3.5 text-base font-medium text-white transition-colors hover:bg-foret active:translate-y-px"
           >
             Envoyer un nouveau lien
           </button>
