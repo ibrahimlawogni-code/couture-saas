@@ -43,9 +43,17 @@ let dejaPrepare = false;
  * fichiers de script, et un ChunkLoadError des la coupure.
  */
 
-/** Adresses des scripts et feuilles de style citees par une page. */
+/**
+ * Adresses des scripts et feuilles de style citees par une page.
+ *
+ * La barre oblique inverse fait partie des caracteres a exclure : le HTML
+ * produit par Next echappe certaines adresses, et une classe qui ne
+ * l'arretait pas capturait le caractere d'echappement avec. L'adresse
+ * partait alors en %5C et revenait en 404 - sur seize correspondances
+ * relevees dans une page, cinq etaient dans ce cas.
+ */
 function ressourcesDe(html: string) {
-  return new Set(html.match(/\/_next\/static\/[^"'\s>]+/g) ?? []);
+  return new Set(html.match(/\/_next\/static\/[^"'\s>\\]+/g) ?? []);
 }
 export function Prechargement() {
   const router = useRouter();
@@ -56,7 +64,6 @@ export function Prechargement() {
 
   useEffect(() => {
     if (dejaPrepare || !chargee || !navigator.onLine) return;
-    dejaPrepare = true;
 
     const adresses = [...ECRANS_FIXES];
 
@@ -76,6 +83,7 @@ export function Prechargement() {
      */
     (async () => {
       const dejaVues = new Set<string>();
+      let complet = true;
 
       for (const adresse of adresses) {
         // La charge RSC, pour la navigation interne hors reseau.
@@ -83,21 +91,43 @@ export function Prechargement() {
 
         try {
           const reponse = await fetch(adresse, { credentials: "same-origin" });
-          if (!reponse.ok) continue;
+          if (!reponse.ok) {
+            complet = false;
+            continue;
+          }
 
           for (const ressource of ressourcesDe(await reponse.text())) {
             // Les ecrans partagent l'essentiel de leurs bundles : sans ce
             // filtre, les memes fichiers seraient redemandes une fois par
             // page de la liste.
             if (dejaVues.has(ressource)) continue;
-            dejaVues.add(ressource);
 
-            await fetch(ressource, { credentials: "same-origin" }).catch(() => {});
+            // Marque apres coup, et seulement en cas de succes : marquer
+            // avant retirait definitivement de la preparation un fichier
+            // qu'un simple hoquet reseau avait fait manquer.
+            const obtenue = await fetch(ressource, { credentials: "same-origin" })
+              .then((r) => r.ok)
+              .catch(() => false);
+
+            if (obtenue) dejaVues.add(ressource);
+            else complet = false;
           }
         } catch {
           // Une page qui ne se precharge pas ne doit rien casser.
+          complet = false;
         }
       }
+
+      /*
+       * Le drapeau n'est tenu que si la preparation est allee au bout.
+       *
+       * Il etait pose avant de commencer, sur une centaine d'allers-retours
+       * en serie : couper le reseau au milieu laissait definitivement de
+       * cote tout ce qui suivait dans la liste - « Nouvelle commande » en
+       * sixieme position, et toutes les pages de detail derriere elle -
+       * sans que rien ne reprenne jamais.
+       */
+      dejaPrepare = complet;
     })();
   }, [chargee, premierClient, premiereCommande, router]);
 

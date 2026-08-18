@@ -11,7 +11,19 @@ export type EtatFile = {
 const ETAT_INITIAL: EtatFile = { horsLigne: false, operations: [] };
 const RELANCE_MS = 30_000;
 
-let etat: EtatFile = ETAT_INITIAL;
+/*
+ * L'etat de depart cote navigateur repond deja a la question du reseau.
+ *
+ * Il valait « en ligne » jusqu'a ce que initialiser() consulte
+ * navigator.onLine, ce qui n'arrive qu'a l'abonnement, donc apres le
+ * premier rendu. Tout ce qui lisait cet etat pendant l'hydratation croyait
+ * donc a une connexion, hors reseau comme ailleurs.
+ */
+let etat: EtatFile =
+  typeof navigator === "undefined"
+    ? ETAT_INITIAL
+    : { ...ETAT_INITIAL, horsLigne: !navigator.onLine };
+
 let initialise = false;
 
 const abonnes = new Set<() => void>();
