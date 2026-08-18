@@ -17,6 +17,7 @@ import {
 } from "@/lib/commandes";
 import { useDonnees } from "@/lib/offline/use-donnees";
 import { Carte, CarteLien, Panneau } from "@/ui/carte";
+import { Vignette } from "@/ui/vignette";
 import { Compteur, Etiquette, type TonEtiquette } from "@/ui/etiquette";
 import { EnTeteSection } from "@/ui/page";
 import { Squelette, SqueletteLigne } from "@/ui/squelette";
@@ -252,17 +253,6 @@ export function TableauDeBord() {
             </div>
           </div>
 
-          {/*
-           * Le graphique passe a cote du chiffre sur grand ecran, dans une
-           * colonne bornee. Etale sur toute la largeur du panneau, ses six
-           * bandes depassaient 150 px chacune pour des barres plafonnees a
-           * 24 px : les barres flottaient dans le vide et l'ensemble ne se
-           * lisait plus comme un graphique. Le plafond est bon, c'est la
-           * largeur offerte qui ne l'etait pas.
-           */}
-          <div className="mt-5 border-t border-white/15 pt-4 lg:mt-0 lg:w-72 lg:shrink-0 lg:border-t-0 lg:border-l lg:border-white/15 lg:pt-0 lg:pl-8">
-            <GraphiqueEncaissements points={bilan.points} ton="sombre" />
-          </div>
         </div>
       </Panneau>
 
@@ -374,50 +364,27 @@ export function TableauDeBord() {
           precision="au total"
         />
       </div>
-    </>
-  );
-}
 
-/**
- * Vignette de statistique : un libelle, une valeur, et la precision qui
- * lui donne son sens.
- *
- * La precision n'est pas decorative. « Créances 231 000 » ne dit pas s'il
- * s'agit d'un gros impaye ou de dix petits, et c'est pourtant ce qui
- * decide de la matinee.
- */
-function Vignette({
-  libelle,
-  valeur,
-  unite,
-  precision,
-  alerte = false,
-}: {
-  libelle: string;
-  valeur: string;
-  unite?: string;
-  precision: string;
-  alerte?: boolean;
-}) {
-  return (
-    <Carte classe="p-3.5">
-      <p className="text-[10px] font-medium tracking-[0.1em] text-gris uppercase">
-        {libelle}
-      </p>
-      <p className="mt-1.5 flex items-baseline gap-1">
-        <span
-          className={`text-xl leading-none font-semibold tracking-tight sm:text-2xl ${
-            alerte ? "text-rouge" : "text-encre"
-          }`}
-        >
-          {valeur}
-        </span>
-        {unite && (
-          <span className="text-[10px] font-medium text-gris">{unite}</span>
-        )}
-      </p>
-      <p className="mt-1.5 text-[11px] leading-tight text-gris">{precision}</p>
-    </Carte>
+      {/*
+       * Le graphique ferme l'ecran. Il a d'abord ete loge dans le panneau,
+       * a cote du montant du mois, pour eviter l'aller-retour entre le
+       * chiffre et sa courbe ; mais il y alourdissait le premier coup
+       * d'oeil, alors que ce qu'on vient chercher le matin est ce qui
+       * presse - les retards, puis les chiffres du jour. La tendance sur
+       * six mois se consulte, elle ne s'annonce pas.
+       */}
+      <Carte classe="mt-6 p-5">
+        <h2 className="text-[10px] font-medium tracking-[0.1em] text-gris uppercase">
+          Encaissements par mois
+        </h2>
+        <p className="mt-1 text-xs text-gris">
+          Touchez une barre pour voir le montant exact.
+        </p>
+        <div className="mt-4">
+          <GraphiqueEncaissements points={bilan.points} />
+        </div>
+      </Carte>
+    </>
   );
 }
 

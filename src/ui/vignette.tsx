@@ -41,10 +41,17 @@ export function Vignette({
         {libelle}
       </p>
 
-      <p className="mt-1.5 flex items-baseline gap-1">
+      {/*
+       * Le repli est necessaire, pas decoratif. Sur trois colonnes a
+       * 390 px, une vignette fait un tiers de l'ecran : « 216 000 » suivi
+       * de « FCFA » sur la meme ligne debordait de la carte. La devise
+       * passe donc dessous quand la place manque, plutot que de sortir du
+       * cadre.
+       */}
+      <p className="mt-1.5 flex flex-wrap items-baseline gap-x-1">
         <span
           className={`leading-none font-semibold tracking-tight ${
-            taille === "compacte" ? "text-base" : "text-xl sm:text-2xl"
+            taille === "compacte" ? "text-base" : "text-lg sm:text-2xl"
           } ${alerte ? "text-rouge" : "text-encre"}`}
         >
           {valeur}
