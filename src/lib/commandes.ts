@@ -86,3 +86,44 @@ export function formaterNombre(montant: number) {
 export function formaterMontant(montant: number) {
   return `${formaterNombre(montant)} FCFA`;
 }
+
+/*
+ * Ce que chaque commande a deja encaisse.
+ *
+ * Six ecrans refaisaient cette boucle a la main - tableau de bord,
+ * finances, Kanban, liste et fiche client, detail de commande - et sept
+ * refaisaient la soustraction qui suit. C'est pourtant le seul chiffre du
+ * produit qu'un tailleur prononce a voix haute devant son client : le
+ * jour ou la regle bouge, en corriger cinq sur six laisse un ecran qui le
+ * contredit.
+ */
+export function versesParCommande(
+  paiements: { commande_id: string; montant: number | string }[]
+) {
+  const total = new Map<string, number>();
+
+  for (const paiement of paiements) {
+    total.set(
+      paiement.commande_id,
+      (total.get(paiement.commande_id) ?? 0) + Number(paiement.montant)
+    );
+  }
+
+  return total;
+}
+
+/** Ce qu'il reste a encaisser. Negatif si le client a trop verse. */
+export function resteAPayer(prixTotal: number | string, verse: number) {
+  return Number(prixTotal) - verse;
+}
+
+/**
+ * Part deja encaissee, en pourcentage.
+ *
+ * Une commande a prix nul rend zero plutot qu'une division impossible :
+ * il n'y a rien a encaisser, donc rien a suivre.
+ */
+export function partVersee(prixTotal: number | string, verse: number) {
+  const prix = Number(prixTotal);
+  return prix > 0 ? Math.min(100, (verse / prix) * 100) : 0;
+}
