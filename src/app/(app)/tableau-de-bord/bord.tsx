@@ -424,7 +424,7 @@ function Vignette({
 function SqueletteBord() {
   return (
     <div role="status" aria-label="Chargement du tableau de bord">
-      <Squelette classe="h-72 rounded-panneau" />
+      <Squelette rayon="panneau" classe="h-72" />
 
       <div className="mt-6 flex flex-col gap-2">
         <Squelette classe="h-3.5 w-24" />
@@ -433,9 +433,9 @@ function SqueletteBord() {
       </div>
 
       <div className="mt-6 grid grid-cols-3 gap-2">
-        <Squelette classe="h-24 rounded-carte" />
-        <Squelette classe="h-24 rounded-carte" />
-        <Squelette classe="h-24 rounded-carte" />
+        <Squelette rayon="carte" classe="h-24" />
+        <Squelette rayon="carte" classe="h-24" />
+        <Squelette rayon="carte" classe="h-24" />
       </div>
     </div>
   );

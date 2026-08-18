@@ -275,7 +275,7 @@ function SqueletteTableau() {
         <div key={colonne} className="w-64 shrink-0">
           <div className="flex items-center justify-between px-1">
             <Squelette classe="h-3.5 w-20" />
-            <Squelette classe="size-5 rounded-full" />
+            <Squelette rayon="rond" classe="size-5" />
           </div>
           <div className="mt-2 flex flex-col gap-2">
             {[0, 1].map((carte) => (

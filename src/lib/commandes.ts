@@ -67,6 +67,22 @@ export const PRIORITE_LABELS: Record<Priorite, string> = {
   normal: "Dans les temps",
 };
 
+/*
+ * Un seul formateur pour toute l'application.
+ *
+ * Il etait construit a chaque appel, ce qui coute environ cent fois plus
+ * que le formatage lui-meme. Sur un Kanban de deux cents commandes, avec
+ * le prix et le reste du sur chaque carte, cela faisait quatre cents
+ * constructions par rendu - sur le telephone d'entree de gamme qui est la
+ * cible du produit.
+ */
+const NOMBRE = new Intl.NumberFormat("fr-FR");
+
+/** Le nombre seul, quand la devise est posee a cote en plus petit. */
+export function formaterNombre(montant: number) {
+  return NOMBRE.format(montant);
+}
+
 export function formaterMontant(montant: number) {
-  return `${new Intl.NumberFormat("fr-FR").format(montant)} FCFA`;
+  return `${formaterNombre(montant)} FCFA`;
 }

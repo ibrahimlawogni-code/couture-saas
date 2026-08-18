@@ -379,7 +379,7 @@ function SqueletteFiche() {
   return (
     <div role="status" aria-label="Chargement de la fiche">
       <Squelette classe="mt-2 h-7 w-2/5" />
-      <Squelette classe="mt-3 h-9 w-40 rounded-full" />
+      <Squelette rayon="rond" classe="mt-3 h-9 w-40" />
 
       <div className="mt-5 grid grid-cols-2 gap-2">
         <Squelette classe="h-11" />
@@ -388,7 +388,7 @@ function SqueletteFiche() {
 
       <div className="mt-6 flex flex-col gap-2">
         <Squelette classe="h-3.5 w-32" />
-        <Squelette classe="h-32 rounded-carte" />
+        <Squelette rayon="carte" classe="h-32" />
       </div>
 
       <div className="mt-6 flex flex-col gap-2">

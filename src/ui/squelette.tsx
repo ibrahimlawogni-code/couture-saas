@@ -13,11 +13,36 @@ import { classes } from "./classes";
  * mouvement : la regle est posee pour tout le document dans globals.css.
  */
 
-export function Squelette({ classe }: { classe?: string }) {
+/*
+ * Le rayon passe par une prop, jamais par la chaine libre.
+ *
+ * Tailwind v4 emet ses utilitaires dans l'ordre alphabetique de leur nom,
+ * et classes() se contente de concatener : une classe posee par l'appelant
+ * ne l'emporte que si son nom vient apres celui de la base. « carte »
+ * precede « controle », si bien que huit appels demandant rounded-carte
+ * rendaient en rounded-controle sans que rien ne le signale - des
+ * silhouettes plus etroites que les cartes qu'elles annoncent, soit
+ * exactement le sursaut que ce composant existe pour supprimer.
+ *
+ * Une prop rend le mauvais accord inexprimable, la ou la discipline avait
+ * echoue.
+ */
+const RAYONS = {
+  controle: "rounded-controle",
+  carte: "rounded-carte",
+  panneau: "rounded-panneau",
+  rond: "rounded-full",
+} as const;
+
+export function Squelette({
+  rayon = "controle",
+  classe,
+}: {
+  rayon?: keyof typeof RAYONS;
+  classe?: string;
+}) {
   return (
-    <div
-      className={classes("animate-pulse rounded-controle bg-bordure", classe)}
-    />
+    <div className={classes("animate-pulse bg-bordure", RAYONS[rayon], classe)} />
   );
 }
 

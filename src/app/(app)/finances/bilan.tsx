@@ -267,11 +267,11 @@ function Vignette({
 function SqueletteBilan() {
   return (
     <div role="status" aria-label="Chargement du bilan">
-      <Squelette classe="mt-4 h-36 rounded-panneau" />
+      <Squelette rayon="panneau" classe="mt-4 h-36" />
 
       <div className="mt-3 grid grid-cols-2 gap-2">
-        <Squelette classe="h-24 rounded-carte" />
-        <Squelette classe="h-24 rounded-carte" />
+        <Squelette rayon="carte" classe="h-24" />
+        <Squelette rayon="carte" classe="h-24" />
       </div>
 
       <div className="mt-6 flex flex-col gap-2">

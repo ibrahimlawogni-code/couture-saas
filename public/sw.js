@@ -79,10 +79,36 @@ async function mettreEnCache(requete, reponse) {
   }
 }
 
+/*
+ * Les fichiers batis portent un hash de contenu dans leur nom : sous une
+ * meme adresse, leurs octets ne changent jamais. Les demander au reseau
+ * d'abord n'apprend donc rien, et coute cher la ou ca fait le plus mal :
+ * sur un lien instable, chaque script attend l'expiration du reseau avant
+ * que le repli ne serve le cache, alors que les octets sont deja sur
+ * l'appareil.
+ */
+function estImmuable(url) {
+  return new URL(url).pathname.startsWith("/_next/static/");
+}
+
 self.addEventListener("fetch", (evenement) => {
   const { request } = evenement;
 
   if (!estCachable(request)) return;
+
+  if (estImmuable(request.url)) {
+    evenement.respondWith(
+      caches.match(request, OPTIONS_MATCH).then(
+        (cache) =>
+          cache ??
+          fetch(request).then((reponse) => {
+            if (reponse.ok) evenement.waitUntil(mettreEnCache(request, reponse.clone()));
+            return reponse;
+          })
+      )
+    );
+    return;
+  }
 
   const navigation = request.mode === "navigate";
 

@@ -438,9 +438,9 @@ function SqueletteDetail() {
     <div role="status" aria-label="Chargement de la commande">
       <Squelette classe="mt-2 h-7 w-3/5" />
       <Squelette classe="mt-2 h-4 w-2/5" />
-      <Squelette classe="mt-5 h-32 rounded-carte" />
-      <Squelette classe="mt-3 h-28 rounded-carte" />
-      <Squelette classe="mt-3 h-44 rounded-carte" />
+      <Squelette rayon="carte" classe="mt-5 h-32" />
+      <Squelette rayon="carte" classe="mt-3 h-28" />
+      <Squelette rayon="carte" classe="mt-3 h-44" />
     </div>
   );
 }
