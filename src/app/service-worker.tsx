@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   CaretDown,
@@ -38,9 +38,32 @@ export function BarreEtatReseau() {
     });
   }, []);
 
-  // La file qui se vide signifie que le serveur a de nouvelles donnees.
+  /*
+   * La file qui se vide signifie que le serveur a de nouvelles donnees.
+   *
+   * Mais seulement si quelque chose a change. Cet effet se declenchait a
+   * chaque montage, et le premier rendu annonce toujours « en ligne » :
+   * le store ne consulte navigator.onLine que dans l'effet d'abonnement,
+   * donc apres. Hors reseau, ce rafraichissement echouait, Next basculait
+   * en navigation dure - location.replace - et la page se rechargeait
+   * depuis le cache pour recommencer aussitot. React n'atteignait jamais
+   * la fin de son hydratation : les formulaires restaient figes sur
+   * « Chargement... » et la navigation arriere ne permettait pas d'en
+   * sortir, replace n'empilant rien.
+   */
+  const precedent = useRef<{ horsLigne: boolean; enAttente: number } | null>(null);
+
   useEffect(() => {
-    if (!horsLigne && enAttente.length === 0) router.refresh();
+    const avant = precedent.current;
+    precedent.current = { horsLigne, enAttente: enAttente.length };
+
+    // Premier passage : rien n'a encore change, il n'y a rien a relire.
+    if (!avant) return;
+
+    const reseauRevenu = avant.horsLigne && !horsLigne;
+    const fileVidee = avant.enAttente > 0 && enAttente.length === 0;
+
+    if (!horsLigne && (reseauRevenu || fileVidee)) router.refresh();
   }, [horsLigne, enAttente.length, router]);
 
   /*

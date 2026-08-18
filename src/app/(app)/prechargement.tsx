@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useDonnees } from "@/lib/offline/use-donnees";
 
 const ECRANS_FIXES = [
@@ -25,8 +26,37 @@ let dejaPrepare = false;
  * Ces requetes traversent le service worker, qui les met en cache au passage.
  * Une seule page de detail suffit : le service worker la range sous son modele
  * d'adresse, ce qui rend consultables toutes les fiches du meme type.
+ *
+ * Rapporter le HTML ne suffit pas, et le defaut ne se voyait qu'une fois
+ * le reseau coupe : la page sortait du cache et s'affichait normalement,
+ * mais ses balises script pointaient vers des fichiers que personne
+ * n'avait jamais demandes, donc que le service worker n'avait jamais vus
+ * passer. React n'hydratait pas. Le formulaire « Nouveau client » restait
+ * fige sur « Chargement... » et « Nouvelle commande » ne s'ouvrait pas du
+ * tout - la promesse meme du produit, prendre une commande sans reseau,
+ * tombait.
+ *
+ * Les bundles sont donc lus dans le HTML rapporte, puis demandes un a un.
+ * router.prefetch a d'abord ete essaye : il rapporte la charge RSC, ce qui
+ * sert a la navigation interne, mais laisse la plupart des bundles hors du
+ * cache. Un releve l'a montre - quarante pages en cache pour douze
+ * fichiers de script, et un ChunkLoadError des la coupure.
  */
+
+/**
+ * Adresses des scripts et feuilles de style citees par une page.
+ *
+ * La barre oblique inverse fait partie des caracteres a exclure : le HTML
+ * produit par Next echappe certaines adresses, et une classe qui ne
+ * l'arretait pas capturait le caractere d'echappement avec. L'adresse
+ * partait alors en %5C et revenait en 404 - sur seize correspondances
+ * relevees dans une page, cinq etaient dans ce cas.
+ */
+function ressourcesDe(html: string) {
+  return new Set(html.match(/\/_next\/static\/[^"'\s>\\]+/g) ?? []);
+}
 export function Prechargement() {
+  const router = useRouter();
   const { clients, commandes, chargee } = useDonnees();
 
   const premierClient = clients[0]?.id;
@@ -34,7 +64,6 @@ export function Prechargement() {
 
   useEffect(() => {
     if (dejaPrepare || !chargee || !navigator.onLine) return;
-    dejaPrepare = true;
 
     const adresses = [...ECRANS_FIXES];
 
@@ -46,12 +75,61 @@ export function Prechargement() {
       adresses.push(`/commandes/${premiereCommande}`);
     }
 
-    for (const adresse of adresses) {
-      fetch(adresse, { credentials: "same-origin" }).catch(() => {
-        // Une page qui ne se precharge pas ne doit rien casser.
-      });
-    }
-  }, [chargee, premierClient, premiereCommande]);
+    /*
+     * En serie plutot qu'en parallele : ce travail se fait pendant que la
+     * personne consulte son atelier, et une quarantaine de requetes
+     * lancees d'un coup sur un reseau mobile ralentirait ce qu'elle est en
+     * train de faire. Rien ne presse ici.
+     */
+    (async () => {
+      const dejaVues = new Set<string>();
+      let complet = true;
+
+      for (const adresse of adresses) {
+        // La charge RSC, pour la navigation interne hors reseau.
+        router.prefetch(adresse);
+
+        try {
+          const reponse = await fetch(adresse, { credentials: "same-origin" });
+          if (!reponse.ok) {
+            complet = false;
+            continue;
+          }
+
+          for (const ressource of ressourcesDe(await reponse.text())) {
+            // Les ecrans partagent l'essentiel de leurs bundles : sans ce
+            // filtre, les memes fichiers seraient redemandes une fois par
+            // page de la liste.
+            if (dejaVues.has(ressource)) continue;
+
+            // Marque apres coup, et seulement en cas de succes : marquer
+            // avant retirait definitivement de la preparation un fichier
+            // qu'un simple hoquet reseau avait fait manquer.
+            const obtenue = await fetch(ressource, { credentials: "same-origin" })
+              .then((r) => r.ok)
+              .catch(() => false);
+
+            if (obtenue) dejaVues.add(ressource);
+            else complet = false;
+          }
+        } catch {
+          // Une page qui ne se precharge pas ne doit rien casser.
+          complet = false;
+        }
+      }
+
+      /*
+       * Le drapeau n'est tenu que si la preparation est allee au bout.
+       *
+       * Il etait pose avant de commencer, sur une centaine d'allers-retours
+       * en serie : couper le reseau au milieu laissait definitivement de
+       * cote tout ce qui suivait dans la liste - « Nouvelle commande » en
+       * sixieme position, et toutes les pages de detail derriere elle -
+       * sans que rien ne reprenne jamais.
+       */
+      dejaPrepare = complet;
+    })();
+  }, [chargee, premierClient, premiereCommande, router]);
 
   return null;
 }
