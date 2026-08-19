@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { GOOGLE_ACTIF } from "@/lib/fournisseurs";
+import { BoutonGoogle, Separateur } from "../bouton-google";
 import { ChampCode } from "./champ-code";
 import { ChampMotDePasse } from "../champ-mot-de-passe";
 import { signup } from "./actions";
@@ -50,7 +52,23 @@ export function FormulaireInscription({
         </p>
       )}
 
-      <form action={signup} className="mt-5 flex flex-col gap-3">
+      {/*
+       * Google evite l'email de confirmation, qui est l'etape ou une
+       * inscription se perd le plus souvent ici. Le code d'invitation en
+       * cours de saisie part avec le bouton : sans lui, l'apprenti
+       * reviendrait de Google sans rien qui le rattache a son atelier.
+       */}
+      {GOOGLE_ACTIF && (
+        <div className="mt-5 flex flex-col gap-4">
+          <BoutonGoogle code={saisi.trim()} />
+          <Separateur />
+        </div>
+      )}
+
+      <form
+        action={signup}
+        className={`flex flex-col gap-3 ${GOOGLE_ACTIF ? "mt-4" : "mt-5"}`}
+      >
         {!rejoint && (
           <Champ
             id="atelier"

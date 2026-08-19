@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { EnvelopeSimple } from "@phosphor-icons/react/dist/ssr";
+import { GOOGLE_ACTIF } from "@/lib/fournisseurs";
+import { BoutonGoogle, Separateur } from "../bouton-google";
 import { ChampMotDePasse } from "../champ-mot-de-passe";
 import { Marque } from "../marque";
 import { login } from "./actions";
@@ -81,7 +83,24 @@ export default async function LoginPage({
             </p>
           )}
 
-          <form action={login} className="mt-6 flex flex-col gap-5">
+          {/*
+           * Le fournisseur avant le formulaire : c'est le chemin le plus
+           * court, et sur l'Android d'un tailleur le compte Google est deja
+           * ouvert sur l'appareil. Le mot de passe reste juste dessous, un
+           * telephone partage ou un compte perdu ne devant pas fermer la
+           * porte de l'atelier.
+           */}
+          {GOOGLE_ACTIF && (
+            <div className="mt-6 flex flex-col gap-5">
+              <BoutonGoogle surFondSombre />
+              <Separateur surFondSombre />
+            </div>
+          )}
+
+          <form
+            action={login}
+            className={`flex flex-col gap-5 ${GOOGLE_ACTIF ? "mt-5" : "mt-6"}`}
+          >
             <div>
               <label htmlFor="email" className="sr-only">
                 Email

@@ -61,6 +61,49 @@ Purge manuelle en developpement :
 curl http://localhost:3000/api/purge-ateliers -H "Authorization: Bearer $CRON_SECRET"
 ```
 
+## Connexion avec Google
+
+Le gain n'est pas d'epargner un mot de passe, c'est de supprimer l'email de
+confirmation : Google a deja verifie l'adresse, la personne revient avec une
+session ouverte. C'est l'etape ou une inscription se perd le plus souvent,
+au point que `messages-auth.ts` proposait deux fois d'activer un atelier a la
+main faute de mieux.
+
+Le bouton part **eteint**. Il ne s'affiche que si `NEXT_PUBLIC_AUTH_GOOGLE`
+vaut `1`, pour qu'un deploiement fait avant la configuration n'affiche pas
+une porte qui refuse de s'ouvrir.
+
+Mise en service, dans cet ordre :
+
+1. Appliquer `supabase/migrations/0010_inscription_par_fournisseur.sql`
+2. Dans Google Cloud, creer des identifiants OAuth et autoriser l'URL de
+   rappel que Supabase indique
+3. Dans Supabase, onglet Authentication puis Providers, activer Google avec
+   ces identifiants
+4. Toujours dans Supabase, ajouter `https://votre-domaine/auth/callback` aux
+   URL de redirection autorisees
+5. **Verifier la liaison des identites sur un compte jetable** : inscrivez-vous
+   par email avec une adresse Gmail, deconnectez-vous, puis revenez par
+   Google avec la meme adresse. Vous devez retrouver votre atelier. Si un
+   atelier vide apparait, les deux identites ne sont pas liees et il ne faut
+   pas ouvrir la porte en l'etat
+6. Poser `NEXT_PUBLIC_AUTH_GOOGLE=1`
+
+Pour refermer, retirer la variable. Aucun deploiement de code n'est
+necessaire dans un sens comme dans l'autre.
+
+### Pourquoi un ecran de bienvenue
+
+Le declencheur `handle_new_user()` cree l'atelier a partir des metadonnees
+que le formulaire depose. Une inscription Google n'en depose aucune : le nom
+de l'atelier et le code d'invitation n'existent pas encore quand le compte
+est cree. Le declencheur laisse donc passer ces comptes sans rien creer, et
+`/bienvenue` acheve l'inscription en appelant `terminer_inscription()`.
+
+Sans cela, tout compte Google aurait ouvert un atelier nomme « Mon atelier »,
+et surtout un apprenti invite serait devenu proprietaire d'un atelier vide au
+lieu de rejoindre celui de son patron - en silence.
+
 ## Modele de donnees
 
 Voir `supabase/migrations/0001_init.sql`. Entites principales : `ateliers` (tenant), `utilisateurs`, `clients`, `gabarits_mesure`, `mesures`, `commandes`, `historique_statuts`, `paiements`, `notifications`. Isolation multi-tenant geree par Row Level Security sur `atelier_id`.
