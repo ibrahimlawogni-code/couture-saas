@@ -182,7 +182,13 @@ export function TableauDeBord() {
        * a faire l'aller-retour pour savoir si le mois etait bon.
        */}
       <Panneau classe="p-5 lg:p-6">
-        <div className="lg:flex lg:items-start lg:gap-8">
+        {/*
+         * Sur grand ecran, les deux actions se rangent a droite du montant
+         * plutot que dessous. Le panneau tient alors en une bande, et
+         * l'ecran entier gagne les quelque soixante-dix pixels qui le
+         * faisaient deborder d'un portable.
+         */}
+        <div className="lg:flex lg:items-center lg:justify-between lg:gap-8">
           <div className="lg:min-w-0 lg:flex-1">
             <p className="text-sm text-vert-pale">
               {salutation}
@@ -230,155 +236,184 @@ export function TableauDeBord() {
               </p>
             )}
 
-            <div className="mt-5 flex flex-col gap-2 sm:flex-row lg:mt-6">
-              <Link
-                href="/commandes/new"
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-controle bg-white px-5 text-sm font-medium text-foret transition-colors duration-150 ease-doux hover:bg-vert-clair"
-              >
-                <Plus size={16} weight="bold" />
-                Nouvelle commande
-              </Link>
-              <Link
-                href="/clients/new"
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-controle border border-white/25 px-5 text-sm font-medium text-white transition-colors duration-150 ease-doux hover:bg-white/10"
-              >
-                <UserPlus size={16} />
-                Nouveau client
-              </Link>
-            </div>
           </div>
 
+          <div className="mt-5 flex flex-col gap-2 sm:flex-row lg:mt-0 lg:shrink-0 lg:flex-col xl:flex-row">
+            <Link
+              href="/commandes/new"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-controle bg-white px-5 text-sm font-medium text-foret transition-colors duration-150 ease-doux hover:bg-vert-clair"
+            >
+              <Plus size={16} weight="bold" />
+              Nouvelle commande
+            </Link>
+            <Link
+              href="/clients/new"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-controle border border-white/25 px-5 text-sm font-medium text-white transition-colors duration-150 ease-doux hover:bg-white/10"
+            >
+              <UserPlus size={16} />
+              Nouveau client
+            </Link>
+          </div>
         </div>
       </Panneau>
 
-      <section className="mt-6">
-        <EnTeteSection
-          titre="À traiter"
-          action={
-            bilan.aTraiter.length > 0 && (
-              <Compteur ton={enRetard > 0 ? "probleme" : "attention"}>
-                {bilan.aTraiter.length}
-              </Compteur>
-            )
-          }
-        />
-
-        {bilan.aTraiter.length === 0 ? (
-          <Carte classe="mt-2 flex items-center gap-3 px-4 py-4">
-            <CheckCircle
-              size={20}
-              weight="fill"
-              className="shrink-0 text-vert"
-              aria-hidden
-            />
-            <p className="text-sm text-gris">
-              Rien d&apos;urgent aujourd&apos;hui. Aucun retard, aucun essayage
-              prévu, aucune commande en attente de retrait.
-            </p>
-          </Carte>
-        ) : (
-          <ul className="mt-2 grid gap-2 lg:grid-cols-2">
-            {bilan.aTraiter.slice(0, A_TRAITER_MAX).map((commande) => {
-              const raison = motif(commande);
-
-              return (
-                <li key={commande.id}>
-                  <CarteLien
-                    href={`/commandes/${commande.id}`}
-                    classe="px-4 py-3"
-                  >
-                    <span className="flex items-center justify-between gap-3">
-                      <span className="truncate text-sm font-medium text-encre">
-                        {commande.client}
-                      </span>
-                      {raison && (
-                        <Etiquette ton={raison.ton}>{raison.texte}</Etiquette>
-                      )}
-                    </span>
-
-                    {/*
-                     * La ligne du bas porte le metier : le modele, l'etape,
-                     * et surtout ce qui reste du. Sans le reste a payer, il
-                     * fallait ouvrir la commande pour savoir s'il y avait de
-                     * l'argent a reclamer en meme temps que le vetement.
-                     */}
-                    <span className="mt-1 flex items-baseline justify-between gap-3">
-                      <span className="truncate text-xs text-gris">
-                        {commande.nom_modele ?? "Sans modèle"} ·{" "}
-                        {STATUT_LABELS[commande.statut as Statut]}
-                      </span>
-                      <span
-                        className={`chiffres shrink-0 text-xs font-medium ${
-                          commande.reste > 0 ? "text-rouge" : "text-vert"
-                        }`}
-                      >
-                        {commande.reste > 0
-                          ? `reste ${formaterMontant(commande.reste)}`
-                          : "soldé"}
-                      </span>
-                    </span>
-                  </CarteLien>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-
-        {bilan.aTraiter.length > A_TRAITER_MAX && (
-          <Link
-            href="/commandes"
-            className="mt-2 inline-block text-sm font-medium text-vert underline underline-offset-2"
-          >
-            Voir les {bilan.aTraiter.length - A_TRAITER_MAX} autres
-          </Link>
-        )}
-      </section>
-
-      <div className="mt-6 grid grid-cols-3 gap-2">
-        <Vignette
-          libelle="Créances"
-          valeur={nombre.format(bilan.creances)}
-          unite="FCFA"
-          precision={
-            bilan.nbImpayes > 0
-              ? `${bilan.nbImpayes} commande${bilan.nbImpayes > 1 ? "s" : ""}`
-              : "tout est soldé"
-          }
-          alerte={bilan.creances > 0}
-        />
-        <Vignette
-          libelle="En cours"
-          valeur={String(bilan.enCours.length)}
-          precision={
-            enRetard > 0 ? `dont ${enRetard} en retard` : "aucune en retard"
-          }
-        />
-        <Vignette
-          libelle="Clients"
-          valeur={String(clients.length)}
-          precision="au total"
-        />
-      </div>
-
       {/*
-       * Le graphique ferme l'ecran. Il a d'abord ete loge dans le panneau,
-       * a cote du montant du mois, pour eviter l'aller-retour entre le
-       * chiffre et sa courbe ; mais il y alourdissait le premier coup
-       * d'oeil, alors que ce qu'on vient chercher le matin est ce qui
-       * presse - les retards, puis les chiffres du jour. La tendance sur
-       * six mois se consulte, elle ne s'annonce pas.
+       * Deux colonnes sur grand ecran, et non quatre blocs empiles.
+       *
+       * L'ecran demandait 933 pixels pour six commandes a traiter, quand un
+       * portable de 1366x768 n'en offre qu'environ 640 une fois la barre du
+       * navigateur posee : le tableau de bord se lisait au defilement, ce
+       * qui est exactement ce qu'un tableau de bord doit eviter. La largeur
+       * etait pourtant libre - tout tenait dans une colonne unique.
+       *
+       * Ce qui presse reste a gauche, en premier dans l'ordre de lecture ;
+       * les totaux et la tendance passent a droite, ou on va les chercher.
        */}
-      <Carte classe="mt-6 p-5">
-        <h2 className="text-[10px] font-medium tracking-[0.1em] text-gris uppercase">
-          Encaissements par mois
-        </h2>
-        <p className="mt-1 text-xs text-gris">
-          Touchez une barre pour voir le montant exact.
-        </p>
-        <div className="mt-4">
-          <GraphiqueEncaissements points={bilan.points} />
+      <div className="mt-6 grid gap-6 lg:grid-cols-[1.3fr_1fr] lg:items-start lg:gap-5">
+        <section>
+          <EnTeteSection
+            titre="À traiter"
+            action={
+              bilan.aTraiter.length > 0 && (
+                <Compteur ton={enRetard > 0 ? "probleme" : "attention"}>
+                  {bilan.aTraiter.length}
+                </Compteur>
+              )
+            }
+          />
+
+          {bilan.aTraiter.length === 0 ? (
+            <Carte classe="mt-2 flex items-center gap-3 px-4 py-4">
+              <CheckCircle
+                size={20}
+                weight="fill"
+                className="shrink-0 text-vert"
+                aria-hidden
+              />
+              <p className="text-sm text-gris">
+                Rien d&apos;urgent aujourd&apos;hui. Aucun retard, aucun essayage
+                prévu, aucune commande en attente de retrait.
+              </p>
+            </Carte>
+          ) : (
+            <ul className="mt-2 grid gap-2">
+              {bilan.aTraiter.slice(0, A_TRAITER_MAX).map((commande) => {
+                const raison = motif(commande);
+
+                return (
+                  <li key={commande.id}>
+                    <CarteLien
+                      href={`/commandes/${commande.id}`}
+                      classe="px-4 py-3"
+                    >
+                      <span className="flex items-center justify-between gap-3">
+                        <span className="truncate text-sm font-medium text-encre">
+                          {commande.client}
+                        </span>
+                        {raison && (
+                          <Etiquette ton={raison.ton}>{raison.texte}</Etiquette>
+                        )}
+                      </span>
+
+                      {/*
+                       * La ligne du bas porte le metier : le modele, l'etape,
+                       * et surtout ce qui reste du. Sans le reste a payer, il
+                       * fallait ouvrir la commande pour savoir s'il y avait de
+                       * l'argent a reclamer en meme temps que le vetement.
+                       */}
+                      <span className="mt-1 flex items-baseline justify-between gap-3">
+                        <span className="truncate text-xs text-gris">
+                          {commande.nom_modele ?? "Sans modèle"} ·{" "}
+                          {STATUT_LABELS[commande.statut as Statut]}
+                        </span>
+                        <span
+                          className={`chiffres shrink-0 text-xs font-medium ${
+                            commande.reste > 0 ? "text-rouge" : "text-vert"
+                          }`}
+                        >
+                          {commande.reste > 0
+                            ? `reste ${formaterMontant(commande.reste)}`
+                            : "soldé"}
+                        </span>
+                      </span>
+                    </CarteLien>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          {bilan.aTraiter.length > A_TRAITER_MAX && (
+            <Link
+              href="/commandes"
+              className="mt-2 inline-block text-sm font-medium text-vert underline underline-offset-2"
+            >
+              Voir les {bilan.aTraiter.length - A_TRAITER_MAX} autres
+            </Link>
+          )}
+        </section>
+
+        {/*
+         * Les trois totaux restent en bande sur telephone, ou la largeur
+         * manque, et passent en colonne a cote du graphique sur grand
+         * ecran : a un tiers de la moitie de la page, « 1 805 700 » ne
+         * tiendrait plus dans sa carte.
+         */}
+        <div className="flex flex-col gap-6 lg:gap-5">
+          <div className="grid grid-cols-3 gap-2 lg:grid-cols-1">
+            <Vignette
+              libelle="Créances"
+              valeur={nombre.format(bilan.creances)}
+              unite="FCFA"
+              precision={
+                bilan.nbImpayes > 0
+                  ? `${bilan.nbImpayes} commande${bilan.nbImpayes > 1 ? "s" : ""}`
+                  : "tout est soldé"
+              }
+              alerte={bilan.creances > 0}
+            />
+            <Vignette
+              libelle="En cours"
+              valeur={String(bilan.enCours.length)}
+              precision={
+                enRetard > 0 ? `dont ${enRetard} en retard` : "aucune en retard"
+              }
+            />
+            <Vignette
+              libelle="Clients"
+              valeur={String(clients.length)}
+              precision="au total"
+            />
+          </div>
+
+          {/*
+           * Le graphique ferme la colonne de droite. Il a d'abord ete loge
+           * dans le panneau, a cote du montant du mois, pour eviter
+           * l'aller-retour entre le chiffre et sa courbe ; mais il y
+           * alourdissait le premier coup d'oeil, alors que ce qu'on vient
+           * chercher le matin est ce qui presse - les retards, puis les
+           * chiffres du jour. La tendance sur six mois se consulte, elle ne
+           * s'annonce pas.
+           */}
+          <Carte classe="p-5">
+            <h2 className="text-[10px] font-medium tracking-[0.1em] text-gris uppercase">
+              Encaissements par mois
+            </h2>
+            {/*
+             * Consigne reservee au tactile : sur un ordinateur, on ne touche
+             * pas une barre, on la survole - et le graphique porte deja son
+             * curseur et sa ligne de lecture pour le dire. La retirer rend a la
+             * colonne les vingt pixels qui la faisaient depasser.
+             */}
+            <p className="mt-1 text-xs text-gris lg:hidden">
+              Touchez une barre pour voir le montant exact.
+            </p>
+            <div className="mt-4">
+              <GraphiqueEncaissements points={bilan.points} />
+            </div>
+          </Carte>
         </div>
-      </Carte>
+      </div>
     </>
   );
 }
