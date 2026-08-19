@@ -14,7 +14,9 @@ import {
   STATUT_LABELS,
   TON_PRIORITE,
   formaterMontant,
+  partVersee,
   priorite,
+  resteAPayer,
   statutSuivant,
   type Statut,
 } from "@/lib/commandes";
@@ -66,7 +68,6 @@ export function DetailCommande() {
     (somme, paiement) => somme + Number(paiement.montant),
     0
   );
-  const resteAPayer = Number(commande?.prix_total ?? 0) - totalPaye;
 
   // Le bucket est prive : les photos exigent une URL signee, donc du reseau.
   const cheminsPhotos = useMemo(
@@ -119,10 +120,18 @@ export function DetailCommande() {
   const statut = commande.statut as Statut;
   const suivant = statutSuivant(statut);
   const niveau = priorite(commande.date_livraison, statut);
+  /*
+   * Les trois chiffres de l'argent se tiennent ici, apres la garde : la
+   * commande y est certaine, ce qui evite un repli sur zero qui masquerait
+   * une commande absente derriere un solde a zero.
+   *
+   * Passer commande?.prix_total a une fonction importee plus haut faisait
+   * de surcroit renoncer le compilateur React a la memoisation des photos :
+   * il tient alors la commande pour possiblement modifiee.
+   */
   const prixTotal = Number(commande.prix_total);
-  // Une commande a prix nul ne doit pas afficher une jauge remplie a 0 % :
-  // il n'y a rien a encaisser, donc rien a suivre.
-  const partPayee = prixTotal > 0 ? Math.min(100, (totalPaye / prixTotal) * 100) : 0;
+  const reste = resteAPayer(prixTotal, totalPaye);
+  const partPayee = partVersee(prixTotal, totalPaye);
 
   async function avancer() {
     if (!suivant) return;
@@ -164,7 +173,7 @@ export function DetailCommande() {
     {
       cle: "recapitulatif",
       label: "Envoyer le récapitulatif",
-      texte: messageRecapitulatif(nomAtelier, nomClient, donneesMessage, resteAPayer),
+      texte: messageRecapitulatif(nomAtelier, nomClient, donneesMessage, reste),
       visible: true,
     },
     {
@@ -176,7 +185,7 @@ export function DetailCommande() {
     {
       cle: "pret",
       label: "Prévenir que c'est prêt",
-      texte: messagePret(nomAtelier, nomClient, donneesMessage, resteAPayer),
+      texte: messagePret(nomAtelier, nomClient, donneesMessage, reste),
       visible: statut === "pret",
     },
   ].filter((message) => message.visible);
@@ -266,7 +275,7 @@ export function DetailCommande() {
         />
       </Bloc>
 
-      <Bloc titre={resteAPayer > 0 ? "Reste à payer" : "Paiement"} classe="mt-3">
+      <Bloc titre={reste > 0 ? "Reste à payer" : "Paiement"} classe="mt-3">
         {/*
          * Le solde en grand, le detail en dessous. C'est la seule question
          * qui se pose au moment de remettre la piece, et elle se lisait
@@ -276,12 +285,12 @@ export function DetailCommande() {
         <p className="flex items-baseline gap-2">
           <span
             className={`text-[1.75rem] leading-none font-semibold tracking-tight ${
-              resteAPayer > 0 ? "text-rouge" : "text-vert"
+              reste > 0 ? "text-rouge" : "text-vert"
             }`}
           >
-            {resteAPayer > 0 ? nombre.format(resteAPayer) : "Soldé"}
+            {reste > 0 ? nombre.format(reste) : "Soldé"}
           </span>
-          {resteAPayer > 0 && (
+          {reste > 0 && (
             <span className="text-xs font-medium text-gris">FCFA</span>
           )}
         </p>
@@ -316,7 +325,7 @@ export function DetailCommande() {
           />
         </div>
 
-        {resteAPayer > 0 && (
+        {reste > 0 && (
           <form onSubmit={ajouterPaiement} className="mt-3 flex gap-2">
             <label htmlFor="montant" className="sr-only">
               Montant reçu
@@ -366,8 +375,13 @@ export function DetailCommande() {
           <BoutonRecu
             donnees={{
               atelier: nomAtelier,
+              telephone: atelier?.telephone ?? null,
+              whatsapp: atelier?.whatsapp_number ?? null,
+              commandeId,
+              dateCommande: commande.created_at,
               client: nomClient,
               modele: commande.nom_modele,
+              statut,
               prixTotal,
               dateLivraison: commande.date_livraison,
               versements: versements.map((paiement) => ({

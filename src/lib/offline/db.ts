@@ -53,6 +53,13 @@ export type LigneAtelier = {
   nom: string;
   /** Code de la formule. La base reste seule juge des limites. */
   formule: string;
+  /*
+   * Coordonnees portees par le recu remis au client. Elles suivent la copie
+   * locale plutot que le serveur : un recu se prepare souvent au comptoir,
+   * sans reseau, et un pied de page vide serait pire que pas de pied.
+   */
+  telephone: string | null;
+  whatsapp_number: string | null;
 };
 
 export type LigneClient = {

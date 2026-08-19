@@ -1,4 +1,9 @@
-import { formaterMontant } from "@/lib/commandes";
+import {
+  STATUT_LABELS,
+  formaterMontant,
+  resteAPayer,
+  type Statut,
+} from "@/lib/commandes";
 
 const LARGEUR = 800;
 const MARGE = 56;
@@ -22,8 +27,16 @@ const FORET = "#0c3b2e";
 
 export type DonneesRecu = {
   atelier: string;
+  /** Coordonnees de l'atelier, en pied de recu. Absentes tant que les reglages ne les portent pas. */
+  telephone: string | null;
+  whatsapp: string | null;
+  /** Identifiant de la commande : il donne sa reference au recu. */
+  commandeId: string;
+  /** Date de la commande, qui date le recu tant qu'aucun versement ne le fait. */
+  dateCommande: string;
   client: string;
   modele: string | null;
+  statut: Statut;
   prixTotal: number;
   versements: { date: string; montant: number; type: string }[];
   dateLivraison: string | null;
@@ -40,6 +53,43 @@ const TYPES: Record<string, string> = {
 
 function formaterDate(valeur: string | null) {
   return valeur ? new Date(valeur).toLocaleDateString("fr-FR") : "à définir";
+}
+
+/**
+ * Reference du recu, tiree de l'identifiant de la commande.
+ *
+ * Le recu ne portait aucune marque : deux exemplaires remis au meme client
+ * ne se distinguaient pas, et rien ne les rattachait a une commande. Huit
+ * caracteres suffisent a les separer dans un atelier, et se recopient au
+ * telephone sans se tromper.
+ */
+function reference(commandeId: string) {
+  return commandeId.replace(/-/g, "").slice(0, 8).toUpperCase();
+}
+
+/**
+ * Date du recu : celle du dernier versement, ou celle de la commande tant
+ * qu'aucun versement n'a eu lieu.
+ *
+ * Elle etait prise a la generation. Le meme recu, repartage le lendemain,
+ * portait donc une autre date que l'exemplaire deja entre les mains du
+ * client - sur le seul document du produit qui puisse etre produit deux
+ * fois, et le seul qui serve de preuve.
+ */
+function dateRecu(donnees: DonneesRecu) {
+  return formaterDate(donnees.versements.at(-1)?.date ?? donnees.dateCommande);
+}
+
+/** Coordonnees de l'atelier, sans repeter deux fois le meme numero. */
+function coordonnees(donnees: DonneesRecu) {
+  const numeros = [
+    donnees.telephone && `Tél. ${donnees.telephone}`,
+    donnees.whatsapp &&
+      donnees.whatsapp !== donnees.telephone &&
+      `WhatsApp ${donnees.whatsapp}`,
+  ].filter(Boolean);
+
+  return numeros.join("   ·   ");
 }
 
 /**
@@ -86,17 +136,22 @@ export async function genererRecu(donnees: DonneesRecu): Promise<Blob> {
   const hauteurEntete = 150;
   const hauteurLigne = 46;
   const nbVersements = donnees.versements.length;
+  const contact = coordonnees(donnees);
 
   // Positions calculees d'avance : la hauteur du canvas doit etre connue
   // avant le trace, et la deduire d'une formule approchee laissait une
   // bande blanche de pres de deux cents pixels sous le total.
   const yInfos = hauteurEntete + MARGE;
-  const yPrix = yInfos + hauteurLigne * 3 + 8;
+  // Quatre lignes d'informations : client, modele, etat, livraison.
+  const yPrix = yInfos + hauteurLigne * 4 + 8;
   const yVersements = yPrix + hauteurLigne;
   const yDejaVerse = yVersements + 34 * nbVersements + 12;
   const yReste = yDejaVerse + hauteurLigne + 8;
   const yPied = yReste + 58;
-  const hauteur = yPied + MARGE - 10;
+  const yContact = yPied + 30;
+  // Un atelier qui n'a pas renseigne ses coordonnees ne doit pas payer la
+  // ligne en bande blanche.
+  const hauteur = (contact ? yContact : yPied) + MARGE - 10;
 
   const canvas = document.createElement("canvas");
   canvas.width = LARGEUR;
@@ -120,7 +175,15 @@ export async function genererRecu(donnees: DonneesRecu): Promise<Blob> {
 
   ctx.font = `400 24px ${police}`;
   ctx.fillStyle = VERT_PALE;
-  ctx.fillText(`Reçu du ${new Date().toLocaleDateString("fr-FR")}`, MARGE, 110);
+  ctx.fillText(
+    tronquer(
+      ctx,
+      `Reçu N° ${reference(donnees.commandeId)} · ${dateRecu(donnees)}`,
+      largeurUtile
+    ),
+    MARGE,
+    110
+  );
 
   let y = yInfos;
 
@@ -157,6 +220,9 @@ export async function genererRecu(donnees: DonneesRecu): Promise<Blob> {
 
   ligne("Client", donnees.client, true);
   ligne("Modèle", donnees.modele ?? "Non précisé");
+  // Le recu annoncait la date de livraison sans jamais dire ou en etait la
+  // piece, alors que c'est la question posee au comptoir.
+  ligne("État", STATUT_LABELS[donnees.statut] ?? donnees.statut);
   ligne("Livraison prévue", formaterDate(donnees.dateLivraison));
 
   separateur(yPrix - 28);
@@ -186,7 +252,12 @@ export async function genererRecu(donnees: DonneesRecu): Promise<Blob> {
     (somme, versement) => somme + versement.montant,
     0
   );
-  const reste = donnees.prixTotal - totalVerse;
+  /*
+   * La meme soustraction que les ecrans, et pour cause : c'est le chiffre
+   * que le client emporte. Un recu qui contredirait la fiche de commande
+   * serait le pire endroit ou laisser la regle diverger.
+   */
+  const reste = resteAPayer(donnees.prixTotal, totalVerse);
 
   y = yDejaVerse;
   ligne("Déjà versé", formaterMontant(totalVerse));
@@ -210,6 +281,10 @@ export async function genererRecu(donnees: DonneesRecu): Promise<Blob> {
   ctx.font = `400 22px ${police}`;
   ctx.fillStyle = GRIS;
   ctx.fillText("Merci de votre confiance.", MARGE, yPied);
+
+  if (contact) {
+    ctx.fillText(tronquer(ctx, contact, largeurUtile), MARGE, yContact);
+  }
 
   return new Promise((resolve, reject) => {
     canvas.toBlob(

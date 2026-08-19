@@ -22,7 +22,7 @@ export default async function ReglagesPage() {
     await Promise.all([
       supabase
         .from("ateliers")
-        .select("nom, limite_utilisateurs")
+        .select("nom, limite_utilisateurs, telephone, whatsapp_number")
         .eq("id", atelierId)
         .single(),
       supabase.from("utilisateurs").select("id, nom, role").order("role"),
@@ -46,6 +46,8 @@ export default async function ReglagesPage() {
         utilisateurId={user.id}
         nomAtelier={atelier?.nom ?? ""}
         nomUtilisateur={moi?.nom ?? ""}
+        telephoneAtelier={atelier?.telephone ?? ""}
+        whatsappAtelier={atelier?.whatsapp_number ?? ""}
       />
 
       <Equipe

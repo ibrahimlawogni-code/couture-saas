@@ -28,7 +28,7 @@ export async function rafraichirMiroir() {
   const supabase = createClient();
 
   const [ateliers, clients, mesures, commandes, paiements] = await Promise.all([
-    supabase.from("ateliers").select("id, nom, formule"),
+    supabase.from("ateliers").select("id, nom, formule, telephone, whatsapp_number"),
     supabase.from("clients").select("id, nom, telephone, whatsapp, notes, created_at"),
     supabase.from("mesures").select("id, client_id, libelle, valeurs, created_at"),
     supabase

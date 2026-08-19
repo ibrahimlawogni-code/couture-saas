@@ -17,11 +17,15 @@ export function FormulaireReglages({
   utilisateurId,
   nomAtelier,
   nomUtilisateur,
+  telephoneAtelier,
+  whatsappAtelier,
 }: {
   atelierId: string;
   utilisateurId: string;
   nomAtelier: string;
   nomUtilisateur: string;
+  telephoneAtelier: string;
+  whatsappAtelier: string;
 }) {
   const router = useRouter();
   const pret = useHydratation();
@@ -35,6 +39,8 @@ export function FormulaireReglages({
     const formulaire = new FormData(evenement.currentTarget);
     const atelier = String(formulaire.get("atelier") ?? "").trim();
     const utilisateur = String(formulaire.get("utilisateur") ?? "").trim();
+    const telephone = String(formulaire.get("telephone") ?? "").trim();
+    const whatsapp = String(formulaire.get("whatsapp") ?? "").trim();
 
     if (!atelier || !utilisateur) {
       setEtat("echec");
@@ -44,7 +50,16 @@ export function FormulaireReglages({
     const supabase = createClient();
 
     const [reponseAtelier, reponseUtilisateur] = await Promise.all([
-      supabase.from("ateliers").update({ nom: atelier }).eq("id", atelierId),
+      supabase
+        .from("ateliers")
+        .update({
+          nom: atelier,
+          // Un champ vide efface la coordonnee plutot que d'y ranger une
+          // chaine vide, que le recu afficherait comme un libelle sans rien.
+          telephone: telephone || null,
+          whatsapp_number: whatsapp || null,
+        })
+        .eq("id", atelierId),
       supabase.from("utilisateurs").update({ nom: utilisateur }).eq("id", utilisateurId),
     ]);
 
@@ -70,6 +85,32 @@ export function FormulaireReglages({
         aide="Il apparaît sur les reçus et les messages envoyés à vos clients."
         defaultValue={nomAtelier}
         required
+      />
+
+      {/*
+       * Les deux coordonnees de l'atelier, et non celles de la personne
+       * connectee : c'est l'atelier que le client rappelle, et le recu
+       * peut avoir ete etabli par un apprenti.
+       */}
+      <Champ
+        id="telephone"
+        name="telephone"
+        type="tel"
+        libelle="Téléphone de l'atelier"
+        aide="Imprimé en pied de reçu, pour que le client puisse vous joindre."
+        defaultValue={telephoneAtelier}
+        autoComplete="tel"
+        inputMode="tel"
+      />
+
+      <Champ
+        id="whatsapp"
+        name="whatsapp"
+        type="tel"
+        libelle="WhatsApp de l'atelier"
+        aide="Laissez vide si c'est le même numéro."
+        defaultValue={whatsappAtelier}
+        inputMode="tel"
       />
 
       <Champ
