@@ -22,11 +22,28 @@ export default async function AppLayout({
     redirect("/login");
   }
 
-  const { data: utilisateur } = await supabase
+  const { data: utilisateur, error } = await supabase
     .from("utilisateurs")
     .select("nom, ateliers(nom)")
     .eq("id", user.id)
     .single();
+
+  /*
+   * Compte authentifie mais sans atelier : une inscription par fournisseur
+   * externe que l'ecran de bienvenue n'a pas encore achevee (migration
+   * 0010). Sans ce renvoi, l'application s'ouvrirait sur un atelier nomme
+   * « Mon atelier » et vide de tout, puisque chaque politique RLS compare a
+   * un atelier_id qui n'existe pas.
+   *
+   * Le code d'erreur, et non l'absence de donnees : PGRST116 dit « aucune
+   * ligne », la ou une panne passagere ou une coupure reseau laisse aussi
+   * utilisateur a null. Renvoyer sur la bienvenue quelqu'un dont la requete
+   * a simplement echoue lui ferait croire qu'il a perdu son atelier - et
+   * lui proposerait d'en ouvrir un second.
+   */
+  if (error?.code === "PGRST116") {
+    redirect("/bienvenue");
+  }
 
   const atelier = utilisateur?.ateliers as unknown as { nom: string } | null;
   const nomAtelier = atelier?.nom ?? "Mon atelier";
