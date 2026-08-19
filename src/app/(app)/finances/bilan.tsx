@@ -2,11 +2,19 @@
 
 import { useMemo } from "react";
 import { CheckCircle, TrendDown, TrendUp } from "@phosphor-icons/react/dist/ssr";
-import { STATUT_LABELS, formaterMontant, type Statut } from "@/lib/commandes";
+import {
+  STATUT_LABELS,
+  formaterMontant,
+  partVersee,
+  resteAPayer,
+  versesParCommande,
+  type Statut,
+} from "@/lib/commandes";
 import { useDonnees } from "@/lib/offline/use-donnees";
 import { Carte, CarteLien, Panneau } from "@/ui/carte";
 import { EnTeteSection } from "@/ui/page";
 import { Squelette, SqueletteLigne } from "@/ui/squelette";
+import { Vignette } from "@/ui/vignette";
 
 const nombre = new Intl.NumberFormat("fr-FR");
 
@@ -51,13 +59,7 @@ export function BilanFinancier() {
 
     // Ce qui reste du sur chaque commande, livree ou non : une commande
     // remise sans solde reste une creance.
-    const verseParCommande = new Map<string, number>();
-    for (const paiement of paiements) {
-      verseParCommande.set(
-        paiement.commande_id,
-        (verseParCommande.get(paiement.commande_id) ?? 0) + Number(paiement.montant)
-      );
-    }
+    const verseParCommande = versesParCommande(paiements);
 
     const nomsClients = new Map(clients.map((client) => [client.id, client.nom]));
 
@@ -68,10 +70,10 @@ export function BilanFinancier() {
         return {
           ...commande,
           client: nomsClients.get(commande.client_id) ?? "Client inconnu",
-          reste: prix - verse,
+          reste: resteAPayer(prix, verse),
           // Part deja encaissee : distingue le client qui n'a rien verse
           // de celui a qui il ne manque qu'un solde symbolique.
-          part: prix > 0 ? Math.min(100, (verse / prix) * 100) : 0,
+          part: partVersee(prix, verse),
         };
       })
       .filter((commande) => commande.reste > 0)
@@ -228,39 +230,6 @@ export function BilanFinancier() {
         )}
       </section>
     </>
-  );
-}
-
-function Vignette({
-  libelle,
-  valeur,
-  unite,
-  precision,
-  alerte = false,
-}: {
-  libelle: string;
-  valeur: string;
-  unite?: string;
-  precision: string;
-  alerte?: boolean;
-}) {
-  return (
-    <Carte classe="p-3.5">
-      <p className="text-[10px] font-medium tracking-[0.1em] text-gris uppercase">
-        {libelle}
-      </p>
-      <p className="mt-1.5 flex items-baseline gap-1">
-        <span
-          className={`text-xl leading-none font-semibold tracking-tight sm:text-2xl ${
-            alerte ? "text-rouge" : "text-encre"
-          }`}
-        >
-          {valeur}
-        </span>
-        {unite && <span className="text-[10px] font-medium text-gris">{unite}</span>}
-      </p>
-      <p className="mt-1.5 text-[11px] leading-tight text-gris">{precision}</p>
-    </Carte>
   );
 }
 

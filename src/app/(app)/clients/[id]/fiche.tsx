@@ -9,7 +9,13 @@ import {
   WhatsappLogo,
 } from "@phosphor-icons/react/dist/ssr";
 import { useIdentifiantUrl } from "@/lib/identifiant-url";
-import { STATUT_LABELS, formaterMontant, type Statut } from "@/lib/commandes";
+import {
+  STATUT_LABELS,
+  formaterMontant,
+  resteAPayer,
+  versesParCommande,
+  type Statut,
+} from "@/lib/commandes";
 import { useDonnees } from "@/lib/offline/use-donnees";
 import { normaliserNumero } from "@/lib/whatsapp";
 import { LienBouton } from "@/ui/bouton";
@@ -17,6 +23,7 @@ import { Carte, CarteLien } from "@/ui/carte";
 import { Etiquette } from "@/ui/etiquette";
 import { EnTeteSection } from "@/ui/page";
 import { Squelette, SqueletteLigne } from "@/ui/squelette";
+import { Vignette } from "@/ui/vignette";
 
 const nombre = new Intl.NumberFormat("fr-FR");
 
@@ -73,21 +80,17 @@ export function FicheClient() {
    * La liste en disait plus que la page dediee.
    */
   const suivi = useMemo(() => {
-    const verse = new Map<string, number>();
-    for (const paiement of paiements) {
-      verse.set(
-        paiement.commande_id,
-        (verse.get(paiement.commande_id) ?? 0) + Number(paiement.montant)
-      );
-    }
+    const verse = versesParCommande(paiements);
 
     const restes = new Map<string, number>();
     let du = 0;
     let enCours = 0;
 
     for (const commande of commandesClient) {
-      const reste =
-        Number(commande.prix_total) - (verse.get(commande.id) ?? 0);
+      const reste = resteAPayer(
+        commande.prix_total,
+        verse.get(commande.id) ?? 0
+      );
       restes.set(commande.id, reste);
 
       if (reste > 0) du += reste;
@@ -183,7 +186,7 @@ export function FicheClient() {
             month: "short",
             year: "2-digit",
           })}
-          petit
+          taille="compacte"
         />
       </div>
 
@@ -336,42 +339,6 @@ export function FicheClient() {
         )}
       </section>
     </>
-  );
-}
-
-/** Vignette de synthese, alignee sur celles du tableau de bord. */
-function Vignette({
-  libelle,
-  valeur,
-  unite,
-  alerte = false,
-  petit = false,
-}: {
-  libelle: string;
-  valeur: string;
-  unite?: string;
-  alerte?: boolean;
-  /** Une date ne supporte pas la taille d'un montant sur trois colonnes. */
-  petit?: boolean;
-}) {
-  return (
-    <Carte classe="p-3">
-      <p className="text-[10px] font-medium tracking-[0.1em] text-gris uppercase">
-        {libelle}
-      </p>
-      <p className="mt-1.5 flex items-baseline gap-1">
-        <span
-          className={`leading-none font-semibold tracking-tight ${
-            petit ? "text-base" : "text-lg sm:text-xl"
-          } ${alerte ? "text-rouge" : "text-encre"}`}
-        >
-          {valeur}
-        </span>
-        {unite && (
-          <span className="text-[10px] font-medium text-gris">{unite}</span>
-        )}
-      </p>
-    </Carte>
   );
 }
 

@@ -13,6 +13,8 @@ import {
   STATUT_LABELS,
   formaterMontant,
   priorite,
+  resteAPayer,
+  versesParCommande,
   type Statut,
 } from "@/lib/commandes";
 import { useDonnees } from "@/lib/offline/use-donnees";
@@ -75,18 +77,10 @@ export function TableauDeBord() {
 
     const enCours = commandes.filter((c) => c.statut !== "livre");
 
-    const verseParCommande = new Map<string, number>();
-    for (const paiement of paiements) {
-      verseParCommande.set(
-        paiement.commande_id,
-        (verseParCommande.get(paiement.commande_id) ?? 0) +
-          Number(paiement.montant),
-      );
-    }
+    const verseParCommande = versesParCommande(paiements);
 
-    const restes = commandes.map(
-      (commande) =>
-        Number(commande.prix_total) - (verseParCommande.get(commande.id) ?? 0),
+    const restes = commandes.map((commande) =>
+      resteAPayer(commande.prix_total, verseParCommande.get(commande.id) ?? 0),
     );
     const creances = restes.reduce(
       (somme, reste) => somme + (reste > 0 ? reste : 0),
@@ -102,9 +96,10 @@ export function TableauDeBord() {
         client: nomsClients.get(commande.client_id) ?? "Client inconnu",
         niveau: priorite(commande.date_livraison, commande.statut as Statut),
         essayageAujourdhui: memeJour(commande.date_essayage, maintenant),
-        reste:
-          Number(commande.prix_total) -
-          (verseParCommande.get(commande.id) ?? 0),
+        reste: resteAPayer(
+          commande.prix_total,
+          verseParCommande.get(commande.id) ?? 0,
+        ),
       }))
       .filter(
         (c) =>

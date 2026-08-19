@@ -6,7 +6,7 @@ import {
   Users,
   X,
 } from "@phosphor-icons/react/dist/ssr";
-import { formaterMontant } from "@/lib/commandes";
+import { formaterMontant, resteAPayer, versesParCommande } from "@/lib/commandes";
 import { useDonnees } from "@/lib/offline/use-donnees";
 import { LienBouton } from "@/ui/bouton";
 import { CarteLien } from "@/ui/carte";
@@ -27,18 +27,12 @@ export function ListeClients() {
    * deja ailleurs, il fallait juste les amener ici.
    */
   const parClient = useMemo(() => {
-    const verse = new Map<string, number>();
-    for (const paiement of paiements) {
-      verse.set(
-        paiement.commande_id,
-        (verse.get(paiement.commande_id) ?? 0) + Number(paiement.montant)
-      );
-    }
+    const verse = versesParCommande(paiements);
 
     const agregat = new Map<string, { enCours: number; reste: number }>();
     for (const commande of commandes) {
       const courant = agregat.get(commande.client_id) ?? { enCours: 0, reste: 0 };
-      const du = Number(commande.prix_total) - (verse.get(commande.id) ?? 0);
+      const du = resteAPayer(commande.prix_total, verse.get(commande.id) ?? 0);
 
       agregat.set(commande.client_id, {
         enCours: courant.enCours + (commande.statut !== "livre" ? 1 : 0),

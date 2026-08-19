@@ -10,7 +10,9 @@ import {
   TON_PRIORITE,
   formaterMontant,
   priorite,
+  resteAPayer,
   statutSuivant,
+  versesParCommande,
   type Statut,
 } from "@/lib/commandes";
 import { rafraichirMiroir } from "@/lib/offline/miroir";
@@ -40,16 +42,10 @@ export function TableauCommandes() {
    * qu'il reste a encaisser. Or c'est la question qui se pose au moment
    * de remettre le vetement, et elle obligeait a ouvrir la commande.
    */
-  const verseParCommande = useMemo(() => {
-    const total = new Map<string, number>();
-    for (const paiement of paiements) {
-      total.set(
-        paiement.commande_id,
-        (total.get(paiement.commande_id) ?? 0) + Number(paiement.montant)
-      );
-    }
-    return total;
-  }, [paiements]);
+  const verseParCommande = useMemo(
+    () => versesParCommande(paiements),
+    [paiements]
+  );
 
   const parStatut = useMemo(() => {
     const groupes = new Map<Statut, typeof commandes>();
@@ -158,9 +154,10 @@ export function TableauCommandes() {
                   );
                   const suivant = statutSuivant(commande.statut as Statut);
                   const provisoire = commande.enAttente || commande.enEchec;
-                  const reste =
-                    Number(commande.prix_total) -
-                    (verseParCommande.get(commande.id) ?? 0);
+                  const reste = resteAPayer(
+                    commande.prix_total,
+                    verseParCommande.get(commande.id) ?? 0
+                  );
 
                   return (
                     <li key={commande.id}>
