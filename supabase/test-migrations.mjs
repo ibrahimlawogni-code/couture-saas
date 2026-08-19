@@ -1,0 +1,455 @@
+/*
+ * Banc d'essai des migrations SQL.
+ *
+ * Dix migrations portent les regles d'argent et d'acces du produit, et rien
+ * ne les verifiait : elles etaient collees dans le SQL editor de Supabase et
+ * jugees sur pieces. Ce banc les applique dans l'ordre a un Postgres neuf,
+ * puis exerce les parcours d'inscription.
+ *
+ * PGlite plutot que Docker ou un projet Supabase de test : c'est un vrai
+ * Postgres compile en WebAssembly, il demarre en memoire, et le banc entier
+ * tourne en quelques secondes sans rien installer sur la machine.
+ *
+ *   npm run test:migrations
+ *
+ * Il vit ici plutot qu'a la racine : /test-*.mjs y est ignore par git, une
+ * regle posee pour les scripts navigateur jetables. Celui-ci ne l'est pas.
+ */
+import { PGlite } from "@electric-sql/pglite";
+import { pgcrypto } from "@electric-sql/pglite/contrib/pgcrypto";
+import { readFile, readdir } from "node:fs/promises";
+import { resolve } from "node:path";
+
+const MIGRATIONS = resolve(import.meta.dirname, "migrations");
+
+/*
+ * Ce que Supabase fournit et qu'un Postgres nu n'a pas. Strictement ce dont
+ * les migrations ont besoin : de quoi les faire passer, pas de quoi imiter
+ * Supabase.
+ */
+const PRELUDE = `
+create schema if not exists auth;
+create schema if not exists storage;
+
+do $$
+begin
+  if not exists (select 1 from pg_roles where rolname = 'anon') then create role anon; end if;
+  if not exists (select 1 from pg_roles where rolname = 'authenticated') then create role authenticated; end if;
+  if not exists (select 1 from pg_roles where rolname = 'service_role') then create role service_role; end if;
+end $$;
+
+create table auth.users (
+  id uuid primary key default gen_random_uuid(),
+  email text,
+  raw_user_meta_data jsonb not null default '{}'::jsonb,
+  raw_app_meta_data jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+-- Supabase la tire du jeton ; ici d'une variable de session, que le banc
+-- pose avant chaque appel pour se faire passer pour quelqu'un.
+create or replace function auth.uid() returns uuid
+language sql stable as $$
+  select nullif(current_setting('banc.utilisateur', true), '')::uuid;
+$$;
+
+create table storage.buckets (
+  id text primary key,
+  name text,
+  public boolean not null default false
+);
+
+create table storage.objects (
+  id uuid primary key default gen_random_uuid(),
+  bucket_id text,
+  name text,
+  owner uuid
+);
+
+create or replace function storage.foldername(name text) returns text[]
+language sql immutable as $$
+  select string_to_array(name, '/');
+$$;
+`;
+
+// 0001 demande pgcrypto, que PGlite ne charge pas d'office.
+const db = await PGlite.create({ extensions: { pgcrypto } });
+
+await db.exec(PRELUDE);
+
+for (const fichier of (await readdir(MIGRATIONS)).sort()) {
+  if (!fichier.endsWith(".sql")) continue;
+  try {
+    await db.exec(await readFile(resolve(MIGRATIONS, fichier), "utf8"));
+    console.log(`  applique  ${fichier}`);
+  } catch (erreur) {
+    console.log(`  ECHEC     ${fichier} : ${erreur.message}`);
+    process.exit(1);
+  }
+}
+
+// --- Outils du banc ------------------------------------------------------
+
+let total = 0;
+let rates = 0;
+
+function verifier(nom, obtenu, attendu) {
+  total += 1;
+  const ok = JSON.stringify(obtenu) === JSON.stringify(attendu);
+  if (!ok) rates += 1;
+  console.log(
+    `  ${ok ? "ok  " : "RATE"}  ${nom}` +
+      (ok
+        ? ""
+        : `\n          obtenu ${JSON.stringify(obtenu)}, attendu ${JSON.stringify(attendu)}`)
+  );
+}
+
+/** Cree un compte comme le ferait Supabase, et rend l'erreur du declencheur. */
+async function inscrire({ email, provider = "email", meta = {} }) {
+  const id = crypto.randomUUID();
+  try {
+    await db.query(
+      `insert into auth.users (id, email, raw_user_meta_data, raw_app_meta_data)
+       values ($1, $2, $3::jsonb, $4::jsonb)`,
+      [id, email, JSON.stringify(meta), JSON.stringify({ provider })]
+    );
+    return { id, erreur: null };
+  } catch (erreur) {
+    return { id, erreur: erreur.message };
+  }
+}
+
+async function seFaisantPasserPour(id, action) {
+  await db.query(`select set_config('banc.utilisateur', $1, false)`, [id ?? ""]);
+  try {
+    return await action();
+  } finally {
+    await db.query(`select set_config('banc.utilisateur', '', false)`);
+  }
+}
+
+async function terminer(id, params = {}) {
+  return seFaisantPasserPour(id, async () => {
+    try {
+      await db.query(
+        `select terminer_inscription(
+           atelier_nom := $1, nom_utilisateur := $2, code_invitation := $3)`,
+        [params.atelier ?? "", params.nom ?? "", params.code ?? ""]
+      );
+      return null;
+    } catch (erreur) {
+      return erreur.message;
+    }
+  });
+}
+
+const compter = async (sql, params = []) =>
+  Number((await db.query(sql, params)).rows[0].n);
+
+const lireUtilisateur = async (id) =>
+  (
+    await db.query(
+      `select u.nom, u.role, a.nom as atelier
+         from utilisateurs u join ateliers a on a.id = u.atelier_id
+        where u.id = $1`,
+      [id]
+    )
+  ).rows[0] ?? null;
+
+async function inviter(atelierId, role = "apprenti") {
+  const code = `C${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+  await db.query(
+    `insert into invitations (atelier_id, code, role) values ($1, $2, $3)`,
+    [atelierId, code, role]
+  );
+  return code;
+}
+
+// =========================================================================
+console.log("\nA. Parcours par email : doit rester inchange\n");
+// =========================================================================
+
+const a1 = await inscrire({
+  email: "kossi@atelier.bj",
+  meta: { atelier_nom: "Atelier Kossi", nom: "Kossi Adjovi" },
+});
+verifier("A1 inscription email : aucune erreur", a1.erreur, null);
+verifier("A1 atelier cree et role proprietaire", await lireUtilisateur(a1.id), {
+  nom: "Kossi Adjovi",
+  role: "proprietaire",
+  atelier: "Atelier Kossi",
+});
+
+const atelierKossi = (
+  await db.query(`select atelier_id from utilisateurs where id = $1`, [a1.id])
+).rows[0].atelier_id;
+
+/*
+ * Un atelier nait sur la formule Decouverte, dont max_comptes vaut 1 : il
+ * n'accepte aucun apprenti tant qu'il n'est pas passe a Atelier Pro. C'est
+ * voulu, la page de tarifs y reservant les apprentis. Le banc doit donc
+ * changer d'offre avant d'inviter.
+ */
+const formule = async (code) =>
+  db.query(`update ateliers set formule = $1 where id = $2`, [code, atelierKossi]);
+
+await formule("atelier_pro");
+verifier(
+  "A2 la formule pro releve la limite de comptes",
+  await compter(`select limite_utilisateurs n from ateliers where id = $1`, [
+    atelierKossi,
+  ]),
+  6
+);
+
+const codeValide = await inviter(atelierKossi);
+const a3 = await inscrire({
+  email: "apprenti@atelier.bj",
+  meta: { nom: "Sena", code_invitation: codeValide },
+});
+verifier("A3 inscription sur code : aucune erreur", a3.erreur, null);
+verifier("A3 rattache a l atelier du patron", await lireUtilisateur(a3.id), {
+  nom: "Sena",
+  role: "apprenti",
+  atelier: "Atelier Kossi",
+});
+verifier(
+  "A3 invitation marquee comme utilisee",
+  await compter(
+    `select count(*) n from invitations where code = $1 and utilisee_le is not null`,
+    [codeValide]
+  ),
+  1
+);
+
+const a4 = await inscrire({
+  email: "faux@atelier.bj",
+  meta: { nom: "X", code_invitation: "NEXISTEPAS" },
+});
+verifier(
+  "A4 code invalide refuse",
+  /code_invitation_invalide/.test(a4.erreur ?? ""),
+  true
+);
+verifier(
+  "A4 aucun compte laisse derriere",
+  await compter(`select count(*) n from auth.users where email = 'faux@atelier.bj'`),
+  0
+);
+
+// Retour a l'offre Atelier : un seul compte, la place est deja prise.
+await formule("atelier");
+const codePlein = await inviter(atelierKossi);
+const a5 = await inscrire({
+  email: "detrop@atelier.bj",
+  meta: { nom: "Trop", code_invitation: codePlein },
+});
+verifier("A5 atelier plein refuse", /atelier_complet/.test(a5.erreur ?? ""), true);
+await formule("atelier_pro");
+
+// =========================================================================
+console.log("\nB. Inscription par fournisseur externe\n");
+// =========================================================================
+
+const ateliersAvant = await compter(`select count(*) n from ateliers`);
+
+const b1 = await inscrire({
+  email: "google1@gmail.com",
+  provider: "google",
+  meta: { full_name: "Adjoa Hounkpatin", email_verified: true },
+});
+verifier("B1 compte cree sans erreur", b1.erreur, null);
+verifier(
+  "B1 aucune ligne utilisateurs",
+  await compter(`select count(*) n from utilisateurs where id = $1`, [b1.id]),
+  0
+);
+verifier(
+  "B1 aucun atelier ouvert",
+  await compter(`select count(*) n from ateliers`),
+  ateliersAvant
+);
+
+verifier(
+  "B2 terminer_inscription : aucune erreur",
+  await terminer(b1.id, { atelier: "Couture Adjoa" }),
+  null
+);
+verifier("B2 atelier ouvert au bon nom", await lireUtilisateur(b1.id), {
+  nom: "Adjoa Hounkpatin",
+  role: "proprietaire",
+  atelier: "Couture Adjoa",
+});
+
+/*
+ * Le cas que toute la migration existe pour eviter : un second appel -
+ * double envoi, retour arriere, rechargement - ne doit pas ouvrir un
+ * atelier fantome.
+ */
+const ateliersApresB2 = await compter(`select count(*) n from ateliers`);
+verifier(
+  "B3 second appel : aucune erreur",
+  await terminer(b1.id, { atelier: "Second atelier" }),
+  null
+);
+verifier(
+  "B3 aucun atelier fantome",
+  await compter(`select count(*) n from ateliers`),
+  ateliersApresB2
+);
+
+const codeB4 = await inviter(atelierKossi);
+const b4 = await inscrire({
+  email: "google2@gmail.com",
+  provider: "google",
+  meta: { full_name: "Yao Mensah" },
+});
+verifier(
+  "B4 rattachement sur code : aucune erreur",
+  await terminer(b4.id, { code: codeB4 }),
+  null
+);
+verifier("B4 rejoint l atelier du patron", await lireUtilisateur(b4.id), {
+  nom: "Yao Mensah",
+  role: "apprenti",
+  atelier: "Atelier Kossi",
+});
+verifier(
+  "B4 invitation consommee",
+  await compter(
+    `select count(*) n from invitations where code = $1 and utilisee_le is not null`,
+    [codeB4]
+  ),
+  1
+);
+
+const b5 = await inscrire({
+  email: "google3@gmail.com",
+  provider: "google",
+  meta: { full_name: "Test" },
+});
+verifier(
+  "B5 code invalide refuse",
+  /code_invitation_invalide/.test((await terminer(b5.id, { code: "NEXISTEPAS" })) ?? ""),
+  true
+);
+verifier(
+  "B5 rien cree malgre le refus",
+  await compter(`select count(*) n from utilisateurs where id = $1`, [b5.id]),
+  0
+);
+
+// Retour a une offre a un seul compte : l'atelier de Kossi est plein.
+await formule("atelier");
+verifier(
+  "B6 atelier plein refuse",
+  /atelier_complet/.test((await terminer(b5.id, { code: await inviter(atelierKossi) })) ?? ""),
+  true
+);
+
+verifier(
+  "B7 sans session refuse",
+  /non_authentifie/.test((await terminer(null, { atelier: "Sans personne" })) ?? ""),
+  true
+);
+
+// Nom : la saisie l'emporte, le fournisseur sert de repli.
+const b8 = await inscrire({
+  email: "google4@gmail.com",
+  provider: "google",
+  meta: { full_name: "Nom Google" },
+});
+await terminer(b8.id, { atelier: "Atelier B8", nom: "Nom Corrige" });
+verifier(
+  "B8 le nom saisi l emporte sur celui de Google",
+  (await lireUtilisateur(b8.id)).nom,
+  "Nom Corrige"
+);
+
+const b9 = await inscrire({
+  email: "google5@gmail.com",
+  provider: "google",
+  meta: { name: "Nom Sous name" },
+});
+await terminer(b9.id, { atelier: "Atelier B9" });
+verifier(
+  "B9 repli sur name quand full_name manque",
+  (await lireUtilisateur(b9.id)).nom,
+  "Nom Sous name"
+);
+
+const b10 = await inscrire({
+  email: "google6@gmail.com",
+  provider: "google",
+  meta: {},
+});
+await terminer(b10.id, {});
+verifier("B10 sans nom ni atelier : replis appliques", await lireUtilisateur(b10.id), {
+  nom: "Utilisateur",
+  role: "proprietaire",
+  atelier: "Mon atelier",
+});
+
+// =========================================================================
+console.log("\nC. Droits sur la fonction\n");
+// =========================================================================
+
+const droits = (
+  await db.query(`
+    select
+      has_function_privilege('anon', 'terminer_inscription(text,text,text)', 'execute') as anon,
+      has_function_privilege('authenticated', 'terminer_inscription(text,text,text)', 'execute') as authenticated
+  `)
+).rows[0];
+verifier("C1 anon ne peut pas l executer", droits.anon, false);
+verifier("C2 authenticated le peut", droits.authenticated, true);
+
+// =========================================================================
+console.log("\nD. Robustesse de la migration elle-meme\n");
+// =========================================================================
+
+/*
+ * Un compte anterieur a la migration peut n'avoir aucun raw_app_meta_data.
+ * Le defaut a 'email' doit alors s'appliquer, sinon toute inscription
+ * ancienne basculerait du cote fournisseur et perdrait son atelier.
+ */
+const d1 = await db.query(
+  `insert into auth.users (id, email, raw_user_meta_data, raw_app_meta_data)
+   values (gen_random_uuid(), 'ancien@atelier.bj',
+           '{"atelier_nom":"Atelier Ancien","nom":"Ancien"}'::jsonb, '{}'::jsonb)
+   returning id`
+);
+verifier(
+  "D1 compte sans provider : traite comme email",
+  await lireUtilisateur(d1.rows[0].id),
+  { nom: "Ancien", role: "proprietaire", atelier: "Atelier Ancien" }
+);
+
+// La migration sera collee dans le SQL editor, peut-etre deux fois.
+let rejeu = null;
+try {
+  await db.exec(
+    await readFile(resolve(MIGRATIONS, "0010_inscription_par_fournisseur.sql"), "utf8")
+  );
+} catch (erreur) {
+  rejeu = erreur.message;
+}
+verifier("D2 migration rejouable sans erreur", rejeu, null);
+
+const d3 = await inscrire({
+  email: "apres-rejeu@gmail.com",
+  provider: "google",
+  meta: { full_name: "Apres Rejeu" },
+});
+verifier(
+  "D3 comportement identique apres rejeu",
+  await compter(`select count(*) n from utilisateurs where id = $1`, [d3.id]),
+  0
+);
+
+// =========================================================================
+console.log(
+  `\n${rates === 0 ? `Les ${total} verifications passent.` : `${rates} verification(s) sur ${total} en echec.`}\n`
+);
+process.exit(rates === 0 ? 0 : 1);

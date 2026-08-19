@@ -32,6 +32,28 @@ supabase/
   migrations/     schema SQL (a appliquer manuellement dans le SQL editor Supabase, ou via la CLI Supabase plus tard)
 ```
 
+## Tester les migrations
+
+```bash
+npm run test:migrations
+```
+
+Applique les migrations dans l'ordre a un Postgres neuf, puis exerce les
+parcours d'inscription : creation d'atelier, rattachement sur code
+d'invitation, codes invalides, atelier plein, inscription par fournisseur
+externe, idempotence de `terminer_inscription`, droits sur les fonctions.
+
+Pas de Docker ni de projet Supabase de test : `supabase/test-migrations.mjs`
+demarre
+un vrai Postgres compile en WebAssembly, en memoire, et rend la main en
+quelques secondes. Le prelude du fichier fournit ce que Supabase apporte et
+qu'un Postgres nu n'a pas : le schema `auth`, `auth.uid()`, les roles et un
+`storage` minimal.
+
+A lancer avant de coller une migration dans le SQL editor. Les regles
+d'argent et d'acces du produit vivent dans ces fichiers, et une erreur ne
+s'y voit qu'en production.
+
 ## Suppression de compte et purge
 
 Supprimer le dernier compte d'un atelier ne suffit pas a effacer ses
