@@ -28,6 +28,33 @@ const CODES_DEFINITIFS = /^(22|23|42|P0)/;
  */
 const CODE_DROIT_REFUSE = "42501";
 
+/**
+ * Vrai quand la requete n'a pas atteint la base.
+ *
+ * Le cas vise n'est pas l'absence de reseau declaree - navigator.onLine la
+ * signale deja - mais le wifi qui repond present sans rien laisser passer :
+ * forfait epuise, portail captif, borne saturee. L'appareil se croit
+ * connecte, l'envoi part, et rien ne revient.
+ *
+ * Deux formes, selon la porte d'entree :
+ *
+ * - PostgREST rend un code vide quand fetch a echoue, la ou un refus de la
+ *   base en porte toujours un - 23505, 42501, PGRST116. Le portail captif
+ *   qui renvoie sa page d'accueil tombe dans le meme sac : le corps n'est
+ *   pas du JSON, et l'erreur ressort alors sans code du tout ;
+ * - le Storage separe lui-meme ses deux cas. StorageApiError porte un
+ *   statut HTTP, donc une vraie reponse du service ; StorageUnknownError
+ *   n'en porte pas, et enveloppe l'echec de transport.
+ */
+export function estPanneReseau(erreur: unknown): boolean {
+  if (erreur && typeof erreur === "object" && "__isStorageError" in erreur) {
+    return (erreur as { status?: number }).status === undefined;
+  }
+
+  const code = (erreur as { code?: string } | null)?.code;
+  return typeof code !== "string" || code === "";
+}
+
 export function estRefusDefinitif(erreur: unknown): boolean {
   const code = (erreur as { code?: string } | null)?.code;
 

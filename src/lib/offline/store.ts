@@ -37,13 +37,25 @@ async function recharger() {
   definir({ operations: await listerFile() });
 }
 
+/*
+ * navigator.onLine ne dit que l'existence d'une route, jamais qu'elle mene
+ * quelque part. Sur la borne wifi d'un maquis dont le forfait est epuise,
+ * il repond « en ligne » pendant que rien ne passe, et la bande d'etat
+ * affirmait alors que le travail etait parti.
+ *
+ * C'est donc l'envoi qui tranche, puisque lui seul touche vraiment la
+ * base. Pas de sondage periodique pour autant : il couterait des donnees
+ * a un public qui les compte, alors que la file dit deja ce qu'il faut.
+ */
 async function tenterSynchronisation() {
-  definir({ horsLigne: !navigator.onLine });
-
-  if (navigator.onLine) {
-    await synchroniser();
+  if (!navigator.onLine) {
+    definir({ horsLigne: true });
+    await recharger();
+    return;
   }
 
+  const { reseauMuet } = await synchroniser();
+  definir({ horsLigne: reseauMuet });
   await recharger();
 }
 
