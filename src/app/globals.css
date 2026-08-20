@@ -150,7 +150,31 @@ body {
   }
 }
 
+/*
+ * Flottement des objets de couture du hero.
+ *
+ * Lent et de faible amplitude : l'effet doit se remarquer au bout de
+ * quelques secondes, pas sauter aux yeux. Une page de vente qui s'agite
+ * dit « promotion », quand la marque veut dire « precis et calme ».
+ *
+ * La regle prefers-reduced-motion en fin de fichier l'immobilise, comme
+ * toute autre animation du document.
+ */
+@keyframes flotter {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
 @layer utilities {
+  .flotte {
+    animation: flotter 7s var(--ease-doux) infinite;
+  }
+
   /*
    * La barre de navigation est en position fixe en bas de l'ecran. Sans
    * cette reserve, l'indicateur d'accueil de l'iPhone se pose par-dessus

@@ -10,6 +10,7 @@ import {
   WhatsappLogo,
 } from "@phosphor-icons/react/dist/ssr";
 import { Marque } from "./marque";
+import { ObjetsCouture } from "./objets-couture";
 
 // Adresse professionnelle, hebergee sur le domaine colossalebusiness.fr.
 const WHATSAPP = "2290197970999";
@@ -36,28 +37,38 @@ export const metadata: Metadata = {
 function Navigation() {
   return (
     <header className="sticky top-0 z-40 border-b border-bordure bg-white/90 backdrop-blur">
-      <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
+      <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-2 px-4 sm:px-5">
         {/* La marque accompagne le nom, comme dans la barre laterale et
             l'en-tete du telephone : c'est la meme identite des l'accueil. */}
         <Link
           href="/"
-          className="flex items-center gap-2.5 rounded-controle text-encre"
+          className="flex shrink-0 items-center gap-2 rounded-controle text-encre sm:gap-2.5"
         >
           <Marque taille={26} />
-          <span className="text-lg font-semibold tracking-tight">TailorHub</span>
+          <span className="text-base font-semibold tracking-tight sm:text-lg">
+            TailorHub
+          </span>
         </Link>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           <Link
             href="/login"
-            className="rounded-controle px-3 py-2 text-sm font-medium text-gris transition-colors hover:text-encre"
+            className="rounded-controle px-2 py-2 text-sm font-medium whitespace-nowrap text-gris transition-colors hover:text-encre sm:px-3"
           >
             Se connecter
           </Link>
+          {/*
+           * Le libelle raccourcit sur telephone plutot que de passer a la
+           * ligne. A 390 px, « Essayer gratuitement » en entier poussait la
+           * barre au-dela de sa hauteur et cassait les deux liens en deux
+           * lignes chacun. Se connecter reste visible : c'est le seul acces
+           * a l'application pour qui a deja un atelier.
+           */}
           <Link
             href="/signup"
-            className="rounded-controle bg-foret px-4 py-2.5 text-sm font-medium text-white transition-transform hover:bg-vert active:translate-y-px"
+            className="rounded-controle bg-foret px-3 py-2.5 text-sm font-medium whitespace-nowrap text-white transition-transform hover:bg-vert active:translate-y-px sm:px-4"
           >
-            Essayer gratuitement
+            <span className="sm:hidden">Essayer</span>
+            <span className="hidden sm:inline">Essayer gratuitement</span>
           </Link>
         </div>
       </nav>
@@ -65,49 +76,72 @@ function Navigation() {
   );
 }
 
+/*
+ * Le hero tient dans un panneau sombre a grands angles, pose dans la page
+ * plutot qu'etale d'un bord a l'autre.
+ *
+ * Il etait sage : deux colonnes sur fond blanc, un aplat vert derriere la
+ * capture. Correct, mais sans presence - et c'est la presence, pas la
+ * disposition, qui manquait. Le cadre donne l'aplomb, le fond foret donne
+ * la profondeur, et les objets de couture donnent le mouvement.
+ *
+ * sur-fond-sombre bascule l'anneau de focus en blanc : le vert de l'anneau
+ * par defaut disparaitrait dans le vert foret.
+ */
 function Hero() {
   return (
-    <section className="mx-auto grid max-w-6xl items-center gap-12 px-5 pt-16 pb-20 lg:grid-cols-[1.1fr_0.9fr] lg:pt-24">
-      <div>
-        <h1 className="text-4xl font-semibold leading-[1.05] tracking-tight text-encre md:text-5xl lg:text-6xl">
-          Votre atelier,
-          <br />
-          enfin sous contrôle.
-        </h1>
-        <p className="mt-6 max-w-md text-lg leading-relaxed text-gris">
-          Mesures, commandes, acomptes et rappels WhatsApp. Sur votre téléphone,
-          même sans connexion.
-        </p>
-        <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-          <Link
-            href="/signup"
-            className="inline-flex items-center justify-center gap-2 rounded-controle bg-vert px-6 py-4 text-base font-medium text-white transition-transform hover:bg-foret active:translate-y-px"
-          >
-            Essayer gratuitement
-            <ArrowRight size={18} weight="bold" />
-          </Link>
-          <a
-            href={lienWhatsApp}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 rounded-controle border border-bordure bg-white px-6 py-4 text-base font-medium text-encre transition-colors hover:bg-papier active:translate-y-px"
-          >
-            <WhatsappLogo size={18} weight="fill" />
-            Poser une question
-          </a>
-        </div>
-      </div>
+    <section className="px-4 pt-6 pb-16 sm:px-5 lg:pb-24">
+      <div className="sur-fond-sombre relative mx-auto max-w-6xl overflow-hidden rounded-[1.75rem] bg-foret px-6 py-12 text-white sm:px-10 sm:py-16 lg:rounded-[2.25rem] lg:px-14 lg:py-20">
+        <div className="grid items-center gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
+          {/*
+           * La capture passe a gauche sur grand ecran, le texte a droite.
+           * Sur telephone l'ordre s'inverse : on lit d'abord ce que le
+           * produit promet, on regarde ensuite a quoi il ressemble.
+           */}
+          <div className="relative order-2 lg:order-1">
+            <ObjetsCouture />
+            <div className="relative mx-auto w-full max-w-[220px] sm:max-w-[260px]">
+              <Image
+                src="/captures/commandes.png"
+                alt="Le tableau des commandes de TailorHub sur un téléphone"
+                width={1170}
+                height={2133}
+                priority
+                className="w-full rounded-panneau border border-white/15 shadow-flottant"
+              />
+            </div>
+          </div>
 
-      <div className="relative mx-auto w-full max-w-[280px] lg:max-w-[320px]">
-        <div className="absolute -inset-6 -z-10 rounded-[3rem] bg-vert-clair" />
-        <Image
-          src="/captures/commandes.png"
-          alt="Le tableau des commandes de TailorHub sur un téléphone"
-          width={1170}
-          height={2133}
-          priority
-          className="w-full rounded-panneau border border-bordure shadow-xl"
-        />
+          <div className="order-1 lg:order-2">
+            <h1 className="text-[2.25rem] font-semibold leading-[1.02] tracking-tight sm:text-5xl lg:text-6xl xl:text-[4.25rem]">
+              Votre atelier,
+              <br />
+              enfin sous contrôle.
+            </h1>
+            <p className="mt-6 max-w-md text-lg leading-relaxed text-vert-pale">
+              Mesures, commandes, acomptes et rappels WhatsApp. Sur votre
+              téléphone, même sans connexion.
+            </p>
+            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+              <Link
+                href="/signup"
+                className="inline-flex items-center justify-center gap-2 rounded-controle bg-white px-6 py-4 text-base font-medium text-foret transition-colors duration-150 ease-doux hover:bg-vert-clair active:translate-y-px"
+              >
+                Essayer gratuitement
+                <ArrowRight size={18} weight="bold" />
+              </Link>
+              <a
+                href={lienWhatsApp}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 rounded-controle border border-white/25 px-6 py-4 text-base font-medium text-white transition-colors duration-150 ease-doux hover:bg-white/10 active:translate-y-px"
+              >
+                <WhatsappLogo size={18} weight="fill" />
+                Poser une question
+              </a>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );
