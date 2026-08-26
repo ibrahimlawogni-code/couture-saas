@@ -13,10 +13,27 @@ import {
 import { useDonnees } from "@/lib/offline/use-donnees";
 import { Carte, CarteLien, Panneau } from "@/ui/carte";
 import { EnTeteSection } from "@/ui/page";
+import {
+  METHODE_LABELS,
+  repartitionParMethode,
+} from "@/lib/paiements";
 import { Squelette, SqueletteLigne } from "@/ui/squelette";
 import { Vignette } from "@/ui/vignette";
 
 const nombre = new Intl.NumberFormat("fr-FR");
+
+/*
+ * Trois nuances de la meme famille, et non trois couleurs de la palette.
+ *
+ * Le moyen de paiement ne porte aucun jugement : ni probleme, ni
+ * avertissement, ni parole du systeme. Prendre le rouge ou le bleu pour
+ * distinguer Mobile Money des especes dirait quelque chose de faux.
+ */
+const TEINTES_METHODE = {
+  especes: "bg-foret",
+  mobile_money: "bg-vert",
+  virement: "bg-vert-pale",
+} as const;
 
 function debutDuMois(recul = 0) {
   const date = new Date();
@@ -31,9 +48,23 @@ export function BilanFinancier() {
     const debutPrecedent = debutDuMois(1);
     const estDeCeMois = (date: string) => new Date(date) >= debutMois;
 
-    const encaisseMois = paiements
-      .filter((paiement) => estDeCeMois(paiement.created_at))
-      .reduce((somme, paiement) => somme + Number(paiement.montant), 0);
+    const paiementsDuMois = paiements.filter((paiement) =>
+      estDeCeMois(paiement.created_at)
+    );
+
+    const encaisseMois = paiementsDuMois.reduce(
+      (somme, paiement) => somme + Number(paiement.montant),
+      0
+    );
+
+    /*
+     * Par quel moyen l'argent du mois est arrive.
+     *
+     * Sur les versements anterieurs a la saisie du moyen, la base a pose
+     * « especes » par defaut sans que personne l'ait dit : la repartition
+     * ne devient fiable qu'a mesure que de nouveaux versements arrivent.
+     */
+    const repartition = repartitionParMethode(paiementsDuMois);
 
     // Le mois precedent en entier, pour situer celui en cours.
     const encaissePrecedent = paiements
@@ -87,6 +118,7 @@ export function BilanFinancier() {
     return {
       debutMois,
       encaisseMois,
+      repartition,
       acomptesMois,
       commandesMois,
       valeurCommandesMois,
@@ -164,6 +196,59 @@ export function BilanFinancier() {
           alerte={bilan.totalCreances > 0}
         />
       </div>
+
+      {/*
+       * Par quel moyen l'argent est arrive.
+       *
+       * Absente tant qu'aucun versement n'est enregistre : une barre a zero
+       * n'apprend rien, et une carte vide donne l'impression d'un ecran
+       * casse plutot que d'un mois qui commence.
+       */}
+      {bilan.repartition.length > 0 && (
+        <Carte classe="mt-3 p-5">
+          <h2 className="text-[10px] font-medium tracking-[0.1em] text-gris uppercase">
+            Reçu en
+          </h2>
+
+          <div
+            aria-hidden
+            className="mt-3 flex h-2 gap-0.5 overflow-hidden rounded-full"
+          >
+            {bilan.repartition.map((part) => (
+              <div
+                key={part.methode}
+                style={{ width: `${part.part}%` }}
+                className={TEINTES_METHODE[part.methode]}
+              />
+            ))}
+          </div>
+
+          <ul className="mt-3 flex flex-col gap-1.5">
+            {bilan.repartition.map((part) => (
+              <li
+                key={part.methode}
+                className="flex items-baseline justify-between gap-3 text-sm"
+              >
+                <span className="flex min-w-0 items-center gap-2">
+                  <span
+                    aria-hidden
+                    className={`size-2 shrink-0 rounded-full ${TEINTES_METHODE[part.methode]}`}
+                  />
+                  <span className="truncate text-gris">
+                    {METHODE_LABELS[part.methode]}
+                  </span>
+                </span>
+                <span className="chiffres shrink-0 text-encre">
+                  {formaterMontant(part.montant)}{" "}
+                  <span className="text-gris">
+                    ({Math.round(part.part)} %)
+                  </span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Carte>
+      )}
 
       <section className="mt-6">
         <EnTeteSection titre="À recouvrer" />

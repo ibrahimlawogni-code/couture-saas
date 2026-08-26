@@ -60,18 +60,20 @@ s'y voit qu'en production.
 npm run test:commandes
 ```
 
-Verifie les deux calculs de `src/lib/commandes.ts` qui manipulent des
-dates, parce qu'une erreur de date ne se voit pas en relisant du code :
+Verifie les regles de `src/lib/` qui ne se relisent pas a l'oeil :
 
 - **la ponctualite**, seul chiffre du produit qui juge le travail plutot
   que l'argent, et seul qu'un tailleur puisse montrer a un client ;
 - **les groupes d'echeance**, qui commandent la mise en page entiere de
   l'ecran des commandes. Un decalage d'un jour range une piece a livrer
-  aujourd'hui sous « Cette semaine ».
+  aujourd'hui sous « Cette semaine » ;
+- **la repartition par moyen de paiement**, qui doit tenir debout sur les
+  versements anterieurs a la saisie du moyen - ceux qui n'en portent
+  aucun, et que la base compte en especes par defaut.
 
-Aucune bibliotheque : dix-huit comparaisons ne valent pas une dependance
-de plus. Le banc importe directement le module TypeScript, d'ou le
-`--experimental-strip-types` de la commande.
+Aucune bibliotheque : quelques dizaines de comparaisons ne valent pas une
+dependance de plus. Le banc importe directement les modules TypeScript,
+d'ou le `--experimental-strip-types` de la commande.
 
 ## Suppression de compte et purge
 

@@ -103,6 +103,13 @@ export type LignePaiement = {
   commande_id: string;
   montant: number;
   type: string;
+  /*
+   * Especes, Mobile Money ou virement. Optionnel a la lecture : les
+   * versements enregistres avant que l'application ne pose ce champ n'en
+   * portent aucun, et la base leur a mis « especes » par defaut sans que
+   * personne l'ait dit.
+   */
+  methode?: string | null;
   created_at: string;
 };
 

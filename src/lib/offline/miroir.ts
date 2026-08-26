@@ -39,7 +39,9 @@ export async function rafraichirMiroir() {
         .select(
           "id, client_id, nom_modele, statut, prix_total, date_essayage, date_livraison, photo_modele_url, photo_tissu_url, jeton_avis, created_at"
         ),
-      supabase.from("paiements").select("id, commande_id, montant, type, created_at"),
+      supabase
+        .from("paiements")
+        .select("id, commande_id, montant, type, methode, created_at"),
       /*
        * Seuls les passages a « Livre » sont rapatries. L'historique
        * complet compte sept lignes par commande, dont six qu'aucun ecran

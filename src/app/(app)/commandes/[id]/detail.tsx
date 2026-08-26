@@ -29,7 +29,14 @@ import {
 } from "@/lib/whatsapp";
 import { enregistrer } from "@/lib/offline/enregistrer";
 import { rafraichirMiroir } from "@/lib/offline/miroir";
+import {
+  METHODE_DEFAUT,
+  METHODE_LABELS,
+  methodeConnue,
+  type Methode,
+} from "@/lib/paiements";
 import { useDonnees } from "@/lib/offline/use-donnees";
+import { ChoixMethode } from "@/ui/choix-methode";
 import { useFileAttente } from "@/lib/offline/use-file-attente";
 import { Bouton } from "@/ui/bouton";
 import { Carte } from "@/ui/carte";
@@ -53,6 +60,7 @@ export function DetailCommande() {
   const { horsLigne } = useFileAttente();
   const [signatures, setSignatures] = useState<string[]>([]);
   const [montant, setMontant] = useState("");
+  const [methode, setMethode] = useState<Methode>(METHODE_DEFAUT);
 
   const commande = commandes.find((candidat) => candidat.id === commandeId);
   const client = clients.find((candidat) => candidat.id === commande?.client_id);
@@ -155,9 +163,17 @@ export function DetailCommande() {
       commande_id: commandeId,
       montant: valeur,
       type: "complement",
+      methode,
     });
 
     setMontant("");
+    /*
+     * Le moyen revient aux especes apres chaque versement plutot que de
+     * garder le dernier choix. Un tailleur encaisse surtout au comptoir ;
+     * conserver « Mobile Money » d'un client a l'autre ferait enregistrer
+     * en silence un moyen faux, exactement le defaut qu'on repare ici.
+     */
+    setMethode(METHODE_DEFAUT);
   }
 
   const numero = client?.whatsapp ?? client?.telephone ?? null;
@@ -351,25 +367,34 @@ export function DetailCommande() {
         </div>
 
         {reste > 0 && (
-          <form onSubmit={ajouterPaiement} className="mt-3 flex gap-2">
-            <label htmlFor="montant" className="sr-only">
-              Montant reçu
-            </label>
-            <input
-              id="montant"
-              value={montant}
-              onChange={(evenement) => setMontant(evenement.target.value)}
-              type="number"
-              min="1"
-              step="1"
-              inputMode="numeric"
-              placeholder="Montant reçu"
-              required
-              className="min-h-11 w-full min-w-0 flex-1 rounded-controle border border-bordure px-4 py-3 text-base transition-colors duration-150 ease-doux hover:border-vert-pale"
+          <form onSubmit={ajouterPaiement} className="mt-3">
+            <div className="flex gap-2">
+              <label htmlFor="montant" className="sr-only">
+                Montant reçu
+              </label>
+              <input
+                id="montant"
+                value={montant}
+                onChange={(evenement) => setMontant(evenement.target.value)}
+                type="number"
+                min="1"
+                step="1"
+                inputMode="numeric"
+                placeholder="Montant reçu"
+                required
+                className="min-h-11 w-full min-w-0 flex-1 rounded-controle border border-bordure px-4 py-3 text-base transition-colors duration-150 ease-doux hover:border-vert-pale"
+              />
+              <Bouton type="submit" classe="shrink-0">
+                Ajouter
+              </Bouton>
+            </div>
+
+            <ChoixMethode
+              nom="methode"
+              valeur={methode}
+              onChange={setMethode}
+              classe="mt-3"
             />
-            <Bouton type="submit" classe="shrink-0">
-              Ajouter
-            </Bouton>
           </form>
         )}
 
@@ -384,7 +409,8 @@ export function DetailCommande() {
                   <span className="chiffres">
                     {new Date(paiement.created_at).toLocaleDateString("fr-FR")}
                   </span>{" "}
-                  · {paiement.type}
+                  · {paiement.type} ·{" "}
+                  {METHODE_LABELS[methodeConnue(paiement.methode)]}
                   {paiement.enAttente && " · en attente"}
                 </span>
                 {/* Colonne de montants : chasse fixe pour qu'ils s'alignent. */}
@@ -413,6 +439,7 @@ export function DetailCommande() {
                 date: paiement.created_at,
                 montant: Number(paiement.montant),
                 type: paiement.type,
+                methode: paiement.methode,
               })),
             }}
           />

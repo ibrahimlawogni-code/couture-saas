@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Users } from "@phosphor-icons/react/dist/ssr";
 import { createClient } from "@/lib/supabase/client";
 import { MODELES, MODELE_AUTRE } from "@/lib/commandes";
+import { METHODE_DEFAUT, type Methode } from "@/lib/paiements";
 import { enregistrer } from "@/lib/offline/enregistrer";
 import { estLimiteOffre, messageRefus } from "@/lib/offline/erreurs";
 import { cheminPhoto, compresserPhoto } from "@/lib/offline/photo";
@@ -13,6 +14,7 @@ import { useFileAttente } from "@/lib/offline/use-file-attente";
 import { useHydratation } from "@/lib/hydratation";
 import { Bouton, LienBouton } from "@/ui/bouton";
 import { Champ, Selecteur } from "@/ui/champ";
+import { ChoixMethode } from "@/ui/choix-methode";
 import { EtatVide } from "@/ui/etat-vide";
 import { Message } from "@/ui/message";
 import type { PhotoEnAttente } from "@/lib/offline/db";
@@ -37,6 +39,8 @@ export function FormulaireCommande({
   const [erreur, setErreur] = useState<string | null>(null);
   const [limite, setLimite] = useState(false);
   const [modele, setModele] = useState("");
+  const [acompte, setAcompte] = useState("");
+  const [methode, setMethode] = useState<Methode>(METHODE_DEFAUT);
 
   // Un client cree hors ligne doit pouvoir recevoir une commande
   // immediatement, sans attendre sa synchronisation.
@@ -146,6 +150,7 @@ export function FormulaireCommande({
         commande_id: commandeId,
         montant: acompte,
         type: "acompte",
+        methode,
       });
     }
 
@@ -255,8 +260,24 @@ export function FormulaireCommande({
           min="0"
           step="1"
           inputMode="numeric"
+          value={acompte}
+          onChange={(evenement) => setAcompte(evenement.target.value)}
         />
       </div>
+
+      {/*
+       * Le moyen n'apparait qu'une fois un acompte saisi : demander
+       * comment a ete paye un acompte inexistant n'a pas de sens, et
+       * chaque champ de plus sur cet ecran se paie en abandons.
+       */}
+      {Number(acompte) > 0 && (
+        <ChoixMethode
+          nom="methode"
+          valeur={methode}
+          onChange={setMethode}
+          libelle="Acompte reçu en"
+        />
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         <Champ

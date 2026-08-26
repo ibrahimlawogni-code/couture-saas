@@ -4,6 +4,7 @@ import {
   resteAPayer,
   type Statut,
 } from "@/lib/commandes";
+import { METHODE_LABELS, methodeConnue } from "@/lib/paiements";
 
 const LARGEUR = 800;
 const MARGE = 56;
@@ -38,7 +39,18 @@ export type DonneesRecu = {
   modele: string | null;
   statut: Statut;
   prixTotal: number;
-  versements: { date: string; montant: number; type: string }[];
+  versements: {
+    date: string;
+    montant: number;
+    type: string;
+    /*
+     * Le moyen figure sur le recu parce que c'est la que le client le
+     * verifie : « j'ai envoye par Mobile Money » se conteste mal devant
+     * une ligne qui dit especes. Absent des versements enregistres avant
+     * que l'application ne le saisisse.
+     */
+    methode?: string | null;
+  }[];
   dateLivraison: string | null;
 };
 
@@ -238,7 +250,7 @@ export async function genererRecu(donnees: DonneesRecu): Promise<Blob> {
     ctx.fillText(
       `${new Date(versement.date).toLocaleDateString("fr-FR")} · ${
         TYPES[versement.type] ?? versement.type
-      }`,
+      } · ${METHODE_LABELS[methodeConnue(versement.methode)]}`,
       MARGE + 16,
       y
     );

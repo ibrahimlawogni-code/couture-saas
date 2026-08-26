@@ -11,13 +11,20 @@
  *                   commandes. Un decalage d'un jour range une piece a
  *                   livrer aujourd'hui sous « Cette semaine », ou l'inverse.
  *
+ * S'y ajoute la repartition des encaissements par moyen de paiement, qui
+ * n'est pas une affaire de date mais d'argent - et qui doit tenir debout
+ * sur les versements anterieurs a la saisie du moyen, ceux qui n'en
+ * portent aucun.
+ *
  *   npm run test:commandes
  *
  * Il vit a cote de ce qu'il verifie, comme le banc des migrations vit dans
- * supabase/. Pas de bibliotheque : dix comparaisons ne valent pas une
- * dependance de plus dans un projet qui vise l'Android d'entree de gamme.
+ * supabase/. Pas de bibliotheque : quelques dizaines de comparaisons ne
+ * valent pas une dependance de plus dans un projet qui vise l'Android
+ * d'entree de gamme.
  */
 import { groupeEcheance, ponctualite } from "./commandes.ts";
+import { repartitionParMethode } from "./paiements.ts";
 
 let total = 0;
 let rates = 0;
@@ -185,6 +192,65 @@ verifier("B6 sans date", groupeEcheance(null, "couture"), "sans_date");
  */
 verifier("B7 livree en retard : rangee dans Livre", groupeEcheance(dans(-30), "livre"), "livre");
 verifier("B8 livree sans date : rangee dans Livre", groupeEcheance(null, "livre"), "livre");
+
+// =========================================================================
+console.log("\nC. Repartition par moyen de paiement\n");
+// =========================================================================
+
+const verse = (montant, methode) => ({ montant, methode });
+
+verifier("C1 aucun versement", repartitionParMethode([]), []);
+
+verifier(
+  "C2 un seul moyen : cent pour cent",
+  repartitionParMethode([verse(1000, "especes"), verse(3000, "especes")]),
+  [{ methode: "especes", montant: 4000, part: 100 }]
+);
+
+// Le plus gros d'abord : c'est l'ordre dans lequel on lit une repartition.
+verifier(
+  "C3 trie du plus gros au plus petit",
+  repartitionParMethode([
+    verse(1000, "especes"),
+    verse(6000, "mobile_money"),
+    verse(3000, "virement"),
+  ]),
+  [
+    { methode: "mobile_money", montant: 6000, part: 60 },
+    { methode: "virement", montant: 3000, part: 30 },
+    { methode: "especes", montant: 1000, part: 10 },
+  ]
+);
+
+/*
+ * Les versements enregistres avant que l'application ne saisisse le moyen
+ * n'en portent aucun. Ils doivent retomber sur especes - la valeur que la
+ * base leur a posee par defaut - et non disparaitre de la somme.
+ */
+verifier(
+  "C4 moyen absent : compte en especes",
+  repartitionParMethode([verse(2000, null), verse(2000, undefined)]),
+  [{ methode: "especes", montant: 4000, part: 100 }]
+);
+
+verifier(
+  "C5 moyen inconnu : compte en especes",
+  repartitionParMethode([verse(500, "bitcoin")]),
+  [{ methode: "especes", montant: 500, part: 100 }]
+);
+
+// Un total a zero ne doit pas produire une division par zero.
+verifier("C6 total nul", repartitionParMethode([verse(0, "especes")]), []);
+
+// Les montants arrivent parfois en texte depuis la base.
+verifier(
+  "C7 montants en texte",
+  repartitionParMethode([verse("1500", "especes"), verse("500", "virement")]),
+  [
+    { methode: "especes", montant: 1500, part: 75 },
+    { methode: "virement", montant: 500, part: 25 },
+  ]
+);
 
 // =========================================================================
 console.log(
