@@ -449,6 +449,160 @@ verifier(
 );
 
 // =========================================================================
+console.log("\nE. Avis clients : une porte ouverte sans compte\n");
+// =========================================================================
+
+/*
+ * La migration 0011 laisse un visiteur sans session ecrire dans la base.
+ * C'est le seul endroit du produit ou cela arrive, et deux fonctions
+ * security definer y travaillent hors RLS : ce qui suit verifie que leur
+ * portee tient bien au jeton et a rien d'autre.
+ */
+
+const clientAvis = (
+  await db.query(
+    `insert into clients (atelier_id, nom) values ($1, 'Cliente Avis') returning id`,
+    [atelierKossi]
+  )
+).rows[0].id;
+
+async function creerCommande(statut, modele = "Boubou brode") {
+  const ligne = (
+    await db.query(
+      `insert into commandes (atelier_id, client_id, nom_modele, statut)
+       values ($1, $2, $3, $4) returning id, jeton_avis`,
+      [atelierKossi, clientAvis, modele, statut]
+    )
+  ).rows[0];
+  return ligne;
+}
+
+const noter = async (jeton, note, commentaire = null) => {
+  try {
+    await db.query(`select laisser_avis($1, $2::smallint, $3)`, [
+      jeton,
+      note,
+      commentaire,
+    ]);
+    return null;
+  } catch (erreur) {
+    return erreur.message;
+  }
+};
+
+const livree = await creerCommande("livre");
+const enCoursAvis = await creerCommande("couture");
+
+// E1 : chaque commande recoit un jeton distinct, y compris celles creees
+// avant la migration.
+const jetons = await compter(
+  `select count(distinct jeton_avis) n from commandes`
+);
+const nbCommandes = await compter(`select count(*) n from commandes`);
+verifier("E1 un jeton distinct par commande", jetons, nbCommandes);
+
+// E2 : le visiteur voit de quoi reconnaitre sa commande, et rien de plus.
+const vue = (
+  await db.query(`select * from commande_a_noter($1)`, [livree.jeton_avis])
+).rows[0];
+verifier("E2 le jeton donne l atelier et le modele", vue, {
+  atelier: "Atelier Kossi",
+  modele: "Boubou brode",
+  deja_note: false,
+});
+
+// E3 : on ne note pas un vetement qu'on n'a pas recu.
+verifier(
+  "E3 une commande non livree ne repond pas",
+  (await db.query(`select * from commande_a_noter($1)`, [enCoursAvis.jeton_avis]))
+    .rows.length,
+  0
+);
+
+// E4 : un jeton invente n'ouvre rien.
+verifier(
+  "E4 un jeton inconnu ne repond pas",
+  (
+    await db.query(`select * from commande_a_noter($1)`, [
+      "00000000-0000-0000-0000-000000000000",
+    ])
+  ).rows.length,
+  0
+);
+
+// E5 : la note passe.
+verifier("E5 laisser une note", await noter(livree.jeton_avis, 5, "  Parfait  "), null);
+verifier(
+  "E5b le commentaire est nettoye",
+  (await db.query(`select note, commentaire from avis where commande_id = $1`, [livree.id]))
+    .rows[0],
+  { note: 5, commentaire: "Parfait" }
+);
+
+// E6 : une seule note par commande. Sans cela, un lien partage laisserait
+// noter en boucle.
+verifier("E6 deuxieme note refusee", await noter(livree.jeton_avis, 1), "deja_note");
+
+// E7 : les bornes de la note.
+const horsBornes = await creerCommande("livre", "Chemise");
+verifier("E7 note a zero refusee", await noter(horsBornes.jeton_avis, 0), "note_invalide");
+verifier("E7b note a six refusee", await noter(horsBornes.jeton_avis, 6), "note_invalide");
+verifier(
+  "E7c aucune trace laissee par les refus",
+  await compter(`select count(*) n from avis where commande_id = $1`, [horsBornes.id]),
+  0
+);
+
+// E8 : noter une commande non livree.
+verifier(
+  "E8 commande non livree : refus",
+  await noter(enCoursAvis.jeton_avis, 5),
+  "commande_introuvable"
+);
+
+// E9 : l'avis est rattache au bon atelier, sans quoi il compterait pour
+// quelqu'un d'autre.
+verifier(
+  "E9 avis rattache a l atelier de la commande",
+  await compter(`select count(*) n from avis where atelier_id = $1`, [atelierKossi]),
+  1
+);
+
+// E10 : les droits. anon doit pouvoir appeler les deux fonctions - c'est
+// tout l'objet - mais rien de plus.
+const droitsAvis = (
+  await db.query(`
+    select
+      has_function_privilege('anon', 'laisser_avis(uuid,smallint,text)', 'execute') as poser,
+      has_function_privilege('anon', 'commande_a_noter(uuid)', 'execute') as lire,
+      has_table_privilege('anon', 'avis', 'select') as lire_table,
+      has_table_privilege('anon', 'avis', 'insert') as ecrire_table,
+      has_table_privilege('anon', 'commandes', 'select') as lire_commandes
+  `)
+).rows[0];
+verifier("E10 anon peut deposer un avis", droitsAvis.poser, true);
+verifier("E10b anon peut lire la commande a noter", droitsAvis.lire, true);
+verifier("E10c anon ne lit pas la table avis", droitsAvis.lire_table, false);
+verifier("E10d anon n ecrit pas dans la table avis", droitsAvis.ecrire_table, false);
+verifier("E10e anon ne lit pas les commandes", droitsAvis.lire_commandes, false);
+
+// E11 : la migration sera collee dans le SQL editor, peut-etre deux fois.
+let rejeuAvis = null;
+try {
+  await db.exec(await readFile(resolve(MIGRATIONS, "0011_avis.sql"), "utf8"));
+} catch (erreur) {
+  rejeuAvis = erreur.message;
+}
+verifier("E11 migration rejouable sans erreur", rejeuAvis, null);
+
+verifier(
+  "E11b les jetons survivent au rejeu",
+  (await db.query(`select jeton_avis from commandes where id = $1`, [livree.id]))
+    .rows[0].jeton_avis,
+  livree.jeton_avis
+);
+
+// =========================================================================
 console.log(
   `\n${rates === 0 ? `Les ${total} verifications passent.` : `${rates} verification(s) sur ${total} en echec.`}\n`
 );

@@ -18,7 +18,12 @@ const PUBLIC_PATHS = [
 // doit rester visible par un visiteur, et le repli du service worker doit
 // repondre la meme chose dans les deux cas, sinon c'est une redirection qui
 // finit en cache.
-const CHEMINS_LIBRES = ["/hors-ligne"];
+//
+// La page de notation en fait partie : elle s'adresse a un client qui n'a
+// pas de compte, mais le tailleur doit pouvoir ouvrir le lien lui-meme pour
+// verifier ce qu'il envoie. Rangee dans PUBLIC_PATHS, elle renverrait un
+// tailleur connecte vers son tableau de bord.
+const CHEMINS_LIBRES = ["/hors-ligne", "/avis"];
 
 function estCheminLibre(chemin: string) {
   return chemin === "/" || CHEMINS_LIBRES.some((libre) => chemin.startsWith(libre));

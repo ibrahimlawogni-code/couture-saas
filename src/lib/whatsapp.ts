@@ -73,6 +73,32 @@ export function messageRappelEssayage(
   ].join("\n");
 }
 
+/*
+ * La demande d'avis, envoyee apres la remise du vetement.
+ *
+ * Courte, et sans relance : c'est la derniere chose que le client lit de
+ * l'atelier, elle ne doit pas ressembler a une reclamation. Le lien porte
+ * un jeton propre a cette commande, qui ne vaut qu'une fois.
+ */
+export function messageAvis(
+  atelier: string,
+  client: string,
+  commande: Commande,
+  lienNotation: string
+) {
+  return [
+    `Bonjour ${client},`,
+    "",
+    `J'espère que votre ${commande.nom_modele ?? "vêtement"} vous plaît.`,
+    "",
+    `Si vous avez un instant, dites-moi comment ça s'est passé — cela m'aide beaucoup :`,
+    lienNotation,
+    "",
+    `Merci de votre confiance.`,
+    atelier,
+  ].join("\n");
+}
+
 export function messagePret(
   atelier: string,
   client: string,
