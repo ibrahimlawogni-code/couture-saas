@@ -54,6 +54,25 @@ A lancer avant de coller une migration dans le SQL editor. Les regles
 d'argent et d'acces du produit vivent dans ces fichiers, et une erreur ne
 s'y voit qu'en production.
 
+## Tester les regles de commande
+
+```bash
+npm run test:commandes
+```
+
+Verifie les deux calculs de `src/lib/commandes.ts` qui manipulent des
+dates, parce qu'une erreur de date ne se voit pas en relisant du code :
+
+- **la ponctualite**, seul chiffre du produit qui juge le travail plutot
+  que l'argent, et seul qu'un tailleur puisse montrer a un client ;
+- **les groupes d'echeance**, qui commandent la mise en page entiere de
+  l'ecran des commandes. Un decalage d'un jour range une piece a livrer
+  aujourd'hui sous « Cette semaine ».
+
+Aucune bibliotheque : dix-huit comparaisons ne valent pas une dependance
+de plus. Le banc importe directement le module TypeScript, d'ou le
+`--experimental-strip-types` de la commande.
+
 ## Suppression de compte et purge
 
 Supprimer le dernier compte d'un atelier ne suffit pas a effacer ses
