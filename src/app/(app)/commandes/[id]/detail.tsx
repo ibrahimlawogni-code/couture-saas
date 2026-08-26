@@ -22,6 +22,7 @@ import {
 } from "@/lib/commandes";
 import {
   lienWhatsApp,
+  messageAvis,
   messagePret,
   messageRappelEssayage,
   messageRecapitulatif,
@@ -47,7 +48,7 @@ export function DetailCommande() {
   // designeraient une autre commande.
   const commandeId = useIdentifiantUrl() ?? "";
 
-  const { atelier, clients, commandes, paiements, chargee } = useDonnees();
+  const { atelier, clients, commandes, paiements, avis, chargee } = useDonnees();
   const nomAtelier = atelier?.nom ?? "Mon atelier";
   const { horsLigne } = useFileAttente();
   const [signatures, setSignatures] = useState<string[]>([]);
@@ -187,6 +188,30 @@ export function DetailCommande() {
       label: "Prévenir que c'est prêt",
       texte: messagePret(nomAtelier, nomClient, donneesMessage, reste),
       visible: statut === "pret",
+    },
+    /*
+     * La demande d'avis n'apparait qu'une fois la piece remise, et
+     * disparait des que le client a repondu : proposer d'envoyer un lien
+     * deja utilise ferait relancer quelqu'un qui a deja fait sa part.
+     *
+     * Le jeton manque aux commandes encore dans la file locale - c'est la
+     * base qui le pose. Le bouton attend donc leur envoi.
+     */
+    {
+      cle: "avis",
+      label: "Demander un avis",
+      texte: commande.jeton_avis
+        ? messageAvis(
+            nomAtelier,
+            nomClient,
+            donneesMessage,
+            `${window.location.origin}/avis/${commande.jeton_avis}`
+          )
+        : "",
+      visible:
+        statut === "livre" &&
+        Boolean(commande.jeton_avis) &&
+        !avis.some((a) => a.commande_id === commande.id),
     },
   ].filter((message) => message.visible);
 

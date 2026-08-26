@@ -25,6 +25,35 @@ export function statutSuivant(statut: Statut): Statut | null {
   return index >= 0 && index < STATUTS.length - 1 ? STATUTS[index + 1] : null;
 }
 
+/*
+ * Les modeles courants de l'atelier, proposes a la saisie d'une commande.
+ *
+ * La liste ferme le cas frequent sans fermer la porte : le formulaire offre
+ * un choix « Autre » qui rend la saisie libre. Un tailleur coud aussi des
+ * pieces qui ne sont dans aucune liste, et l'obliger a choisir entre neuf
+ * cases lui ferait ranger une robe de mariee sous « Robe (Moderne) ».
+ *
+ * Le champ reste du texte libre en base : rien ici n'est une contrainte,
+ * seulement un raccourci. Les commandes deja saisies gardent leur libelle.
+ */
+export const MODELES = [
+  "3 Pièces (AGBADA)",
+  "BOMBA (Manche courte)",
+  "BOMBA (Manche longue)",
+  "BOMBA Femme",
+  "Chemise",
+  "Chemise + pantalon (Moderne)",
+  "Chemise + pantalon (Pagne)",
+  "Robe (Moderne)",
+  "Robe (Pagne)",
+] as const;
+
+/*
+ * Valeur sentinelle du choix « Autre ». Volontairement impossible a
+ * confondre avec un nom de modele reel.
+ */
+export const MODELE_AUTRE = "__autre__";
+
 export type Priorite = "en_retard" | "urgent" | "normal";
 
 /** Compare la date de livraison a aujourd'hui pour situer l'urgence. */
@@ -197,6 +226,95 @@ export function versesParCommande(
 /** Ce qu'il reste a encaisser. Negatif si le client a trop verse. */
 export function resteAPayer(prixTotal: number | string, verse: number) {
   return Number(prixTotal) - verse;
+}
+
+/*
+ * La ponctualite de l'atelier : la part des pieces sorties a la date
+ * promise.
+ *
+ * C'est le seul indicateur du produit qui juge le travail plutot que
+ * l'argent, et le seul qu'un tailleur puisse montrer a un client. Il
+ * demande de comparer deux dates que l'application tenait separees : celle
+ * qu'on a promise, portee par la commande, et celle ou la piece est
+ * reellement sortie, qui ne vit que dans l'historique des statuts.
+ *
+ * Une commande sans date de livraison prevue est ecartee du calcul : on ne
+ * peut pas etre en retard sur une promesse qu'on n'a pas faite. Les
+ * compter comme ponctuelles gonflerait le score de tout ce qu'on a oublie
+ * de dater.
+ */
+export type Ponctualite = {
+  /** Livraisons sur lesquelles le calcul a pu se faire. */
+  mesurees: number;
+  aTemps: number;
+  /** Pourcentage entier, ou null quand il n'y a rien a mesurer. */
+  part: number | null;
+  /** Retard moyen en jours, sur les seules pieces en retard. */
+  retardMoyen: number;
+};
+
+const AUCUNE_PONCTUALITE: Ponctualite = {
+  mesurees: 0,
+  aTemps: 0,
+  part: null,
+  retardMoyen: 0,
+};
+
+/** Minuit, pour comparer des jours et non des instants. */
+function jour(valeur: string) {
+  const date = new Date(valeur);
+  date.setHours(0, 0, 0, 0);
+  return date.getTime();
+}
+
+export function ponctualite(
+  commandes: { id: string; statut: string; date_livraison: string | null }[],
+  livraisons: { commande_id: string; created_at: string }[]
+): Ponctualite {
+  /*
+   * La derniere sortie, et non la premiere : le bandeau d'annulation
+   * permet de revenir sur un passage a « Livre », ce qui laisse deux
+   * lignes dans l'historique. C'est la seconde qui fait foi.
+   */
+  const sortieReelle = new Map<string, number>();
+  for (const ligne of livraisons) {
+    const quand = jour(ligne.created_at);
+    const connue = sortieReelle.get(ligne.commande_id);
+    if (connue === undefined || quand > connue) {
+      sortieReelle.set(ligne.commande_id, quand);
+    }
+  }
+
+  let mesurees = 0;
+  let aTemps = 0;
+  let joursDeRetard = 0;
+  let enRetard = 0;
+
+  for (const commande of commandes) {
+    if (commande.statut !== "livre" || !commande.date_livraison) continue;
+
+    const sortie = sortieReelle.get(commande.id);
+    if (sortie === undefined) continue;
+
+    mesurees += 1;
+
+    const promise = jour(commande.date_livraison);
+    if (sortie <= promise) {
+      aTemps += 1;
+    } else {
+      enRetard += 1;
+      joursDeRetard += Math.round((sortie - promise) / 86_400_000);
+    }
+  }
+
+  if (mesurees === 0) return AUCUNE_PONCTUALITE;
+
+  return {
+    mesurees,
+    aTemps,
+    part: Math.round((aTemps / mesurees) * 100),
+    retardMoyen: enRetard > 0 ? joursDeRetard / enRetard : 0,
+  };
 }
 
 /**

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Users } from "@phosphor-icons/react/dist/ssr";
 import { createClient } from "@/lib/supabase/client";
+import { MODELES, MODELE_AUTRE } from "@/lib/commandes";
 import { enregistrer } from "@/lib/offline/enregistrer";
 import { estLimiteOffre, messageRefus } from "@/lib/offline/erreurs";
 import { cheminPhoto, compresserPhoto } from "@/lib/offline/photo";
@@ -35,6 +36,7 @@ export function FormulaireCommande({
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [limite, setLimite] = useState(false);
+  const [modele, setModele] = useState("");
 
   // Un client cree hors ligne doit pouvoir recevoir une commande
   // immediatement, sans attendre sa synchronisation.
@@ -92,6 +94,17 @@ export function FormulaireCommande({
     const prixTotal = Number(formulaire.get("prix_total") ?? 0);
     const acompte = Number(formulaire.get("acompte") ?? 0);
 
+    /*
+     * La sentinelle « Autre » ne doit jamais atteindre la base : c'est le
+     * champ libre qui porte alors le nom du modele.
+     */
+    const choixModele = String(formulaire.get("nom_modele") ?? "");
+    const nomModele =
+      (choixModele === MODELE_AUTRE
+        ? String(formulaire.get("nom_modele_autre") ?? "")
+        : choixModele
+      ).trim() || null;
+
     let enFile = false;
 
     try {
@@ -107,7 +120,7 @@ export function FormulaireCommande({
           // ligne s'affiche depuis la file, ou aucune colonne n'est calculee
           // par Postgres, et se retrouverait donc sans statut dans le tableau.
           statut: "recu",
-          nom_modele: String(formulaire.get("nom_modele") ?? "").trim() || null,
+          nom_modele: nomModele,
           photo_modele_url: photoModèle?.chemin ?? null,
           photo_tissu_url: photoTissu?.chemin ?? null,
           prix_total: prixTotal,
@@ -180,13 +193,43 @@ export function FormulaireCommande({
         ))}
       </Selecteur>
 
-      <Champ
+      {/*
+       * Le modele se choisit dans une liste, et non plus a la main. C'est
+       * la meme dizaine de pieces qui revient, et les ecrire chaque fois
+       * produisait des libelles differents pour un meme vetement - ce qui
+       * se voit ensuite dans le recu remis au client.
+       *
+       * « Autre » ouvre un champ libre : un tailleur coud aussi des pieces
+       * qui ne sont dans aucune liste, et l'obliger a choisir lui ferait
+       * ranger une robe de mariee sous « Robe (Moderne) ».
+       */}
+      <Selecteur
         id="nom_modele"
         name="nom_modele"
-        type="text"
         libelle="Modèle"
-        placeholder="Boubou brodé, chemise..."
-      />
+        value={modele}
+        onChange={(evenement) => setModele(evenement.target.value)}
+      >
+        <option value="">Sans modèle</option>
+        {MODELES.map((nom) => (
+          <option key={nom} value={nom}>
+            {nom}
+          </option>
+        ))}
+        <option value={MODELE_AUTRE}>Autre…</option>
+      </Selecteur>
+
+      {modele === MODELE_AUTRE && (
+        <Champ
+          id="nom_modele_autre"
+          name="nom_modele_autre"
+          type="text"
+          libelle="Préciser le modèle"
+          placeholder="Boubou brodé, tenue de mariée..."
+          autoFocus
+          required
+        />
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         <ChampPhoto id="photo_modele" libelle="Photo modèle" />

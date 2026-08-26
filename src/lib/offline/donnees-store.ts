@@ -3,7 +3,9 @@ import {
   EVENEMENT_MIROIR,
   lireAtelier,
   lireClients,
+  lireAvis,
   lireCommandes,
+  lireHistorique,
   lireMesures,
   lirePaiements,
   rafraichirMiroir,
@@ -13,7 +15,9 @@ import { ouvrirBase, type LigneMesure } from "./db";
 import type {
   LigneAtelier,
   LigneClient,
+  LigneAvis,
   LigneCommande,
+  LigneHistorique,
   LignePaiement,
 } from "./db";
 
@@ -24,6 +28,10 @@ export type Donnees = {
   mesures: AvecAttente<LigneMesure>[];
   commandes: AvecAttente<LigneCommande>[];
   paiements: AvecAttente<LignePaiement>[];
+  /** Les passages a « Livre », dates. Voir lireHistorique. */
+  historique: LigneHistorique[];
+  /** Les notes laissees par les clients. */
+  avis: LigneAvis[];
 };
 
 const VIDE: Donnees = {
@@ -33,6 +41,8 @@ const VIDE: Donnees = {
   mesures: [],
   commandes: [],
   paiements: [],
+  historique: [],
+  avis: [],
 };
 
 let etat: Donnees = VIDE;
@@ -55,15 +65,27 @@ async function toutesLesMesures(): Promise<AvecAttente<LigneMesure>[]> {
 }
 
 async function recharger() {
-  const [atelier, clients, mesures, commandes, paiements] = await Promise.all([
-    lireAtelier(),
-    lireClients(),
-    toutesLesMesures(),
-    lireCommandes(),
-    lirePaiements(),
-  ]);
+  const [atelier, clients, mesures, commandes, paiements, historique, avis] =
+    await Promise.all([
+      lireAtelier(),
+      lireClients(),
+      toutesLesMesures(),
+      lireCommandes(),
+      lirePaiements(),
+      lireHistorique(),
+      lireAvis(),
+    ]);
 
-  etat = { chargee: true, atelier, clients, mesures, commandes, paiements };
+  etat = {
+    chargee: true,
+    atelier,
+    clients,
+    mesures,
+    commandes,
+    paiements,
+    historique,
+    avis,
+  };
   abonnes.forEach((notifier) => notifier());
 }
 

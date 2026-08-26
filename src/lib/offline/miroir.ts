@@ -4,8 +4,10 @@ import {
   ouvrirBase,
   type TableSynchronisable,
   type LigneAtelier,
+  type LigneAvis,
   type LigneClient,
   type LigneCommande,
+  type LigneHistorique,
   type LigneMesure,
   type LignePaiement,
 } from "./db";
@@ -27,31 +29,56 @@ function notifier() {
 export async function rafraichirMiroir() {
   const supabase = createClient();
 
-  const [ateliers, clients, mesures, commandes, paiements] = await Promise.all([
-    supabase.from("ateliers").select("id, nom, formule, telephone, whatsapp_number"),
-    supabase.from("clients").select("id, nom, telephone, whatsapp, notes, created_at"),
-    supabase.from("mesures").select("id, client_id, libelle, valeurs, created_at"),
-    supabase
-      .from("commandes")
-      .select(
-        "id, client_id, nom_modele, statut, prix_total, date_essayage, date_livraison, photo_modele_url, photo_tissu_url, created_at"
-      ),
-    supabase.from("paiements").select("id, commande_id, montant, type, created_at"),
-  ]);
+  const [ateliers, clients, mesures, commandes, paiements, historique, avis] =
+    await Promise.all([
+      supabase.from("ateliers").select("id, nom, formule, telephone, whatsapp_number"),
+      supabase.from("clients").select("id, nom, telephone, whatsapp, notes, created_at"),
+      supabase.from("mesures").select("id, client_id, libelle, valeurs, created_at"),
+      supabase
+        .from("commandes")
+        .select(
+          "id, client_id, nom_modele, statut, prix_total, date_essayage, date_livraison, photo_modele_url, photo_tissu_url, jeton_avis, created_at"
+        ),
+      supabase.from("paiements").select("id, commande_id, montant, type, created_at"),
+      /*
+       * Seuls les passages a « Livre » sont rapatries. L'historique
+       * complet compte sept lignes par commande, dont six qu'aucun ecran
+       * ne lit ; sur deux cents commandes cela ferait mille deux cents
+       * lignes telechargees a chaque ouverture, sur une connexion qui est
+       * deja le point faible du produit.
+       */
+      supabase
+        .from("historique_statuts")
+        .select("id, commande_id, statut, created_at")
+        .eq("statut", "livre"),
+      supabase
+        .from("avis")
+        .select("id, commande_id, note, commentaire, created_at"),
+    ]);
 
   if (
     ateliers.error ||
     clients.error ||
     mesures.error ||
     commandes.error ||
-    paiements.error
+    paiements.error ||
+    historique.error ||
+    avis.error
   ) {
     return false;
   }
 
   const base = await ouvrirBase();
   const transaction = base.transaction(
-    ["ateliers", "clients", "mesures", "commandes", "paiements"],
+    [
+      "ateliers",
+      "clients",
+      "mesures",
+      "commandes",
+      "paiements",
+      "historique",
+      "avis",
+    ],
     "readwrite"
   );
 
@@ -61,6 +88,8 @@ export async function rafraichirMiroir() {
     transaction.objectStore("mesures").clear(),
     transaction.objectStore("commandes").clear(),
     transaction.objectStore("paiements").clear(),
+    transaction.objectStore("historique").clear(),
+    transaction.objectStore("avis").clear(),
   ]);
 
   await Promise.all([
@@ -78,6 +107,12 @@ export async function rafraichirMiroir() {
     ),
     ...(paiements.data ?? []).map((ligne) =>
       transaction.objectStore("paiements").put(ligne as LignePaiement)
+    ),
+    ...(historique.data ?? []).map((ligne) =>
+      transaction.objectStore("historique").put(ligne as LigneHistorique)
+    ),
+    ...(avis.data ?? []).map((ligne) =>
+      transaction.objectStore("avis").put(ligne as LigneAvis)
     ),
   ]);
 
@@ -176,4 +211,22 @@ export async function lirePaiements(): Promise<AvecAttente<LignePaiement>[]> {
   const attente = await lignesEnAttente<LignePaiement>("paiements");
 
   return [...enregistres, ...attente];
+}
+
+/*
+ * Les livraisons datees. Pas de file locale a fusionner : cette table est
+ * ecrite par un declencheur en base, jamais depuis l'appareil.
+ */
+export async function lireHistorique(): Promise<LigneHistorique[]> {
+  const base = await ouvrirBase();
+  return base.getAll("historique");
+}
+
+/*
+ * Les notes des clients. Ecrites depuis la page publique, jamais d'ici :
+ * pas de file locale a fusionner non plus.
+ */
+export async function lireAvis(): Promise<LigneAvis[]> {
+  const base = await ouvrirBase();
+  return base.getAll("avis");
 }

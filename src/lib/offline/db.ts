@@ -89,6 +89,12 @@ export type LigneCommande = {
   date_livraison: string | null;
   photo_modele_url: string | null;
   photo_tissu_url: string | null;
+  /*
+   * Porte le lien de notation envoye au client. Absent des commandes
+   * saisies hors ligne : la base le pose a l'insertion, et la copie locale
+   * ne le connait qu'au retour du miroir.
+   */
+  jeton_avis?: string;
   created_at: string;
 };
 
@@ -97,6 +103,36 @@ export type LignePaiement = {
   commande_id: string;
   montant: number;
   type: string;
+  created_at: string;
+};
+
+/*
+ * Un passage d'etape, date.
+ *
+ * C'est la seule trace de la date de livraison *reelle* : commandes ne
+ * porte que la date *prevue*. Sans cette table, l'application ne peut ni
+ * dire si une piece est sortie a temps, ni compter les livraisons du mois -
+ * elle ne connait que des promesses, jamais leur tenue.
+ *
+ * Alimentee par un declencheur en base a chaque changement de statut : rien
+ * n'est ecrit d'ici, la copie locale est en lecture seule.
+ */
+export type LigneHistorique = {
+  id: string;
+  commande_id: string;
+  statut: string;
+  created_at: string;
+};
+
+/*
+ * Une note laissee par un client. Ecrite par lui depuis la page publique,
+ * jamais depuis l'application : la copie locale est en lecture seule.
+ */
+export type LigneAvis = {
+  id: string;
+  commande_id: string;
+  note: number;
+  commentaire: string | null;
   created_at: string;
 };
 
@@ -133,9 +169,19 @@ interface SchemaCouture extends DBSchema {
     value: LignePaiement;
     indexes: { "par-commande": string };
   };
+  historique: {
+    key: string;
+    value: LigneHistorique;
+    indexes: { "par-commande": string };
+  };
+  avis: {
+    key: string;
+    value: LigneAvis;
+    indexes: { "par-commande": string };
+  };
 }
 
-const VERSION = 2;
+const VERSION = 3;
 
 let instance: Promise<IDBPDatabase<SchemaCouture>> | null = null;
 
@@ -162,6 +208,16 @@ export function ouvrirBase() {
 
           const paiements = base.createObjectStore("paiements", { keyPath: "id" });
           paiements.createIndex("par-commande", "commande_id");
+        }
+
+        if (ancienneVersion < 3) {
+          const historique = base.createObjectStore("historique", {
+            keyPath: "id",
+          });
+          historique.createIndex("par-commande", "commande_id");
+
+          const avis = base.createObjectStore("avis", { keyPath: "id" });
+          avis.createIndex("par-commande", "commande_id");
         }
       },
     });

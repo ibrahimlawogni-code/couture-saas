@@ -6,6 +6,7 @@ import {
   ArrowRight,
   CheckCircle,
   Plus,
+  Star,
   TrendDown,
   TrendUp,
   UserPlus,
@@ -14,6 +15,7 @@ import {
   STATUT_LABELS,
   formaterMontant,
   groupeEcheance,
+  ponctualite,
   priorite,
   resteAPayer,
   versesParCommande,
@@ -66,7 +68,8 @@ function motif(commande: {
 }
 
 export function TableauDeBord() {
-  const { atelier, clients, commandes, paiements, chargee } = useDonnees();
+  const { atelier, clients, commandes, paiements, historique, avis, chargee } =
+    useDonnees();
 
   const bilan = useMemo(() => {
     const maintenant = new Date();
@@ -81,7 +84,38 @@ export function TableauDeBord() {
       .reduce((somme, p) => somme + Number(p.montant), 0);
 
     const enCours = commandes.filter((c) => c.statut !== "livre");
-    const livrees = commandes.length - enCours.length;
+
+    /*
+     * Les livraisons du mois, comptees sur leur date reelle et non sur la
+     * date prevue. L'ecran affichait un total depuis toujours, faute de
+     * connaitre la date de sortie ; l'historique des statuts la porte.
+     */
+    const livreesCeMois = historique.filter(
+      (ligne) => new Date(ligne.created_at) >= debutMois
+    ).length;
+
+    const tenue = ponctualite(commandes, historique);
+
+    /*
+     * La note moyenne. Arrondie au dixieme : au centieme, elle bougerait a
+     * chaque avis et donnerait a un chiffre de douze mesures une precision
+     * qu'il n'a pas.
+     */
+    const satisfaction =
+      avis.length > 0
+        ? avis.reduce((somme, a) => somme + Number(a.note), 0) / avis.length
+        : null;
+
+    /*
+     * Les clients qui ont une piece en cours, parmi tous ceux du carnet.
+     *
+     * Le total seul ne dit pas grand-chose : un atelier de quarante clients
+     * dont trois en activite n'est pas le meme qu'un atelier de quarante
+     * clients dont trente. Le carnet complet reste le chiffre principal -
+     * un client livre reste un client, et c'est lui qu'on rappelle a la
+     * saison suivante.
+     */
+    const clientsActifs = new Set(enCours.map((c) => c.client_id)).size;
 
     const verseParCommande = versesParCommande(paiements);
 
@@ -192,7 +226,11 @@ export function TableauDeBord() {
     return {
       encaisseMois,
       enCours,
-      livrees,
+      livreesCeMois,
+      tenue,
+      satisfaction,
+      nbAvis: avis.length,
+      clientsActifs,
       creances,
       nbImpayes,
       aTraiter,
@@ -203,7 +241,7 @@ export function TableauDeBord() {
       ecart,
       moisPrecedent: precedent?.libelle ?? "",
     };
-  }, [clients, commandes, paiements]);
+  }, [clients, commandes, paiements, historique, avis]);
 
   if (!chargee) return <SqueletteBord />;
 
@@ -420,7 +458,43 @@ export function TableauDeBord() {
           </Carte>
 
           {/*
-           * Trois reperes sur une ligne. Ils ne demandent aucune decision :
+           * Le carnet de clients a sa carte.
+           *
+           * Il tenait dans la ligne de reperes en dessous, ou il se lisait
+           * comme une statistique parmi d'autres. C'est pourtant le seul
+           * chiffre du tableau de bord qui ne redescend jamais : une
+           * commande se livre et sort des comptes, un client livre reste
+           * au carnet, et c'est lui qu'on rappelle a la saison suivante.
+           */}
+          <Carte classe="p-5">
+            <h2 className="text-[10px] font-medium tracking-[0.1em] text-gris uppercase">
+              Clients
+            </h2>
+            <p className="mt-1 flex items-baseline gap-1.5">
+              <span className="text-[2.125rem] leading-none font-semibold tracking-tight text-encre">
+                {clients.length}
+              </span>
+              <span className="text-xs text-gris">
+                au total
+              </span>
+            </p>
+            <p className="mt-2 text-xs text-gris">
+              {clients.length === 0
+                ? "aucun client enregistré"
+                : bilan.clientsActifs > 0
+                  ? `dont ${bilan.clientsActifs} avec une pièce en cours`
+                  : "aucune pièce en cours"}
+            </p>
+          </Carte>
+
+          <Evaluation
+            tenue={bilan.tenue}
+            satisfaction={bilan.satisfaction}
+            nbAvis={bilan.nbAvis}
+          />
+
+          {/*
+           * Deux reperes sur une ligne. Ils ne demandent aucune decision :
            * leur donner une carte chacun leur pretait une urgence qu'ils
            * n'ont pas, et repoussait la courbe sous la ligne de flottaison.
            */}
@@ -428,11 +502,11 @@ export function TableauDeBord() {
             <span className="font-semibold text-encre">
               {bilan.enCours.length}
             </span>{" "}
-            en cours ·{" "}
-            <span className="font-semibold text-encre">{clients.length}</span>{" "}
-            client{clients.length > 1 ? "s" : ""} ·{" "}
-            <span className="font-semibold text-encre">{bilan.livrees}</span>{" "}
-            livrée{bilan.livrees > 1 ? "s" : ""}
+            commande{bilan.enCours.length > 1 ? "s" : ""} en cours ·{" "}
+            <span className="font-semibold text-encre">
+              {bilan.livreesCeMois}
+            </span>{" "}
+            livrée{bilan.livreesCeMois > 1 ? "s" : ""} ce mois
           </p>
 
           {/*
@@ -485,6 +559,150 @@ export function TableauDeBord() {
         </div>
       </div>
     </>
+  );
+}
+
+/*
+ * La tenue des delais, en une jauge.
+ *
+ * C'est le seul indicateur du produit qui juge le travail plutot que
+ * l'argent, et le seul qu'un tailleur puisse montrer a un client.
+ *
+ * Les trois seuils suivent la grammaire de couleur de la marque plutot
+ * qu'une echelle inventee : le vert dit que le metier est tenu, l'ambre
+ * qu'une echeance approche du bord, le rouge qu'il y a un probleme. Un
+ * atelier qui rate une piece sur trois a un probleme, pas une nuance.
+ */
+const SEUIL_BON = 90;
+const SEUIL_PASSABLE = 70;
+
+function Evaluation({
+  tenue,
+  satisfaction,
+  nbAvis,
+}: {
+  tenue: {
+    mesurees: number;
+    aTemps: number;
+    part: number | null;
+    retardMoyen: number;
+  };
+  satisfaction: number | null;
+  nbAvis: number;
+}) {
+  const ton =
+    tenue.part === null
+      ? null
+      : tenue.part >= SEUIL_BON
+        ? { texte: "text-vert", fond: "bg-vert" }
+        : tenue.part >= SEUIL_PASSABLE
+          ? { texte: "text-ambre", fond: "bg-ambre" }
+          : { texte: "text-rouge", fond: "bg-rouge" };
+
+  const retard = tenue.mesurees - tenue.aTemps;
+
+  return (
+    <Carte classe="p-5">
+      <h2 className="text-[10px] font-medium tracking-[0.1em] text-gris uppercase">
+        Évaluation de l&apos;atelier
+      </h2>
+
+      {/* --- Ce que l'atelier tient : les delais ------------------------ */}
+      <div className="mt-3">
+        <p className="flex items-baseline justify-between gap-2">
+          <span className="text-sm text-gris">Ponctualité</span>
+          {tenue.part === null ? (
+            <span className="text-sm text-gris">—</span>
+          ) : (
+            <span
+              className={`text-2xl leading-none font-semibold tracking-tight ${ton!.texte}`}
+            >
+              {tenue.part} %
+            </span>
+          )}
+        </p>
+
+        {tenue.part === null ? (
+          <p className="mt-1.5 text-xs leading-relaxed text-gris">
+            Rien à mesurer pour l&apos;instant. Le score apparaîtra dès
+            qu&apos;une commande datée sera passée à « Livré ».
+          </p>
+        ) : (
+          <>
+            {/*
+             * La jauge double le pourcentage plutot que de le remplacer :
+             * elle se lit d'un coup d'oeil, mais elle ne porte aucune
+             * information que le chiffre ne donne pas, d'ou l'aria-hidden.
+             */}
+            <div
+              aria-hidden
+              className="mt-2 h-1.5 overflow-hidden rounded-full bg-bordure"
+            >
+              <div
+                className={`h-full rounded-full ${ton!.fond}`}
+                style={{ width: `${tenue.part}%` }}
+              />
+            </div>
+            <p className="mt-2 text-xs text-gris">
+              sur {tenue.mesurees} pièce{tenue.mesurees > 1 ? "s" : ""} livrée
+              {tenue.mesurees > 1 ? "s" : ""}
+              {retard > 0 &&
+                ` · retard moyen ${tenue.retardMoyen.toLocaleString("fr-FR", {
+                  maximumFractionDigits: 1,
+                })} jour${tenue.retardMoyen >= 2 ? "s" : ""}`}
+            </p>
+          </>
+        )}
+      </div>
+
+      <div className="my-4 h-px bg-bordure" />
+
+      {/* --- Ce que les clients en disent ------------------------------- */}
+      <div>
+        <p className="flex items-baseline justify-between gap-2">
+          <span className="text-sm text-gris">Satisfaction</span>
+          {satisfaction === null ? (
+            <span className="text-sm text-gris">—</span>
+          ) : (
+            <span className="flex items-baseline gap-1.5">
+              <span className="text-2xl leading-none font-semibold tracking-tight text-encre">
+                {satisfaction.toLocaleString("fr-FR", {
+                  maximumFractionDigits: 1,
+                })}
+              </span>
+              <span className="text-xs text-gris">sur 5</span>
+            </span>
+          )}
+        </p>
+
+        {satisfaction === null ? (
+          <p className="mt-1.5 text-xs leading-relaxed text-gris">
+            Aucun avis reçu. Le lien de notation s&apos;envoie sur WhatsApp
+            depuis une commande livrée.
+          </p>
+        ) : (
+          <>
+            <p aria-hidden className="mt-2 flex gap-0.5">
+              {[1, 2, 3, 4, 5].map((rang) => (
+                <Star
+                  key={rang}
+                  size={15}
+                  weight={rang <= Math.round(satisfaction) ? "fill" : "regular"}
+                  className={
+                    rang <= Math.round(satisfaction)
+                      ? "text-ambre"
+                      : "text-bordure"
+                  }
+                />
+              ))}
+            </p>
+            <p className="mt-2 text-xs text-gris">
+              sur {nbAvis} avis
+            </p>
+          </>
+        )}
+      </div>
+    </Carte>
   );
 }
 
