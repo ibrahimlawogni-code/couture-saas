@@ -4,31 +4,28 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   CaretDown,
+  CheckCircle,
   CloudSlash,
   UploadSimple,
   WarningCircle,
   X,
 } from "@phosphor-icons/react/dist/ssr";
 import { useFileAttente } from "@/lib/offline/use-file-attente";
+import { useEtatEnvoi } from "@/lib/offline/use-etat-envoi";
 import { retirerDeLaFile } from "@/lib/offline/outbox";
 
-/*
- * La bande d'etat du reseau, tout en haut de l'application.
+/**
+ * Enregistrement du service worker, et relecture quand le reseau revient.
  *
- * Elle etait en position fixe, et recouvrait donc l'en-tete du telephone :
- * passer hors ligne faisait disparaitre le nom de l'atelier et le bouton
- * de deconnexion sous la bande bleue. Elle est maintenant dans le flux, ou
- * elle decale le contenu au lieu de le masquer, et collante pour rester
- * visible pendant le defilement.
- *
- * Le bleu la designe comme une parole du systeme, jamais du metier. Le
- * rouge est reserve au seul cas qui demande une decision : un refus
- * definitif, que l'attente ne resoudra pas.
+ * Separe de la bande d'etat parce que les deux n'ont pas la meme portee :
+ * l'enregistrement vaut pour tout le site, y compris la page de vente d'ou
+ * se fait l'installation, tandis que la bande ne concerne que
+ * l'application. Tant que les deux tenaient dans un seul composant, rendre
+ * la bande permanente aurait pose « À jour » en tete de la page de vente.
  */
-export function BarreEtatReseau() {
+export function EnregistrerServiceWorker() {
   const router = useRouter();
-  const { horsLigne, enAttente, echecs } = useFileAttente();
-  const [deplie, setDeplie] = useState(false);
+  const { horsLigne, enAttente } = useFileAttente();
 
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
@@ -66,6 +63,30 @@ export function BarreEtatReseau() {
     if (!horsLigne && (reseauRevenu || fileVidee)) router.refresh();
   }, [horsLigne, enAttente.length, router]);
 
+  return null;
+}
+
+/*
+ * La bande d'etat du reseau, sous l'en-tete de l'application.
+ *
+ * Elle ne parlait qu'en cas d'ennui : hors ligne, envoi en cours, refus.
+ * Le reste du temps elle disparaissait, et son absence ne disait rien -
+ * ni « tout est parti », ni « je n'ai pas encore verifie ». Pour qui perd
+ * le reseau plusieurs fois par jour, c'est justement l'etat calme qui a
+ * besoin d'etre dit : il rassure sur ce qui vient d'etre enregistre.
+ *
+ * Elle est donc permanente, et tient en 26 px tant que rien ne va mal.
+ * Elle informe, elle ne bloque pas.
+ *
+ * Le bleu la designe comme une parole du systeme, jamais du metier. Le
+ * rouge est reserve au seul cas qui demande une decision : un refus
+ * definitif, que l'attente ne resoudra pas.
+ */
+export function BarreEtatReseau() {
+  const { echecs } = useFileAttente();
+  const etat = useEtatEnvoi();
+  const [deplie, setDeplie] = useState(false);
+
   /*
    * Un refus definitif ne se resoudra pas en attendant : il faut dire
    * pourquoi, et laisser la personne s'en debarrasser. Sans ce bouton, une
@@ -78,7 +99,7 @@ export function BarreEtatReseau() {
     return (
       <div
         role="alert"
-        className="sur-fond-sombre sticky top-0 z-50 bg-rouge pt-securite text-white shadow-flottant"
+        className="sur-fond-sombre sticky top-0 z-40 bg-rouge text-white shadow-flottant"
       >
         <button
           type="button"
@@ -134,49 +155,53 @@ export function BarreEtatReseau() {
     );
   }
 
-  if (horsLigne) {
-    return (
-      <BandeSysteme icone={CloudSlash}>
-        Hors connexion
-        {enAttente.length > 0 && ` · ${enAttente.length} en attente d'envoi`}
-      </BandeSysteme>
-    );
-  }
+  const calme = etat.ton === "calme";
+  const enCours = etat.texte === "Envoi en cours";
+  const Icone = calme ? CheckCircle : enCours ? UploadSimple : CloudSlash;
 
-  if (enAttente.length > 0) {
-    return (
-      <BandeSysteme icone={UploadSimple} anime>
-        Envoi en cours · {enAttente.length} restant
-        {enAttente.length > 1 ? "s" : ""}
-      </BandeSysteme>
-    );
-  }
-
-  return null;
+  /*
+   * L'etat calme s'efface sur grand ecran : la barre laterale y porte deja
+   * l'etat d'envoi en permanence, et deux endroits qui disent la meme chose
+   * finissent toujours par se contredire. Les etats qui demandent
+   * l'attention restent visibles partout.
+   */
+  return (
+    <Bande
+      ton={calme ? "calme" : "systeme"}
+      icone={Icone}
+      anime={enCours}
+      classe={calme ? "lg:hidden" : undefined}
+    >
+      {etat.texte}
+      {etat.detail ? ` · ${etat.detail}` : ""}
+    </Bande>
+  );
 }
 
-function BandeSysteme({
+const TONS_BANDE = {
+  systeme: "bg-bleu-clair text-bleu",
+  calme: "bg-papier text-gris",
+} as const;
+
+function Bande({
+  ton,
   icone: Icone,
   anime = false,
+  classe,
   children,
 }: {
+  ton: keyof typeof TONS_BANDE;
   icone: React.ComponentType<{ size?: number; className?: string }>;
   anime?: boolean;
+  classe?: string;
   children: React.ReactNode;
 }) {
   return (
     <p
       role="status"
-      /*
-       * Le calcul plutot que py-2 et pt-securite cote a cote : les deux
-       * posent padding-top, et l'utilitaire emis en dernier l'emporte.
-       * pt-securite gagnait donc, et vaut zero partout sauf sur un
-       * appareil a encoche installe en PWA - le texte se retrouvait colle
-       * au bord haut sur tous les autres.
-       */
-      className="sticky top-0 z-50 flex items-center justify-center gap-2 bg-bleu px-4 pt-[calc(0.5rem+env(safe-area-inset-top))] pb-2 text-sm font-medium text-white"
+      className={`sticky top-0 z-40 flex h-[1.625rem] items-center gap-2 border-b border-bordure px-4 text-[0.6875rem] font-medium ${TONS_BANDE[ton]} ${classe ?? ""}`}
     >
-      <Icone size={16} className={anime ? "animate-pulse" : undefined} />
+      <Icone size={13} className={anime ? "animate-pulse" : undefined} />
       {children}
     </p>
   );

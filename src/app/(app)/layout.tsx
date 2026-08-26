@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { CaretRight } from "@phosphor-icons/react/dist/ssr";
 import { createClient } from "@/lib/supabase/server";
 import { Marque } from "../marque";
+import { BarreEtatReseau } from "../service-worker";
 import { signOut } from "./actions";
 import { BarreLaterale } from "./barre-laterale";
 import { NavigationPrincipale } from "./navigation";
@@ -50,14 +51,20 @@ export default async function AppLayout({
   const nomUtilisateur = utilisateur?.nom ?? "";
 
   return (
-    <div className="flex min-h-full flex-1 flex-col bg-papier lg:flex-row">
+    /*
+     * Sur grand ecran, l'application occupe exactement la hauteur de la
+     * fenetre et c'est la colonne de contenu qui defile. La page entiere
+     * defilait auparavant, ce qui emmenait la barre laterale hors de vue
+     * des le premier ecran de commandes.
+     */
+    <div className="flex min-h-full flex-1 flex-col bg-papier lg:h-dvh lg:flex-row lg:overflow-hidden">
       <BarreLaterale
         nomAtelier={nomAtelier}
         nomUtilisateur={nomUtilisateur}
         deconnexion={signOut}
       />
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col lg:overflow-y-auto">
         {/* En-tete du telephone seulement : sur grand ecran, la barre
             laterale porte deja le nom de l'atelier et la deconnexion. */}
         {/*
@@ -72,7 +79,11 @@ export default async function AppLayout({
          * reglages et la deconnexion, dont aucun n'a besoin d'etre a
          * portee permanente.
          */}
-        <header className="flex items-center justify-between gap-3 border-b border-bordure bg-white px-4 py-3 lg:hidden">
+        {/*
+         * Le calcul plutot que py-3 et pt-securite cote a cote : les deux
+         * posent padding-top, et l'utilitaire emis en dernier l'emporte.
+         */}
+        <header className="flex items-center justify-between gap-3 border-b border-bordure bg-white px-4 pt-[calc(0.75rem+env(safe-area-inset-top))] pb-3 lg:hidden">
           <Link
             href="/reglages"
             className="-m-1.5 flex min-w-0 items-center gap-2.5 rounded-controle p-1.5 active:bg-papier"
@@ -106,6 +117,14 @@ export default async function AppLayout({
             </button>
           </form>
         </header>
+
+        {/*
+         * L'etat du reseau est dit en permanence, sous l'en-tete et non
+         * au-dessus : c'est l'en-tete qui porte le nom de l'atelier, et une
+         * bande collee au-dessus de lui le poussait hors de l'ecran des le
+         * premier defilement.
+         */}
+        <BarreEtatReseau />
 
         {/*
          * La reserve du bas vaut la hauteur de la barre d'onglets plus

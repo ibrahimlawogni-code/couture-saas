@@ -5,20 +5,22 @@ import { classes } from "./classes";
 /*
  * Le cadre commun a tous les ecrans.
  *
- * Trois largeurs, et la raison de chacune :
+ * Deux largeurs, et la raison de chacune :
  *
  *   etroit  listes et formulaires. Une ligne de texte trop large se lit
  *           mal, quelle que soit la place disponible.
- *   large   tableaux de chiffres. Eux gagnent a s'etaler : la contrainte
- *           de lisibilite d'une ligne de prose ne les concerne pas.
- *   pleine  le Kanban, dont les colonnes doivent filer jusqu'aux bords de
- *           l'ecran sans quoi le defilement parait bute.
+ *   large   tableaux de chiffres et listes a colonnes. Eux gagnent a
+ *           s'etaler : la contrainte de lisibilite d'une ligne de prose ne
+ *           les concerne pas.
+ *
+ * Une troisieme, « pleine », servait au Kanban dont les colonnes filaient
+ * jusqu'aux bords de l'ecran. Le Kanban a laisse place a une liste, et plus
+ * rien ne demandait cette largeur.
  */
 
 const LARGEURS = {
   etroit: "mx-auto w-full max-w-2xl px-4",
   large: "mx-auto w-full max-w-2xl px-4 lg:max-w-5xl lg:px-8",
-  pleine: "w-full",
 } as const;
 
 export function Page({

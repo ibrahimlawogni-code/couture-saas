@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import {
+  ArrowRight,
   CheckCircle,
   Plus,
   TrendDown,
@@ -12,6 +13,7 @@ import {
 import {
   STATUT_LABELS,
   formaterMontant,
+  groupeEcheance,
   priorite,
   resteAPayer,
   versesParCommande,
@@ -19,8 +21,8 @@ import {
 } from "@/lib/commandes";
 import { useDonnees } from "@/lib/offline/use-donnees";
 import { Carte, CarteLien, Panneau } from "@/ui/carte";
-import { Vignette } from "@/ui/vignette";
-import { Compteur, Etiquette, type TonEtiquette } from "@/ui/etiquette";
+import { Etiquette, type TonEtiquette } from "@/ui/etiquette";
+import { Jalons } from "@/ui/jalons";
 import { EnTeteSection } from "@/ui/page";
 import { Squelette, SqueletteLigne } from "@/ui/squelette";
 import { GraphiqueEncaissements, type PointMensuel } from "./graphique";
@@ -41,19 +43,22 @@ function memeJour(a: string | null, b: Date) {
 }
 
 /*
- * Ce qui fait remonter une commande dans « A traiter », et sous quel ton.
+ * Ce qui fait remonter une commande dans la liste du jour, et sous quel ton.
  *
  * L'ordre compte : une commande en retard qui a aussi un essayage
- * aujourd'hui est d'abord en retard. Le retard est le seul des trois cas
+ * aujourd'hui est d'abord en retard. Le retard est le seul des quatre cas
  * ou quelque chose a deja mal tourne.
  */
 function motif(commande: {
   niveau: string;
+  livraisonAujourdhui: boolean;
   essayageAujourdhui: boolean;
   statut: string;
 }): { texte: string; ton: TonEtiquette } | null {
   if (commande.niveau === "en_retard")
     return { texte: "En retard", ton: "probleme" };
+  if (commande.livraisonAujourdhui)
+    return { texte: "À livrer", ton: "attention" };
   if (commande.essayageAujourdhui)
     return { texte: "Essayage", ton: "attention" };
   if (commande.statut === "pret") return { texte: "À retirer", ton: "metier" };
@@ -76,6 +81,7 @@ export function TableauDeBord() {
       .reduce((somme, p) => somme + Number(p.montant), 0);
 
     const enCours = commandes.filter((c) => c.statut !== "livre");
+    const livrees = commandes.length - enCours.length;
 
     const verseParCommande = versesParCommande(paiements);
 
@@ -91,25 +97,55 @@ export function TableauDeBord() {
     // Ce qui reclame une decision aujourd'hui, dans l'ordre d'urgence.
     const nomsClients = new Map(clients.map((c) => [c.id, c.nom]));
     const aTraiter = enCours
-      .map((commande) => ({
-        ...commande,
-        client: nomsClients.get(commande.client_id) ?? "Client inconnu",
-        niveau: priorite(commande.date_livraison, commande.statut as Statut),
-        essayageAujourdhui: memeJour(commande.date_essayage, maintenant),
-        reste: resteAPayer(
-          commande.prix_total,
-          verseParCommande.get(commande.id) ?? 0,
-        ),
-      }))
+      .map((commande) => {
+        const groupe = groupeEcheance(
+          commande.date_livraison,
+          commande.statut as Statut,
+        );
+
+        return {
+          ...commande,
+          client: nomsClients.get(commande.client_id) ?? "Client inconnu",
+          niveau: priorite(commande.date_livraison, commande.statut as Statut),
+          livraisonAujourdhui: groupe === "aujourdhui",
+          essayageAujourdhui: memeJour(commande.date_essayage, maintenant),
+          reste: resteAPayer(
+            commande.prix_total,
+            verseParCommande.get(commande.id) ?? 0,
+          ),
+        };
+      })
       .filter(
         (c) =>
           c.niveau === "en_retard" ||
+          c.livraisonAujourdhui ||
           c.essayageAujourdhui ||
           c.statut === "pret",
       )
       .sort((a, b) =>
         (a.date_livraison ?? "9999").localeCompare(b.date_livraison ?? "9999"),
       );
+
+    /*
+     * Le chiffre d'accroche de l'ecran : ce qui doit sortir de l'atelier
+     * aujourd'hui, retards compris. Une piece en retard reste une piece a
+     * livrer - la sortir du compte donnerait un « 1 » rassurant a un
+     * atelier qui en doit quatre depuis la semaine derniere. La pastille
+     * dit ensuite combien sont en retard.
+     */
+    const aLivrer = enCours.filter((c) => {
+      const groupe = groupeEcheance(c.date_livraison, c.statut as Statut);
+      return groupe === "en_retard" || groupe === "aujourdhui";
+    }).length;
+
+    const enRetard = enCours.filter(
+      (c) =>
+        groupeEcheance(c.date_livraison, c.statut as Statut) === "en_retard",
+    ).length;
+
+    const essayages = enCours.filter((c) =>
+      memeJour(c.date_essayage, maintenant),
+    ).length;
 
     // Six derniers mois d'encaissements, mois courant inclus.
     const points: PointMensuel[] = [];
@@ -156,9 +192,13 @@ export function TableauDeBord() {
     return {
       encaisseMois,
       enCours,
+      livrees,
       creances,
       nbImpayes,
       aTraiter,
+      aLivrer,
+      enRetard,
+      essayages,
       points,
       ecart,
       moisPrecedent: precedent?.libelle ?? "",
@@ -169,25 +209,20 @@ export function TableauDeBord() {
 
   const heure = new Date().getHours();
   const salutation = heure < 18 ? "Bonjour" : "Bonsoir";
-  const enRetard = bilan.aTraiter.filter(
-    (c) => c.niveau === "en_retard",
-  ).length;
 
   return (
     <>
       {/*
-       * Le panneau porte le chiffre d'accroche de l'ecran, et le graphique
-       * qui lui donne son sens. Ils vivaient dans deux cartes distinctes :
-       * le montant du mois d'un cote, sa courbe de l'autre, ce qui obligeait
-       * a faire l'aller-retour pour savoir si le mois etait bon.
+       * Le panneau porte le chiffre d'accroche de l'ecran.
+       *
+       * C'etait « Encaissé ce mois ». Un tailleur qui ouvre l'application
+       * le matin ne se demande pas ce qu'il a encaisse depuis le 1er : il
+       * se demande ce qui doit sortir de l'atelier aujourd'hui. L'argent du
+       * mois n'a pas disparu, il est redescendu dans sa carte, avec la
+       * courbe qui lui donne son sens - une question qu'on se pose une fois
+       * par mois n'a pas a occuper le premier regard de chaque jour.
        */}
       <Panneau classe="p-5 lg:p-6">
-        {/*
-         * Sur grand ecran, les deux actions se rangent a droite du montant
-         * plutot que dessous. Le panneau tient alors en une bande, et
-         * l'ecran entier gagne les quelque soixante-dix pixels qui le
-         * faisaient deborder d'un portable.
-         */}
         <div className="lg:flex lg:items-center lg:justify-between lg:gap-8">
           <div className="lg:min-w-0 lg:flex-1">
             <p className="text-sm text-vert-pale">
@@ -200,42 +235,40 @@ export function TableauDeBord() {
               })}
             </p>
 
-            <p className="mt-4 text-[11px] font-medium tracking-[0.12em] text-vert-pale uppercase">
-              Encaissé ce mois
-            </p>
-
             {/*
-             * Chiffres proportionnels, jamais tabulaires : la chasse fixe donne
-             * a chaque chiffre la largeur d'un zero, ce qui distend visiblement
-             * une valeur de cette taille. La devise est en retrait, elle se
-             * repete a chaque lecture et n'a pas a peser autant que le montant.
+             * Chiffres proportionnels, jamais tabulaires : la chasse fixe
+             * donne a chaque chiffre la largeur d'un zero, ce qui distend
+             * visiblement un « 3 » de cette taille.
              */}
-            <p className="mt-0.5 flex items-baseline gap-2">
-              <span className="text-[2.125rem] leading-none font-semibold tracking-tight sm:text-5xl">
-                {nombre.format(bilan.encaisseMois)}
+            <p className="mt-3.5 flex items-baseline gap-2.5">
+              <span className="text-5xl leading-[0.85] font-semibold tracking-tight">
+                {bilan.aLivrer}
               </span>
-              <span className="text-sm font-medium text-vert-pale">FCFA</span>
+              <span className="max-w-36 text-[0.9375rem] leading-tight font-medium">
+                {bilan.aLivrer > 1 ? "pièces à livrer" : "pièce à livrer"}{" "}
+                aujourd&apos;hui
+              </span>
             </p>
 
-            {bilan.ecart !== null && (
-              <p
-                className={`mt-2 flex items-center gap-1.5 text-sm ${
-                  bilan.ecart >= 0 ? "text-vert-pale" : "text-ambre-clair"
-                }`}
-              >
-                {bilan.ecart >= 0 ? (
-                  <TrendUp size={15} weight="bold" aria-hidden />
-                ) : (
-                  <TrendDown size={15} weight="bold" aria-hidden />
-                )}
-                <span>
-                  {bilan.ecart >= 0 ? "+" : "−"}
-                  {Math.abs(Math.round(bilan.ecart))} % sur{" "}
-                  {bilan.moisPrecedent}
+            <div className="mt-3.5 flex flex-wrap gap-2">
+              {bilan.enRetard > 0 && (
+                <Etiquette ton="probleme">
+                  {bilan.enRetard} en retard
+                </Etiquette>
+              )}
+              {bilan.essayages > 0 && (
+                <span className="inline-flex shrink-0 items-center rounded-full bg-white/12 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-white">
+                  {bilan.essayages} essayage
+                  {bilan.essayages > 1 ? "s" : ""} aujourd&apos;hui
                 </span>
-              </p>
-            )}
-
+              )}
+              {bilan.enRetard === 0 && bilan.essayages === 0 && (
+                <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/12 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-white">
+                  <CheckCircle size={13} weight="fill" aria-hidden />
+                  Aucun retard
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="mt-5 flex flex-col gap-2 sm:flex-row lg:mt-0 lg:shrink-0 lg:flex-col xl:flex-row">
@@ -260,24 +293,21 @@ export function TableauDeBord() {
       {/*
        * Deux colonnes sur grand ecran, et non quatre blocs empiles.
        *
-       * L'ecran demandait 933 pixels pour six commandes a traiter, quand un
-       * portable de 1366x768 n'en offre qu'environ 640 une fois la barre du
-       * navigateur posee : le tableau de bord se lisait au defilement, ce
-       * qui est exactement ce qu'un tableau de bord doit eviter. La largeur
-       * etait pourtant libre - tout tenait dans une colonne unique.
-       *
        * Ce qui presse reste a gauche, en premier dans l'ordre de lecture ;
        * les totaux et la tendance passent a droite, ou on va les chercher.
        */}
       <div className="mt-6 grid gap-6 lg:grid-cols-[1.3fr_1fr] lg:items-start lg:gap-5">
         <section>
           <EnTeteSection
-            titre="À traiter"
+            titre="Aujourd'hui et en retard"
             action={
-              bilan.aTraiter.length > 0 && (
-                <Compteur ton={enRetard > 0 ? "probleme" : "attention"}>
-                  {bilan.aTraiter.length}
-                </Compteur>
+              bilan.aTraiter.length > A_TRAITER_MAX && (
+                <Link
+                  href="/commandes"
+                  className="rounded-controle text-xs font-medium text-vert hover:text-foret"
+                >
+                  Tout voir
+                </Link>
               )
             }
           />
@@ -291,8 +321,8 @@ export function TableauDeBord() {
                 aria-hidden
               />
               <p className="text-sm text-gris">
-                Rien d&apos;urgent aujourd&apos;hui. Aucun retard, aucun essayage
-                prévu, aucune commande en attente de retrait.
+                Rien d&apos;urgent aujourd&apos;hui. Aucun retard, aucune
+                livraison prévue, aucune commande en attente de retrait.
               </p>
             </Carte>
           ) : (
@@ -336,76 +366,116 @@ export function TableauDeBord() {
                             : "soldé"}
                         </span>
                       </span>
+
+                      <span className="mt-2.5 block">
+                        <Jalons statut={commande.statut as Statut} />
+                      </span>
                     </CarteLien>
                   </li>
                 );
               })}
             </ul>
           )}
-
-          {bilan.aTraiter.length > A_TRAITER_MAX && (
-            <Link
-              href="/commandes"
-              className="mt-2 inline-block text-sm font-medium text-vert underline underline-offset-2"
-            >
-              Voir les {bilan.aTraiter.length - A_TRAITER_MAX} autres
-            </Link>
-          )}
         </section>
 
-        {/*
-         * Les trois totaux restent en bande sur telephone, ou la largeur
-         * manque, et passent en colonne a cote du graphique sur grand
-         * ecran : a un tiers de la moitie de la page, « 1 805 700 » ne
-         * tiendrait plus dans sa carte.
-         */}
-        <div className="flex flex-col gap-6 lg:gap-5">
-          <div className="grid grid-cols-3 gap-2 lg:grid-cols-1">
-            <Vignette
-              libelle="Créances"
-              valeur={nombre.format(bilan.creances)}
-              unite="FCFA"
-              precision={
-                bilan.nbImpayes > 0
-                  ? `${bilan.nbImpayes} commande${bilan.nbImpayes > 1 ? "s" : ""}`
-                  : "tout est soldé"
-              }
-              alerte={bilan.creances > 0}
-            />
-            <Vignette
-              libelle="En cours"
-              valeur={String(bilan.enCours.length)}
-              precision={
-                enRetard > 0 ? `dont ${enRetard} en retard` : "aucune en retard"
-              }
-            />
-            <Vignette
-              libelle="Clients"
-              valeur={String(clients.length)}
-              precision="au total"
-            />
-          </div>
+        <div className="flex flex-col gap-4 lg:gap-5">
+          {/*
+           * Les creances gardent une carte a elles. Elles partageaient une
+           * bande de trois vignettes avec le nombre de commandes en cours et
+           * le nombre de clients, tous trois du meme poids visuel - alors
+           * qu'une seule des trois appelle une action. Les deux autres sont
+           * des reperes, et sont redescendus sur une ligne de texte.
+           */}
+          <Carte
+            classe={`p-5 ${bilan.creances > 0 ? "border-rouge-clair bg-rouge-clair/40" : ""}`}
+          >
+            <h2 className="text-[10px] font-medium tracking-[0.1em] text-gris uppercase">
+              Créances
+            </h2>
+            <p className="mt-1 flex items-baseline gap-1.5">
+              <span
+                className={`text-[2.125rem] leading-none font-semibold tracking-tight ${
+                  bilan.creances > 0 ? "text-rouge" : "text-encre"
+                }`}
+              >
+                {nombre.format(bilan.creances)}
+              </span>
+              <span className="text-xs text-gris">FCFA</span>
+            </p>
+            <p className="mt-2 text-xs text-gris">
+              {bilan.nbImpayes > 0
+                ? `sur ${bilan.nbImpayes} commande${bilan.nbImpayes > 1 ? "s" : ""}`
+                : "tout est soldé"}
+            </p>
+
+            {bilan.nbImpayes > 0 && (
+              <Link
+                href="/finances"
+                className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-controle bg-rouge px-4 text-sm font-medium text-white transition-colors duration-150 ease-doux hover:bg-encre"
+              >
+                Relancer
+                <ArrowRight size={15} weight="bold" />
+              </Link>
+            )}
+          </Carte>
 
           {/*
-           * Le graphique ferme la colonne de droite. Il a d'abord ete loge
-           * dans le panneau, a cote du montant du mois, pour eviter
-           * l'aller-retour entre le chiffre et sa courbe ; mais il y
-           * alourdissait le premier coup d'oeil, alors que ce qu'on vient
-           * chercher le matin est ce qui presse - les retards, puis les
-           * chiffres du jour. La tendance sur six mois se consulte, elle ne
-           * s'annonce pas.
+           * Trois reperes sur une ligne. Ils ne demandent aucune decision :
+           * leur donner une carte chacun leur pretait une urgence qu'ils
+           * n'ont pas, et repoussait la courbe sous la ligne de flottaison.
+           */}
+          <p className="chiffres px-1 text-xs text-gris">
+            <span className="font-semibold text-encre">
+              {bilan.enCours.length}
+            </span>{" "}
+            en cours ·{" "}
+            <span className="font-semibold text-encre">{clients.length}</span>{" "}
+            client{clients.length > 1 ? "s" : ""} ·{" "}
+            <span className="font-semibold text-encre">{bilan.livrees}</span>{" "}
+            livrée{bilan.livrees > 1 ? "s" : ""}
+          </p>
+
+          {/*
+           * L'argent du mois et sa courbe dans la meme carte : le montant
+           * seul ne dit pas si le mois est bon, c'est la comparaison qui
+           * porte l'information.
            */}
           <Carte classe="p-5">
             <h2 className="text-[10px] font-medium tracking-[0.1em] text-gris uppercase">
-              Encaissements par mois
+              Encaissé ce mois
             </h2>
+            <p className="mt-1 flex items-baseline gap-1.5">
+              <span className="text-[2.125rem] leading-none font-semibold tracking-tight text-encre">
+                {nombre.format(bilan.encaisseMois)}
+              </span>
+              <span className="text-xs text-gris">FCFA</span>
+            </p>
+
+            {bilan.ecart !== null && (
+              <p
+                className={`mt-2 flex items-center gap-1.5 text-xs ${
+                  bilan.ecart >= 0 ? "text-vert" : "text-ambre"
+                }`}
+              >
+                {bilan.ecart >= 0 ? (
+                  <TrendUp size={13} weight="bold" aria-hidden />
+                ) : (
+                  <TrendDown size={13} weight="bold" aria-hidden />
+                )}
+                <span>
+                  {bilan.ecart >= 0 ? "+" : "−"}
+                  {Math.abs(Math.round(bilan.ecart))} % sur{" "}
+                  {bilan.moisPrecedent}
+                </span>
+              </p>
+            )}
+
             {/*
              * Consigne reservee au tactile : sur un ordinateur, on ne touche
              * pas une barre, on la survole - et le graphique porte deja son
-             * curseur et sa ligne de lecture pour le dire. La retirer rend a la
-             * colonne les vingt pixels qui la faisaient depasser.
+             * curseur et sa ligne de lecture pour le dire.
              */}
-            <p className="mt-1 text-xs text-gris lg:hidden">
+            <p className="mt-4 text-xs text-gris lg:hidden">
               Touchez une barre pour voir le montant exact.
             </p>
             <div className="mt-4">
@@ -421,18 +491,17 @@ export function TableauDeBord() {
 function SqueletteBord() {
   return (
     <div role="status" aria-label="Chargement du tableau de bord">
-      <Squelette rayon="panneau" classe="h-72" />
+      <Squelette rayon="panneau" classe="h-56" />
 
       <div className="mt-6 flex flex-col gap-2">
-        <Squelette classe="h-3.5 w-24" />
+        <Squelette classe="h-3.5 w-40" />
         <SqueletteLigne />
         <SqueletteLigne />
       </div>
 
-      <div className="mt-6 grid grid-cols-3 gap-2">
-        <Squelette rayon="carte" classe="h-24" />
-        <Squelette rayon="carte" classe="h-24" />
-        <Squelette rayon="carte" classe="h-24" />
+      <div className="mt-6 flex flex-col gap-4">
+        <Squelette rayon="carte" classe="h-36" />
+        <Squelette rayon="carte" classe="h-48" />
       </div>
     </div>
   );

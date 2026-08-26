@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { DM_Sans } from "next/font/google";
 import "./globals.css";
-import { BarreEtatReseau } from "./service-worker";
+import { EnregistrerServiceWorker } from "./service-worker";
 
 // Une seule famille pour toute l'application. Plus ronde et plus chaleureuse
 // qu'une grotesque neutre, elle convient mieux a un public d'artisans.
@@ -26,7 +26,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="fr" className={`${dmSans.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
-        <BarreEtatReseau />
+        <EnregistrerServiceWorker />
         {children}
       </body>
     </html>

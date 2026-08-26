@@ -67,6 +67,88 @@ export const PRIORITE_LABELS: Record<Priorite, string> = {
   normal: "Dans les temps",
 };
 
+/** Rang de l'etape dans la chaine, de 0 pour Recu a 6 pour Livre. */
+export function rangStatut(statut: Statut) {
+  const rang = STATUTS.indexOf(statut);
+  return rang < 0 ? 0 : rang;
+}
+
+/*
+ * Les tranches d'echeance qui organisent la liste des commandes.
+ *
+ * Elles remplacent les sept colonnes du Kanban comme axe principal. La
+ * chaine des etapes reste lisible - chaque ligne porte ses sept jalons -
+ * mais elle ne commande plus la mise en page : un tailleur ouvre cet ecran
+ * pour savoir ce qui sort aujourd'hui, pas pour savoir combien de pieces
+ * sont a l'etape Couture. La barre de repartition, elle, repond a la
+ * seconde question en une ligne.
+ */
+export type GroupeEcheance =
+  | "en_retard"
+  | "aujourdhui"
+  | "cette_semaine"
+  | "plus_tard"
+  | "sans_date"
+  | "livre";
+
+export const GROUPES_ECHEANCE: readonly GroupeEcheance[] = [
+  "en_retard",
+  "aujourdhui",
+  "cette_semaine",
+  "plus_tard",
+  "sans_date",
+  "livre",
+] as const;
+
+export const GROUPE_LABELS: Record<GroupeEcheance, string> = {
+  en_retard: "En retard",
+  aujourdhui: "Aujourd'hui",
+  cette_semaine: "Cette semaine",
+  plus_tard: "Plus tard",
+  sans_date: "Sans date",
+  livre: "Livré",
+};
+
+export const TON_GROUPE: Record<GroupeEcheance, TonEtiquetteCommande> = {
+  en_retard: "probleme",
+  aujourdhui: "attention",
+  cette_semaine: "metier",
+  plus_tard: "neutre",
+  sans_date: "neutre",
+  livre: "neutre",
+};
+
+type TonEtiquetteCommande = "probleme" | "attention" | "metier" | "neutre";
+
+/*
+ * « Cette semaine » compte sept jours glissants, et non la semaine
+ * calendaire : un vendredi, ce qui interesse le tailleur est ce qui sort
+ * d'ici jeudi prochain, pas ce qui sort avant dimanche - deux jours qui ne
+ * lui laisseraient presque rien.
+ */
+export function groupeEcheance(
+  dateLivraison: string | null,
+  statut: Statut
+): GroupeEcheance {
+  if (statut === "livre") return "livre";
+  if (!dateLivraison) return "sans_date";
+
+  const aujourdhui = new Date();
+  aujourdhui.setHours(0, 0, 0, 0);
+
+  const livraison = new Date(dateLivraison);
+  livraison.setHours(0, 0, 0, 0);
+
+  const jours = Math.round(
+    (livraison.getTime() - aujourdhui.getTime()) / 86_400_000
+  );
+
+  if (jours < 0) return "en_retard";
+  if (jours === 0) return "aujourdhui";
+  if (jours <= 7) return "cette_semaine";
+  return "plus_tard";
+}
+
 /*
  * Un seul formateur pour toute l'application.
  *

@@ -1,18 +1,21 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, ClipboardText } from "@phosphor-icons/react/dist/ssr";
 import { createClient } from "@/lib/supabase/client";
 import {
+  GROUPES_ECHEANCE,
+  GROUPE_LABELS,
   STATUTS,
   STATUT_LABELS,
-  TON_PRIORITE,
+  TON_GROUPE,
   formaterMontant,
-  priorite,
+  groupeEcheance,
   resteAPayer,
   statutSuivant,
   versesParCommande,
+  type GroupeEcheance,
   type Statut,
 } from "@/lib/commandes";
 import { rafraichirMiroir } from "@/lib/offline/miroir";
@@ -21,14 +24,38 @@ import { useFileAttente } from "@/lib/offline/use-file-attente";
 import { Carte } from "@/ui/carte";
 import { Compteur, Etiquette } from "@/ui/etiquette";
 import { EtatVide } from "@/ui/etat-vide";
+import { Jalons, Repartition } from "@/ui/jalons";
 import { LienBouton } from "@/ui/bouton";
 import { Squelette } from "@/ui/squelette";
 
 const LIVREES_AFFICHEES = 20;
 
+/*
+ * Six secondes pour se raviser.
+ *
+ * Assez pour lire ce qui vient de se passer et revenir dessus, trop court
+ * pour qu'un bandeau traine sur l'ecran pendant qu'on travaille. C'est ce
+ * delai qui remplace la boite de confirmation : une main occupee n'a pas a
+ * confirmer deux fois, elle a besoin de pouvoir se tromper.
+ */
+const DUREE_ANNULATION = 6000;
+
 export function TableauCommandes() {
   const { clients, commandes, paiements, chargee } = useDonnees();
   const { horsLigne } = useFileAttente();
+
+  const [annulation, setAnnulation] = useState<{
+    id: string;
+    client: string;
+    avant: Statut;
+    apres: Statut;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!annulation) return;
+    const minuteur = setTimeout(() => setAnnulation(null), DUREE_ANNULATION);
+    return () => clearTimeout(minuteur);
+  }, [annulation]);
 
   const nomsClients = useMemo(
     () => new Map(clients.map((client) => [client.id, client.nom])),
@@ -38,7 +65,7 @@ export function TableauCommandes() {
   /*
    * Ce qui a deja ete verse, commande par commande.
    *
-   * La carte n'affichait que le prix total, ce qui ne dit rien de ce
+   * La ligne n'affichait que le prix total, ce qui ne dit rien de ce
    * qu'il reste a encaisser. Or c'est la question qui se pose au moment
    * de remettre le vetement, et elle obligeait a ouvrir la commande.
    */
@@ -47,247 +74,310 @@ export function TableauCommandes() {
     [paiements]
   );
 
-  const parStatut = useMemo(() => {
-    const groupes = new Map<Statut, typeof commandes>();
+  const { groupes, parEtape, enCours } = useMemo(() => {
+    const lignes = commandes.map((commande) => {
+      const statut = commande.statut as Statut;
 
-    for (const statut of STATUTS) {
-      const cartes = commandes
-        .filter((commande) => (commande.statut as Statut) === statut)
-        .sort((a, b) => {
-          const dateA = a.date_livraison ?? "9999";
-          const dateB = b.date_livraison ?? "9999";
-          return dateA.localeCompare(dateB);
-        });
+      return {
+        ...commande,
+        statut,
+        client: nomsClients.get(commande.client_id) ?? "Client inconnu",
+        groupe: groupeEcheance(commande.date_livraison, statut),
+        suivant: statutSuivant(statut),
+        reste: resteAPayer(
+          commande.prix_total,
+          verseParCommande.get(commande.id) ?? 0
+        ),
+      };
+    });
+
+    const groupes = new Map<GroupeEcheance, typeof lignes>();
+    for (const groupe of GROUPES_ECHEANCE) {
+      const dedans = lignes
+        .filter((ligne) => ligne.groupe === groupe)
+        .sort((a, b) =>
+          (a.date_livraison ?? "9999").localeCompare(b.date_livraison ?? "9999")
+        );
+
+      if (dedans.length === 0) continue;
 
       groupes.set(
-        statut,
-        statut === "livre" ? cartes.slice(0, LIVREES_AFFICHEES) : cartes
+        groupe,
+        groupe === "livre" ? dedans.slice(0, LIVREES_AFFICHEES) : dedans
       );
     }
 
-    return groupes;
-  }, [commandes]);
+    const parEtape: Record<string, number> = {};
+    for (const statut of STATUTS) parEtape[statut] = 0;
+    for (const ligne of lignes) parEtape[ligne.statut] += 1;
 
-  const enCours = commandes.filter((commande) => commande.statut !== "livre").length;
+    return {
+      groupes,
+      parEtape,
+      enCours: lignes.filter((ligne) => ligne.statut !== "livre").length,
+    };
+  }, [commandes, nomsClients, verseParCommande]);
 
   /**
    * L'avancement passe par le reseau : c'est une modification, pas une
    * creation, et la file locale ne gere que les creations.
    */
-  async function avancer(commandeId: string, statut: Statut) {
+  async function changerStatut(id: string, statut: Statut) {
     const supabase = createClient();
     const { error } = await supabase
       .from("commandes")
       .update({ statut })
-      .eq("id", commandeId);
+      .eq("id", id);
 
     if (!error) await rafraichirMiroir();
+    return !error;
+  }
+
+  async function avancer(
+    commande: { id: string; client: string; statut: Statut },
+    suivant: Statut
+  ) {
+    const parti = await changerStatut(commande.id, suivant);
+    if (!parti) return;
+
+    setAnnulation({
+      id: commande.id,
+      client: commande.client,
+      avant: commande.statut,
+      apres: suivant,
+    });
+  }
+
+  async function annuler() {
+    if (!annulation) return;
+    const retour = annulation;
+    setAnnulation(null);
+    await changerStatut(retour.id, retour.avant);
   }
 
   if (!chargee) return <SqueletteTableau />;
 
   if (commandes.length === 0) {
     return (
-      <div className="mx-auto w-full max-w-2xl px-4">
-        <EtatVide
-          icone={ClipboardText}
-          titre="Aucune commande"
-          texte="Chaque commande suit son avancement ici, de la réception à la livraison."
-          action={
-            <LienBouton href="/commandes/new">Créer la première commande</LienBouton>
-          }
-        />
-      </div>
+      <EtatVide
+        icone={ClipboardText}
+        titre="Aucune commande"
+        texte="Chaque commande suit son avancement ici, de la réception à la livraison."
+        action={
+          <LienBouton href="/commandes/new">
+            Créer la première commande
+          </LienBouton>
+        }
+      />
     );
   }
 
   return (
     <>
-      <div className="mx-auto w-full max-w-2xl px-4">
-        <p className="text-sm text-gris">{enCours} en cours</p>
+      <p className="text-sm text-gris">{enCours} en cours</p>
 
-        {/*
-         * Posee avant le tableau, et non apres : c'est elle qui explique
-         * les boutons grises, et placee en fin d'ecran elle se serait
-         * trouvee derriere sept colonnes a defilement horizontal.
-         */}
-        {horsLigne && (
-          <p className="mt-1 text-xs text-gris">
-            Hors connexion : l&apos;avancement des commandes reprendra au retour
-            du réseau.
-          </p>
-        )}
+      {horsLigne && (
+        <p className="mt-1 text-xs text-gris">
+          Hors connexion : l&apos;avancement des commandes reprendra au retour
+          du réseau.
+        </p>
+      )}
+
+      {/*
+       * La repartition remplace la vue d'ensemble que donnaient les sept
+       * colonnes du Kanban, en une ligne au lieu d'un ecran entier. C'est
+       * la seule chose que les colonnes faisaient mieux qu'une liste, et
+       * elle tient ici au-dessus du pli.
+       */}
+      <Carte classe="mt-4 p-4">
+        <h2 className="text-[10px] font-medium tracking-[0.1em] text-gris uppercase">
+          Où en est l&apos;atelier
+        </h2>
+        <div className="mt-2.5">
+          <Repartition parEtape={parEtape} />
+        </div>
+      </Carte>
+
+      {/*
+       * Groupees par echeance, et non par etape.
+       *
+       * Sept colonnes en defilement horizontal n'en montraient qu'une et
+       * demie sur un telephone de 390 px, sans jamais dire ou l'on se
+       * trouvait dans la chaine. La question de trois secondes - qu'est-ce
+       * que je dois sortir aujourd'hui - n'avait aucune reponse a l'ecran.
+       * La chaine reste entierement lisible, ligne par ligne, dans les sept
+       * jalons.
+       */}
+      <div className="mt-6 flex flex-col gap-6">
+        {[...groupes].map(([groupe, lignes]) => (
+          <section key={groupe}>
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-semibold tracking-wide text-gris uppercase">
+                {GROUPE_LABELS[groupe]}
+              </h2>
+              <Compteur ton={TON_GROUPE[groupe]}>{lignes.length}</Compteur>
+            </div>
+
+            <ul className="mt-2 flex flex-col gap-2">
+              {lignes.map((commande) => {
+                const provisoire = commande.enAttente || commande.enEchec;
+
+                /*
+                 * Ecrites une fois, posees a deux endroits : empilees a
+                 * droite du nom sur telephone, en colonnes propres sur
+                 * grand ecran.
+                 */
+                const etiquetteDate = commande.enEchec ? (
+                  <Etiquette ton="probleme">Refusé</Etiquette>
+                ) : commande.enAttente ? (
+                  <Etiquette ton="systeme">En attente</Etiquette>
+                ) : (
+                  <Etiquette ton={TON_GROUPE[groupe]}>
+                    {commande.date_livraison
+                      ? new Date(commande.date_livraison).toLocaleDateString(
+                          "fr-FR",
+                          { day: "2-digit", month: "2-digit" }
+                        )
+                      : "Sans date"}
+                  </Etiquette>
+                );
+
+                const montantReste =
+                  !provisoire && Number(commande.prix_total) > 0 ? (
+                    <span
+                      className={`chiffres text-xs font-medium ${
+                        commande.reste > 0 ? "text-rouge" : "text-vert"
+                      }`}
+                    >
+                      {commande.reste > 0
+                        ? `reste ${formaterMontant(commande.reste)}`
+                        : "soldé"}
+                    </span>
+                  ) : null;
+
+                return (
+                  <li key={commande.id}>
+                    <Carte provisoire={provisoire} classe="p-3 lg:px-4">
+                      <div className="lg:flex lg:items-center lg:gap-4">
+                        <div className="flex items-start justify-between gap-3 lg:w-56 lg:shrink-0 lg:items-center">
+                          {/* Le corps de la ligne ouvre le detail : c'est
+                              la plus grande cible, pour l'action la plus
+                              frequente apres l'avancement. */}
+                          <Link
+                            href={`/commandes/${commande.id}`}
+                            className="min-w-0 flex-1 rounded-controle"
+                          >
+                            <span className="block truncate text-sm font-medium text-encre">
+                              {commande.client}
+                            </span>
+                            <span className="block truncate text-xs text-gris">
+                              {commande.nom_modele ?? "Sans modèle"}
+                            </span>
+                          </Link>
+
+                          <span className="flex shrink-0 flex-col items-end gap-1 lg:hidden">
+                            {etiquetteDate}
+                            {montantReste}
+                          </span>
+                        </div>
+
+                        <span className="hidden shrink-0 lg:block">
+                          {etiquetteDate}
+                        </span>
+                        <span className="hidden lg:block lg:w-32 lg:shrink-0 lg:text-right">
+                          {montantReste}
+                        </span>
+
+                        <div className="mt-2.5 flex items-center gap-3 lg:mt-0 lg:min-w-0 lg:flex-1">
+                          <Jalons statut={commande.statut} />
+                          <span className="hidden truncate text-xs text-gris lg:inline">
+                            {STATUT_LABELS[commande.statut]}
+                          </span>
+
+                          {commande.suivant && !provisoire && (
+                            /*
+                             * Le bouton porte le nom de l'etape suivante
+                             * plutot que le mot « Avancer » : on sait ce
+                             * qu'on declenche avant d'appuyer. Et il fait
+                             * 44 px, dans la ligne, a portee du pouce -
+                             * il fallait auparavant ouvrir la commande.
+                             */
+                            <button
+                              type="button"
+                              onClick={() =>
+                                avancer(commande, commande.suivant as Statut)
+                              }
+                              disabled={horsLigne}
+                              className="ml-auto flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-controle bg-vert-clair px-3.5 text-xs font-semibold text-foret transition-colors duration-150 ease-doux hover:bg-vert hover:text-white disabled:pointer-events-none disabled:opacity-40"
+                            >
+                              {STATUT_LABELS[commande.suivant]}
+                              <ArrowRight size={13} weight="bold" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </Carte>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        ))}
       </div>
 
       {/*
-       * Colonnes qui defilent au doigt : sept colonnes ne tiennent pas
-       * sur un ecran de telephone. L'accroche au defilement les fait se
-       * poser bord a bord plutot que de s'arreter a mi-chemin, ce qui
-       * laissait deux demi-colonnes a l'ecran et perdait le fil.
+       * Le bandeau d'annulation, au-dessus des onglets sur telephone.
+       *
+       * Il remplace la confirmation qu'on posait avant d'agir : appuyer est
+       * immediat, et c'est le retour en arriere qui est offert. Une piece
+       * avancee par erreur se repare en une touche, sans avoir ralenti les
+       * dizaines de fois ou le geste etait le bon.
        */}
-      <div className="mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-px-4 px-4 pb-4">
-        {STATUTS.map((statut) => {
-          const cartes = parStatut.get(statut) ?? [];
-
-          return (
-            <section key={statut} className="w-64 shrink-0 snap-start">
-              <div className="flex items-center justify-between gap-2 px-1">
-                <h2 className="truncate text-sm font-semibold text-encre">
-                  {STATUT_LABELS[statut]}
-                </h2>
-                {/*
-                 * Le compteur portait du gris sur du vert clair, soit
-                 * 3,71:1 - sous le seuil AA. Le ton « metier » de
-                 * l'etiquette pose du vert foret sur le meme fond, a
-                 * 10,3:1.
-                 */}
-                <Compteur ton={cartes.length > 0 ? "metier" : "neutre"}>
-                  {cartes.length}
-                </Compteur>
-              </div>
-
-              <ul className="mt-2 flex flex-col gap-2">
-                {cartes.map((commande) => {
-                  const niveau = priorite(
-                    commande.date_livraison,
-                    commande.statut as Statut
-                  );
-                  const suivant = statutSuivant(commande.statut as Statut);
-                  const provisoire = commande.enAttente || commande.enEchec;
-                  const reste = resteAPayer(
-                    commande.prix_total,
-                    verseParCommande.get(commande.id) ?? 0
-                  );
-
-                  return (
-                    <li key={commande.id}>
-                      <Carte provisoire={provisoire} classe="p-3">
-                        <Link
-                          href={`/commandes/${commande.id}`}
-                          className="block rounded-controle"
-                        >
-                          <p className="truncate text-sm font-medium text-encre">
-                            {nomsClients.get(commande.client_id) ?? "Client inconnu"}
-                          </p>
-                          <p className="truncate text-xs text-gris">
-                            {commande.nom_modele ?? "Sans modèle"}
-                          </p>
-
-                          <div className="mt-2.5 flex items-center justify-between gap-2">
-                            {commande.enEchec ? (
-                              <Etiquette ton="probleme">Refusé</Etiquette>
-                            ) : commande.enAttente ? (
-                              <Etiquette ton="systeme">En attente</Etiquette>
-                            ) : (
-                              <Etiquette ton={TON_PRIORITE[niveau]}>
-                                {commande.date_livraison
-                                  ? new Date(
-                                      commande.date_livraison
-                                    ).toLocaleDateString("fr-FR", {
-                                      day: "2-digit",
-                                      month: "2-digit",
-                                    })
-                                  : "Sans date"}
-                              </Etiquette>
-                            )}
-                            {/*
-                             * Les montants d'une colonne se lisent les uns
-                             * sous les autres : chasse fixe pour qu'ils
-                             * s'alignent au chiffre pres.
-                             */}
-                            <span className="chiffres text-xs text-gris">
-                              {formaterMontant(Number(commande.prix_total))}
-                            </span>
-                          </div>
-
-                          {/*
-                           * Le solde restant, sous le prix. « Soldé » est
-                           * dit en toutes lettres plutot que laisse a
-                           * deviner d'une absence : sur la colonne « Prêt
-                           * à retirer », savoir s'il reste a encaisser
-                           * change ce qu'on dit au client en lui remettant
-                           * sa piece.
-                           */}
-                          {!provisoire && Number(commande.prix_total) > 0 && (
-                            <p
-                              className={`chiffres mt-1 text-right text-[11px] font-medium ${
-                                reste > 0 ? "text-rouge" : "text-vert"
-                              }`}
-                            >
-                              {reste > 0
-                                ? `reste ${formaterMontant(reste)}`
-                                : "soldé"}
-                            </p>
-                          )}
-                        </Link>
-
-                        {suivant && !provisoire && (
-                          <button
-                            type="button"
-                            onClick={() => avancer(commande.id, suivant)}
-                            disabled={horsLigne}
-                            /*
-                             * L'explication du grisage est en clair sous
-                             * le tableau, pas dans un title. Un title sur
-                             * un bouton desactive ne s'affiche jamais :
-                             * le survol n'atteint pas l'element, d'autant
-                             * moins ici que la classe pose
-                             * pointer-events-none - et sur un telephone
-                             * il n'y a de toute facon pas de survol.
-                             */
-                            className="mt-2.5 flex min-h-9 w-full items-center justify-center gap-1.5 rounded-controle border border-bordure text-xs font-medium text-gris transition-colors duration-150 ease-doux hover:border-vert-clair hover:bg-papier hover:text-encre disabled:pointer-events-none disabled:opacity-40"
-                          >
-                            {STATUT_LABELS[suivant]}
-                            <ArrowRight size={12} weight="bold" />
-                          </button>
-                        )}
-                      </Carte>
-                    </li>
-                  );
-                })}
-
-                {cartes.length === 0 && (
-                  <li className="rounded-carte border border-dashed border-bordure py-8 text-center text-xs text-gris">
-                    Vide
-                  </li>
-                )}
-              </ul>
-            </section>
-          );
-        })}
-      </div>
-
+      {annulation && (
+        <div
+          role="status"
+          className="sur-fond-sombre fixed inset-x-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-md items-center gap-3 rounded-carte bg-foret px-4 py-3 text-white shadow-flottant lg:bottom-6"
+        >
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-medium">
+              {annulation.client}
+            </span>
+            <span className="block truncate text-xs text-vert-pale">
+              Passé à {STATUT_LABELS[annulation.apres]} · envoyé
+            </span>
+          </span>
+          <button
+            type="button"
+            onClick={annuler}
+            className="min-h-11 shrink-0 rounded-controle border border-white/25 px-3.5 text-sm font-medium transition-colors duration-150 ease-doux hover:bg-white/10"
+          >
+            Annuler
+          </button>
+        </div>
+      )}
     </>
   );
 }
 
 function SqueletteTableau() {
   return (
-    <div
-      role="status"
-      aria-label="Chargement des commandes"
-      className="mt-4 flex gap-3 overflow-hidden px-4"
-    >
-      {[0, 1, 2].map((colonne) => (
-        <div key={colonne} className="w-64 shrink-0">
-          <div className="flex items-center justify-between px-1">
-            <Squelette classe="h-3.5 w-20" />
-            <Squelette rayon="rond" classe="size-5" />
+    <div role="status" aria-label="Chargement des commandes">
+      <Squelette classe="h-4 w-24" />
+      <Squelette rayon="carte" classe="mt-4 h-24" />
+
+      <div className="mt-6 flex flex-col gap-2">
+        <Squelette classe="h-3.5 w-28" />
+        {[0, 1, 2].map((ligne) => (
+          <div
+            key={ligne}
+            className="flex flex-col gap-2 rounded-carte border border-bordure bg-white p-3"
+          >
+            <Squelette classe="h-3.5 w-2/5" />
+            <Squelette classe="h-3 w-1/3" />
+            <Squelette classe="mt-1 h-11 w-full" />
           </div>
-          <div className="mt-2 flex flex-col gap-2">
-            {[0, 1].map((carte) => (
-              <div
-                key={carte}
-                className="flex flex-col gap-2 rounded-carte border border-bordure bg-white p-3"
-              >
-                <Squelette classe="h-3.5 w-3/5" />
-                <Squelette classe="h-3 w-2/5" />
-                <Squelette classe="mt-1 h-6 w-full" />
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }
