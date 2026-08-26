@@ -50,3 +50,7 @@ next-env.d.ts
 # fichiers de travail : apercus et references
 /reference-*.png
 /apercu-*.html
+
+# reglages locaux de l assistant : une liste de permissions propre a la
+# machine, remplie de chemins absolus vers des dossiers temporaires
+/.claude/
