@@ -91,7 +91,11 @@ create or replace function admin_changer_formule(
 )
 returns void
 language plpgsql
-security definer
+-- security invoker, volontairement : la fonction n'est appelee que par la
+-- cle de service, qui traverse deja RLS. Lui donner en plus les droits du
+-- proprietaire ferait qu'un jour ou elle redeviendrait joignable - une
+-- migration qui re-accorde, une inattention - elle ecrirait quand meme.
+-- Ici, appelee par n'importe qui d'autre, ses ecritures sont refusees.
 set search_path = public
 as $$
 declare
@@ -135,7 +139,7 @@ $$;
 create or replace function admin_nommer(compte uuid, par uuid)
 returns void
 language plpgsql
-security definer
+-- security invoker : voir admin_changer_formule.
 set search_path = public
 as $$
 begin
@@ -159,7 +163,7 @@ $$;
 create or replace function admin_revoquer(compte uuid, par uuid)
 returns void
 language plpgsql
-security definer
+-- security invoker : voir admin_changer_formule.
 set search_path = public
 as $$
 begin
@@ -186,14 +190,37 @@ $$;
 -- Droits
 -- ============================================================
 --
--- Rien n'est ouvert a anon ni a authenticated : ces fonctions ne
--- s'appellent que depuis le serveur, avec la cle de service. Les exposer
--- au navigateur laisserait n'importe quel compte connecte tenter un appel
--- et decouvrir, a la reponse, s'il est administrateur ou non.
-revoke all on function est_administrateur(uuid) from public;
-revoke all on function admin_changer_formule(uuid, text, uuid) from public;
-revoke all on function admin_nommer(uuid, uuid) from public;
-revoke all on function admin_revoquer(uuid, uuid) from public;
+-- Il faut revoquer nommement a anon et authenticated, et pas seulement a
+-- PUBLIC.
+--
+-- Supabase accorde d'office EXECUTE sur toute nouvelle fonction du schema
+-- public a ces deux roles, par ALTER DEFAULT PRIVILEGES. Ce sont des
+-- droits nominatifs : « revoke from public » ne les touche pas. La
+-- premiere version de cette migration s'en contentait, et les fonctions
+-- d'administration etaient joignables avec la seule cle anonyme - celle
+-- qui est publiee dans le navigateur de chaque visiteur.
+--
+-- Elles refusaient bien l'appel, mais parce qu'elles verifient leur
+-- parametre « par ». Or ce parametre vient de l'appelant : quiconque
+-- connaissait l'identifiant d'un administrateur agissait en son nom, et le
+-- journal accusait cet administrateur. Un apprenti pouvait lire cet
+-- identifiant, la politique « Voir les utilisateurs de son atelier »
+-- l'autorisant pour les membres de son propre atelier.
+revoke all on function est_administrateur(uuid) from public, anon, authenticated;
+revoke all on function admin_changer_formule(uuid, text, uuid) from public, anon, authenticated;
+revoke all on function admin_nommer(uuid, uuid) from public, anon, authenticated;
+revoke all on function admin_revoquer(uuid, uuid) from public, anon, authenticated;
+
+grant execute on function est_administrateur(uuid) to service_role;
+grant execute on function admin_changer_formule(uuid, text, uuid) to service_role;
+grant execute on function admin_nommer(uuid, uuid) to service_role;
+grant execute on function admin_revoquer(uuid, uuid) to service_role;
+
+-- Meme raisonnement sur les tables. RLS sans politique les protege deja -
+-- une lecture anonyme rend une liste vide - mais ces deux-la disent qui
+-- peut quoi sur la plateforme : deux serrures valent mieux qu'une.
+revoke all on table administrateurs from anon, authenticated;
+revoke all on table journal_admin from anon, authenticated;
 
 -- ============================================================
 -- Nommer le premier administrateur

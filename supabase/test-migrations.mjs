@@ -70,6 +70,28 @@ create or replace function storage.foldername(name text) returns text[]
 language sql immutable as $$
   select string_to_array(name, '/');
 $$;
+
+/*
+ * Les droits que Supabase accorde d'office dans le schema public, et qu'un
+ * Postgres nu n'a pas.
+ *
+ * Sans eux, le banc mentait : il affirmait que anon ne pouvait executer
+ * aucune fonction d'administration, alors qu'en production Supabase lui
+ * accorde EXECUTE sur toute nouvelle fonction. Un « revoke from public »
+ * ne suffit pas a l'en priver, ces droits etant accordes nommement a anon
+ * et authenticated, pas a PUBLIC.
+ *
+ * C'est la difference qui compte le plus dans ce fichier : un banc d'essai
+ * plus permissif que la production ne protege de rien, il rassure.
+ */
+grant usage on schema public to anon, authenticated, service_role;
+
+alter default privileges in schema public
+  grant all on tables to anon, authenticated, service_role;
+alter default privileges in schema public
+  grant all on sequences to anon, authenticated, service_role;
+alter default privileges in schema public
+  grant execute on functions to anon, authenticated, service_role;
 `;
 
 // 0001 demande pgcrypto, que PGlite ne charge pas d'office.
@@ -568,23 +590,30 @@ verifier(
   1
 );
 
-// E10 : les droits. anon doit pouvoir appeler les deux fonctions - c'est
-// tout l'objet - mais rien de plus.
+/*
+ * E10 : ce qui protege reellement.
+ *
+ * Supabase accorde d'office SELECT et INSERT sur toute nouvelle table du
+ * schema public a anon et authenticated : interroger has_table_privilege
+ * repondrait « oui » sans que cela veuille dire qu'une ligne est lisible.
+ * Ce qui protege ces tables, c'est RLS et ses politiques.
+ */
 const droitsAvis = (
   await db.query(`
     select
       has_function_privilege('anon', 'laisser_avis(uuid,smallint,text)', 'execute') as poser,
       has_function_privilege('anon', 'commande_a_noter(uuid)', 'execute') as lire,
-      has_table_privilege('anon', 'avis', 'select') as lire_table,
-      has_table_privilege('anon', 'avis', 'insert') as ecrire_table,
-      has_table_privilege('anon', 'commandes', 'select') as lire_commandes
+      (select relrowsecurity from pg_class where relname = 'avis') as rls_avis,
+      (select relrowsecurity from pg_class where relname = 'commandes') as rls_commandes,
+      (select count(*) from pg_policies
+        where tablename = 'avis' and cmd <> 'SELECT') as ecritures_avis
   `)
 ).rows[0];
 verifier("E10 anon peut deposer un avis", droitsAvis.poser, true);
 verifier("E10b anon peut lire la commande a noter", droitsAvis.lire, true);
-verifier("E10c anon ne lit pas la table avis", droitsAvis.lire_table, false);
-verifier("E10d anon n ecrit pas dans la table avis", droitsAvis.ecrire_table, false);
-verifier("E10e anon ne lit pas les commandes", droitsAvis.lire_commandes, false);
+verifier("E10c la table avis est sous RLS", droitsAvis.rls_avis, true);
+verifier("E10d aucune politique d ecriture sur avis", Number(droitsAvis.ecritures_avis), 0);
+verifier("E10e les commandes restent sous RLS", droitsAvis.rls_commandes, true);
 
 // E11 : la migration sera collee dans le SQL editor, peut-etre deux fois.
 let rejeuAvis = null;
@@ -764,24 +793,41 @@ verifier(
   "non_administrateur"
 );
 
-// F10 : la cloison. Le navigateur ne doit jamais atteindre ces tables ni
-// ces fonctions, meme connecte, meme administrateur : tout passe par le
-// serveur avec la cle de service.
+/*
+ * F10 : la cloison, deux serrures.
+ *
+ * La premiere version de la migration se contentait de « revoke from
+ * public », qui ne retire pas les droits que Supabase accorde nommement a
+ * anon et authenticated : les fonctions d'administration etaient
+ * joignables avec la cle anonyme. Elles refusaient l'appel, mais en
+ * verifiant leur parametre « par » - fourni par l'appelant. Qui
+ * connaissait l'identifiant d'un administrateur agissait en son nom.
+ */
 const cloison = (
   await db.query(`
     select
-      has_table_privilege('authenticated', 'administrateurs', 'select') as lire_admins,
-      has_table_privilege('authenticated', 'journal_admin', 'select') as lire_journal,
       has_function_privilege('authenticated', 'admin_changer_formule(uuid,text,uuid)', 'execute') as changer,
+      has_function_privilege('anon', 'admin_changer_formule(uuid,text,uuid)', 'execute') as changer_anon,
       has_function_privilege('authenticated', 'admin_nommer(uuid,uuid)', 'execute') as nommer,
-      has_function_privilege('anon', 'est_administrateur(uuid)', 'execute') as sonder
+      has_function_privilege('authenticated', 'admin_revoquer(uuid,uuid)', 'execute') as revoquer,
+      has_function_privilege('anon', 'est_administrateur(uuid)', 'execute') as sonder,
+      has_function_privilege('service_role', 'admin_changer_formule(uuid,text,uuid)', 'execute') as serveur,
+      has_table_privilege('authenticated', 'administrateurs', 'select') as lire_admins,
+      has_table_privilege('anon', 'journal_admin', 'select') as lire_journal,
+      (select relrowsecurity from pg_class where relname = 'administrateurs') as rls_admins,
+      (select count(*) from pg_policies where tablename in ('administrateurs','journal_admin')) as politiques
   `)
 ).rows[0];
-verifier("F10 authenticated ne lit pas les administrateurs", cloison.lire_admins, false);
-verifier("F10b authenticated ne lit pas le journal", cloison.lire_journal, false);
-verifier("F10c authenticated ne change aucune offre", cloison.changer, false);
-verifier("F10d authenticated ne nomme personne", cloison.nommer, false);
+verifier("F10 authenticated ne change aucune offre", cloison.changer, false);
+verifier("F10b anon non plus", cloison.changer_anon, false);
+verifier("F10c authenticated ne nomme personne", cloison.nommer, false);
+verifier("F10d authenticated ne revoque personne", cloison.revoquer, false);
 verifier("F10e anon ne peut pas sonder qui est admin", cloison.sonder, false);
+verifier("F10f mais le serveur le peut", cloison.serveur, true);
+verifier("F10g authenticated ne lit pas les administrateurs", cloison.lire_admins, false);
+verifier("F10h anon ne lit pas le journal", cloison.lire_journal, false);
+verifier("F10i RLS active sur les administrateurs", cloison.rls_admins, true);
+verifier("F10j et aucune politique ne l ouvre", Number(cloison.politiques), 0);
 
 // F11 : la migration sera collee dans le SQL editor, peut-etre deux fois.
 // Elle ne doit pas ressusciter un droit qu'on vient de retirer.
