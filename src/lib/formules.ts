@@ -19,6 +19,13 @@ const FORMULES: Record<string, Plafonds> = {
   atelier_pro: { nom: "Atelier Pro", clients: null, commandesEnCours: null },
 };
 
+/*
+ * Les codes, dans l'ordre ou on les propose. La base reste seule juge de
+ * ce qui existe : cette liste ne sert qu'a peupler un choix, et une offre
+ * ajoutee en base sans l'etre ici sera simplement absente du menu.
+ */
+export const CODES_FORMULES = Object.keys(FORMULES);
+
 // Une formule inconnue de cette table ne doit rien bloquer : la base
 // tranchera, et mieux vaut laisser passer que barrer la route a tort.
 const INCONNUE: Plafonds = { nom: "", clients: null, commandesEnCours: null };

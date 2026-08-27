@@ -603,6 +603,199 @@ verifier(
 );
 
 // =========================================================================
+console.log("\nF. Administrateurs de la plateforme\n");
+// =========================================================================
+
+/*
+ * Le pouvoir cree ici traverse la cloison entre ateliers. Ce qui suit
+ * verifie surtout ce qu'il ne doit PAS permettre.
+ */
+
+const patron = (await inscrire({ email: "patron@tailorhub.bj" })).id;
+const adjoint = (await inscrire({ email: "adjoint@tailorhub.bj" })).id;
+const quidam = (await inscrire({ email: "quidam@atelier.bj" })).id;
+
+const appeler = async (sql, params) => {
+  try {
+    await db.query(sql, params);
+    return null;
+  } catch (erreur) {
+    return erreur.message;
+  }
+};
+
+const estAdmin = async (id) =>
+  (await db.query(`select est_administrateur($1) as oui`, [id])).rows[0].oui;
+
+// F1 : personne n'est administrateur au depart. La migration ne nomme
+// personne, exprès.
+verifier(
+  "F1 aucun administrateur apres la migration",
+  await compter(`select count(*) n from administrateurs`),
+  0
+);
+
+// F2 : sans premier administrateur, personne ne peut s'en nommer un.
+verifier(
+  "F2 un quidam ne peut nommer personne",
+  await appeler(`select admin_nommer($1, $2)`, [quidam, quidam]),
+  "non_administrateur"
+);
+
+// Le premier se nomme a la main, comme le dit la migration.
+await db.query(`insert into administrateurs (id) values ($1)`, [patron]);
+
+verifier("F3 le patron est administrateur", await estAdmin(patron), true);
+verifier("F3b l adjoint ne l est pas encore", await estAdmin(adjoint), false);
+
+// F4 : le patron delegue.
+verifier(
+  "F4 le patron nomme son adjoint",
+  await appeler(`select admin_nommer($1, $2)`, [adjoint, patron]),
+  null
+);
+verifier("F4b l adjoint est administrateur", await estAdmin(adjoint), true);
+
+/*
+ * Un atelier a lui, et non celui des sections precedentes : elles ont deja
+ * change sa formule, et un banc dont une section depend de l'etat laisse
+ * par une autre casse a la premiere reorganisation.
+ */
+const atelierClient = (
+  await db.query(
+    `insert into ateliers (nom, formule) values ('Atelier Payeur', 'decouverte')
+     returning id`
+  )
+).rows[0].id;
+
+// F5 : changer l'offre d'un atelier, le geste qui remplace l'encaissement.
+verifier(
+  "F5 l adjoint change une offre",
+  await appeler(`select admin_changer_formule($1, $2, $3)`, [
+    atelierClient,
+    "atelier_pro",
+    adjoint,
+  ]),
+  null
+);
+verifier(
+  "F5b l offre est bien changee",
+  (await db.query(`select formule from ateliers where id = $1`, [atelierClient]))
+    .rows[0].formule,
+  "atelier_pro"
+);
+
+// F6 : la trace. C'est elle qui rend la delegation tenable.
+const trace = (
+  await db.query(
+    `select administrateur, action,
+            details ->> 'avant' as avant, details ->> 'apres' as apres
+       from journal_admin
+      where action = 'formule' order by created_at desc limit 1`
+  )
+).rows[0];
+verifier("F6 le journal retient qui a agi", trace.administrateur, adjoint);
+verifier("F6b et d ou l atelier vient", trace.avant, "decouverte");
+verifier("F6c et ou il va", trace.apres, "atelier_pro");
+
+// F7 : un double clic ne doit pas raconter un changement qui n'a pas eu lieu.
+const avantRejeu = await compter(`select count(*) n from journal_admin`);
+await appeler(`select admin_changer_formule($1, $2, $3)`, [
+  atelierClient,
+  "atelier_pro",
+  adjoint,
+]);
+verifier(
+  "F7 rechanger vers la meme offre ne journalise rien",
+  await compter(`select count(*) n from journal_admin`),
+  avantRejeu
+);
+
+// F8 : ce que le pouvoir ne permet pas.
+verifier(
+  "F8 un quidam ne change aucune offre",
+  await appeler(`select admin_changer_formule($1, $2, $3)`, [
+    atelierClient,
+    "decouverte",
+    quidam,
+  ]),
+  "non_administrateur"
+);
+verifier(
+  "F8b une offre inventee est refusee",
+  await appeler(`select admin_changer_formule($1, $2, $3)`, [
+    atelierClient,
+    "offre_gratuite_a_vie",
+    patron,
+  ]),
+  "formule_inconnue"
+);
+verifier(
+  "F8c un atelier inconnu est refuse",
+  await appeler(`select admin_changer_formule($1, $2, $3)`, [
+    "00000000-0000-0000-0000-000000000000",
+    "atelier",
+    patron,
+  ]),
+  "atelier_introuvable"
+);
+
+// F9 : on ne se revoque pas soi-meme. Cette seule regle garantit qu'il
+// reste toujours au moins un administrateur.
+verifier(
+  "F9 auto-revocation refusee",
+  await appeler(`select admin_revoquer($1, $2)`, [patron, patron]),
+  "auto_revocation"
+);
+
+verifier(
+  "F9b le patron revoque son adjoint",
+  await appeler(`select admin_revoquer($1, $2)`, [adjoint, patron]),
+  null
+);
+verifier("F9c l adjoint a perdu le droit", await estAdmin(adjoint), false);
+verifier(
+  "F9d et ne peut plus rien changer",
+  await appeler(`select admin_changer_formule($1, $2, $3)`, [
+    atelierClient,
+    "decouverte",
+    adjoint,
+  ]),
+  "non_administrateur"
+);
+
+// F10 : la cloison. Le navigateur ne doit jamais atteindre ces tables ni
+// ces fonctions, meme connecte, meme administrateur : tout passe par le
+// serveur avec la cle de service.
+const cloison = (
+  await db.query(`
+    select
+      has_table_privilege('authenticated', 'administrateurs', 'select') as lire_admins,
+      has_table_privilege('authenticated', 'journal_admin', 'select') as lire_journal,
+      has_function_privilege('authenticated', 'admin_changer_formule(uuid,text,uuid)', 'execute') as changer,
+      has_function_privilege('authenticated', 'admin_nommer(uuid,uuid)', 'execute') as nommer,
+      has_function_privilege('anon', 'est_administrateur(uuid)', 'execute') as sonder
+  `)
+).rows[0];
+verifier("F10 authenticated ne lit pas les administrateurs", cloison.lire_admins, false);
+verifier("F10b authenticated ne lit pas le journal", cloison.lire_journal, false);
+verifier("F10c authenticated ne change aucune offre", cloison.changer, false);
+verifier("F10d authenticated ne nomme personne", cloison.nommer, false);
+verifier("F10e anon ne peut pas sonder qui est admin", cloison.sonder, false);
+
+// F11 : la migration sera collee dans le SQL editor, peut-etre deux fois.
+// Elle ne doit pas ressusciter un droit qu'on vient de retirer.
+let rejeuAdmin = null;
+try {
+  await db.exec(await readFile(resolve(MIGRATIONS, "0012_administrateurs.sql"), "utf8"));
+} catch (erreur) {
+  rejeuAdmin = erreur.message;
+}
+verifier("F11 migration rejouable sans erreur", rejeuAdmin, null);
+verifier("F11b le patron reste administrateur", await estAdmin(patron), true);
+verifier("F11c l adjoint reste revoque", await estAdmin(adjoint), false);
+
+// =========================================================================
 console.log(
   `\n${rates === 0 ? `Les ${total} verifications passent.` : `${rates} verification(s) sur ${total} en echec.`}\n`
 );

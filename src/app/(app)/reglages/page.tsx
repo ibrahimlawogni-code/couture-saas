@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { CaretRight } from "@phosphor-icons/react/dist/ssr";
+import { administrateurConnecte } from "@/lib/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getAtelierId } from "@/lib/atelier";
 import { Carte } from "@/ui/carte";
@@ -35,6 +37,7 @@ export default async function ReglagesPage() {
     ]);
 
   const moi = (membres ?? []).find((membre) => membre.id === user.id);
+  const estAdministrateur = Boolean(await administrateurConnecte());
 
   return (
     <Page>
@@ -58,6 +61,33 @@ export default async function ReglagesPage() {
         invitations={(invitations ?? []) as Invitation[]}
         places={atelier?.limite_utilisateurs ?? 6}
       />
+
+      {/*
+       * L'arriere-guichet ne s'annonce qu'a ceux qui y ont droit. Poser le
+       * lien pour tout le monde et laisser la garde refuser apprendrait a
+       * chaque tailleur que cette adresse existe.
+       */}
+      {estAdministrateur && (
+        <section className="mt-10">
+          <EnTeteSection titre="Plateforme" />
+          <Carte classe="mt-2 p-4">
+            <Link
+              href="/admin"
+              className="flex items-center justify-between gap-3 text-sm"
+            >
+              <span className="min-w-0">
+                <span className="block font-medium text-encre">
+                  Administration TailorHub
+                </span>
+                <span className="block text-gris">
+                  Les ateliers inscrits et leur offre
+                </span>
+              </span>
+              <CaretRight size={14} weight="bold" className="shrink-0 text-gris" />
+            </Link>
+          </Carte>
+        </section>
+      )}
 
       <section className="mt-10">
         <EnTeteSection titre="Compte" />

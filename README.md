@@ -75,6 +75,48 @@ Aucune bibliotheque : quelques dizaines de comparaisons ne valent pas une
 dependance de plus. Le banc importe directement les modules TypeScript,
 d'ou le `--experimental-strip-types` de la commande.
 
+## Administration de la plateforme
+
+Un arriere-guichet, a `/admin`, pour agir sur TailorHub lui-meme plutot que
+sur un atelier : voir les ateliers inscrits et leur activite, changer
+l'offre de l'un d'eux, nommer d'autres administrateurs. Il remplace
+l'ouverture de Supabase, et tient lieu d'encaissement tant que le compte
+marchand Mobile Money n'est pas ouvert : un atelier paie, on le passe a son
+offre a la main.
+
+Ce pouvoir traverse la cloison entre ateliers. Trois regles le tiennent :
+
+- **Rien ne passe par le navigateur.** Les tables `administrateurs` et
+  `journal_admin` ont RLS active et aucune politique ; les fonctions ne
+  sont accordees ni a `anon` ni a `authenticated`. Tout se fait cote
+  serveur avec `SUPABASE_SERVICE_ROLE_KEY`, dans `src/lib/admin.ts`, qui
+  porte `server-only` en tete.
+- **Aucune politique RLS n'est ouverte** sur `clients`, `commandes` ou
+  `paiements`. Une faille de l'ecran d'administration ne peut donc pas
+  devenir une fuite entre ateliers.
+- **Chaque geste est journalise** dans la meme transaction que son effet,
+  parce que le droit se delegue et qu'une delegation sans trace ne se
+  verifie pas.
+
+Un compte ne peut pas se revoquer lui-meme : cette seule regle garantit
+qu'il reste toujours au moins un administrateur.
+
+### Nommer le premier administrateur
+
+La migration n'en nomme aucun, exprès : une adresse ecrite dans le depot y
+resterait, et rejouer la migration ressusciterait un droit qu'on aurait
+retire. Une fois `0012_administrateurs.sql` appliquee, dans le SQL editor
+de Supabase :
+
+```sql
+insert into administrateurs (id)
+select id from auth.users where email = 'votre@adresse'
+on conflict do nothing;
+```
+
+Les suivants se nomment depuis `/admin`, par leur adresse. Le lien vers
+l'arriere-guichet n'apparait dans les Reglages que pour un administrateur.
+
 ## Suppression de compte et purge
 
 Supprimer le dernier compte d'un atelier ne suffit pas a effacer ses
