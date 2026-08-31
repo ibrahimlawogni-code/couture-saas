@@ -15,12 +15,47 @@ function cleSecrete() {
   return cle;
 }
 
+export type StatutSession = "PENDING" | "PAID" | "EXPIRED" | "CANCELLED";
+
 export type SessionCheckout = {
   id: string;
+  slug: string;
   checkout_url: string;
-  status: string;
+  status: StatutSession;
+  amount: string;
+  currency: string;
   metadata: Record<string, unknown>;
+  transaction: unknown;
+  paid_at: string | null;
 };
+
+/*
+ * Toutes les reponses arrivent enveloppees dans { success, data, code },
+ * la ou les exemples de la documentation montrent l'objet nu. Constate
+ * contre l'API reelle, pas suppose : la premiere version de ce fichier
+ * lisait l'objet nu et ne trouvait que des champs indefinis.
+ */
+async function appeler<T>(chemin: string, options: RequestInit = {}): Promise<T> {
+  const reponse = await fetch(`${BASE}${chemin}`, {
+    ...options,
+    headers: {
+      Authorization: `Bearer ${cleSecrete()}`,
+      "Content-Type": "application/json",
+      ...(options.headers ?? {}),
+    },
+  });
+
+  const texte = await reponse.text();
+
+  if (!reponse.ok) {
+    // Le corps d'erreur peut etre du HTML sur un 404 : on le tronque plutot
+    // que de le supposer JSON.
+    throw new Error(`saspay_${reponse.status}: ${texte.slice(0, 300)}`);
+  }
+
+  const corps = JSON.parse(texte);
+  return (corps?.data ?? corps) as T;
+}
 
 /**
  * Ouvre une page de paiement hebergee et rend l'adresse ou envoyer la
@@ -44,12 +79,8 @@ export async function creerSessionCheckout(entree: {
   retourUrl?: string;
   metadonnees: Record<string, string>;
 }): Promise<SessionCheckout> {
-  const reponse = await fetch(`${BASE}/checkout-sessions/`, {
+  return appeler<SessionCheckout>("/checkout-sessions/", {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${cleSecrete()}`,
-      "Content-Type": "application/json",
-    },
     body: JSON.stringify({
       amount: entree.montant.toFixed(2),
       currency: entree.devise ?? "XOF",
@@ -61,27 +92,29 @@ export async function creerSessionCheckout(entree: {
       metadata: entree.metadonnees,
     }),
   });
-
-  if (!reponse.ok) {
-    throw new Error(
-      `saspay_refus_${reponse.status}: ${(await reponse.text()).slice(0, 300)}`
-    );
-  }
-
-  return (await reponse.json()) as SessionCheckout;
 }
 
 /** Relit une session chez SASPay : c'est elle qui fait foi, pas la notification. */
-export async function lireSessionCheckout(id: string): Promise<SessionCheckout> {
-  const reponse = await fetch(`${BASE}/checkout-sessions/${id}/`, {
-    headers: { Authorization: `Bearer ${cleSecrete()}` },
-  });
+export function lireSessionCheckout(id: string) {
+  return appeler<SessionCheckout>(`/checkout-sessions/${id}/`);
+}
 
-  if (!reponse.ok) {
-    throw new Error(`saspay_lecture_${reponse.status}`);
-  }
-
-  return (await reponse.json()) as SessionCheckout;
+/**
+ * Les sessions reglees, les plus recentes d'abord.
+ *
+ * C'est le seul chemin fiable pour rattacher un versement a un atelier : la
+ * notification de SASPay ne porte pas les metadonnees de la session, donc
+ * rien qui dise a qui crediter. La session, elle, les conserve - verifie
+ * contre l'API reelle.
+ *
+ * Une page suffit. La notification arrive dans la seconde qui suit le
+ * paiement, et l'entretien nocturne repasse derriere : une session reglee
+ * ne peut pas s'enfoncer dans la liste avant d'avoir ete vue.
+ */
+export function listerSessionsPayees(parPage = 50) {
+  return appeler<{ count: number; results: SessionCheckout[] }>(
+    `/checkout-sessions/?status=PAID&page_size=${parPage}`
+  );
 }
 
 /**
