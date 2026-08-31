@@ -80,9 +80,13 @@ d'ou le `--experimental-strip-types` de la commande.
 Un arriere-guichet, a `/admin`, pour agir sur TailorHub lui-meme plutot que
 sur un atelier : voir les ateliers inscrits et leur activite, changer
 l'offre de l'un d'eux, nommer d'autres administrateurs. Il remplace
-l'ouverture de Supabase, et tient lieu d'encaissement tant que le compte
-marchand Mobile Money n'est pas ouvert : un atelier paie, on le passe a son
-offre a la main.
+l'ouverture de Supabase.
+
+Il a longtemps tenu lieu d'encaissement, faute de compte marchand : un
+atelier payait, on le passait a son offre a la main. Ce n'est plus le
+chemin normal, l'encaissement par SASPay etant en place (voir plus bas).
+Changer une offre a la main reste utile pour un geste commercial, un
+depannage, ou un reglement recu hors de l'application.
 
 Ce pouvoir traverse la cloison entre ateliers. Trois regles le tiennent :
 
@@ -188,6 +192,48 @@ est cree. Le declencheur laisse donc passer ces comptes sans rien creer, et
 Sans cela, tout compte Google aurait ouvert un atelier nomme « Mon atelier »,
 et surtout un apprenti invite serait devenu proprietaire d'un atelier vide au
 lieu de rejoindre celui de son patron - en silence.
+
+## Encaissement des abonnements
+
+Le tailleur paie son offre depuis **Reglages**, par Mobile Money ou carte,
+via **SASPay**. Un mois a la fois. A l'echeance, l'atelier revient a
+Decouverte sans rien perdre : les plafonds ne s'opposent qu'aux creations,
+jamais aux lignes deja en place.
+
+Trois chemins declenchent le meme rapprochement, et **aucun n'est
+indispensable** : la notification de SASPay, le retour du navigateur apres
+paiement, et l'entretien nocturne. Un tailleur dont la connexion coupe au
+retour verra quand meme son atelier passer en Pro.
+
+La notification ne porte pas les metadonnees de la session, donc rien qui
+dise a qui crediter : elle ne sert que de signal. Ce qui fait foi est la
+relecture des sessions reglees chez SASPay, ou les metadonnees survivent.
+L'identifiant de session sert de cle d'idempotence, une session ne pouvant
+etre reglee qu'une fois.
+
+Le prix n'est jamais transmis par le navigateur : il est lu dans
+`src/lib/tarifs.ts` cote serveur, le formulaire ne designant qu'une offre.
+
+Deux variables, sans prefixe `NEXT_PUBLIC_` :
+
+| Variable | Role |
+|---|---|
+| `SASPAY_SECRET_KEY` | Cle API. `sk_test_` en developpement, `sk_live_` en production |
+| `SASPAY_WEBHOOK_SECRET` | Donne une seule fois a la creation du webhook. Sans lui, toute notification est refusee |
+
+Mise en service :
+
+1. Appliquer `supabase/migrations/0013_abonnement.sql`
+2. Sur `app.saspay.me`, declarer un webhook vers
+   `https://votre-domaine/api/paiements/saspay` et **copier le secret
+   immediatement**, il n'est plus consultable ensuite
+3. Poser les deux variables dans Vercel, environnement Production
+4. Redeployer
+
+La planification nocturne appelle `/api/abonnements/entretien` a 4 h, apres
+la purge. Sa premiere moitie - la retrogradation des periodes finies - ne
+depend pas de SASPay et continue de tourner si le prestataire n'est pas
+configure.
 
 ## Modele de donnees
 

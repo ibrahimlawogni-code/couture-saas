@@ -6,10 +6,16 @@ import { createClient } from "@/lib/supabase/server";
 import { getAtelierId } from "@/lib/atelier";
 import { Carte } from "@/ui/carte";
 import { EnTetePage, EnTeteSection, LienRetour, Page } from "@/ui/page";
+import { Abonnement } from "./abonnement";
 import { Equipe, type Invitation, type Membre } from "./equipe";
 import { FormulaireReglages } from "./formulaire";
 
-export default async function ReglagesPage() {
+export default async function ReglagesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ paiement?: string }>;
+}) {
+  const { paiement } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -24,7 +30,9 @@ export default async function ReglagesPage() {
     await Promise.all([
       supabase
         .from("ateliers")
-        .select("nom, limite_utilisateurs, telephone, whatsapp_number")
+        .select(
+          "nom, limite_utilisateurs, telephone, whatsapp_number, formule, abonnement_jusquau"
+        )
         .eq("id", atelierId)
         .single(),
       supabase.from("utilisateurs").select("id, nom, role").order("role"),
@@ -60,6 +68,12 @@ export default async function ReglagesPage() {
         membres={(membres ?? []) as Membre[]}
         invitations={(invitations ?? []) as Invitation[]}
         places={atelier?.limite_utilisateurs ?? 6}
+      />
+
+      <Abonnement
+        formule={atelier?.formule ?? "decouverte"}
+        echeance={atelier?.abonnement_jusquau ?? null}
+        retour={paiement}
       />
 
       {/*
