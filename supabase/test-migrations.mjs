@@ -842,6 +842,212 @@ verifier("F11b le patron reste administrateur", await estAdmin(patron), true);
 verifier("F11c l adjoint reste revoque", await estAdmin(adjoint), false);
 
 // =========================================================================
+console.log("\nG. Abonnement paye\n");
+// =========================================================================
+
+/*
+ * Un atelier neuf, pour ne pas heriter de l'etat que les sections
+ * precedentes ont laisse a celui de Kossi.
+ */
+const abonne = await inscrire({
+  email: "abonne@atelier.bj",
+  meta: { atelier_nom: "Atelier Abonne", nom: "Sena" },
+});
+const atelierAbonne = (
+  await db.query(`select atelier_id from utilisateurs where id = $1`, [abonne.id])
+).rows[0].atelier_id;
+
+const encaisser = async (tx, code, mois, montant = 5000) => {
+  try {
+    await db.query(
+      `select enregistrer_paiement_abonnement($1, $2, $3, $4, $5)`,
+      [atelierAbonne, tx, code, mois, montant]
+    );
+    return null;
+  } catch (erreur) {
+    return erreur.message;
+  }
+};
+
+const lireAtelier = async (id = atelierAbonne) =>
+  (
+    await db.query(
+      `select formule, limite_utilisateurs,
+              round(extract(epoch from (abonnement_jusquau - now())) / 86400)::int as jours
+         from ateliers where id = $1`,
+      [id]
+    )
+  ).rows[0];
+
+// Un mois calendaire fait 28 a 31 jours : on verifie un intervalle, pas
+// une valeur exacte, sinon le banc echouerait selon le mois ou il tourne.
+const dans = (valeur, min, max) => valeur >= min && valeur <= max;
+
+const echeance = async () => (await db.query(
+  `select abonnement_jusquau from ateliers where id = $1`, [atelierAbonne]
+)).rows[0].abonnement_jusquau;
+
+verifier("G1 un atelier neuf est sur la formule gratuite", await lireAtelier(), {
+  formule: "decouverte",
+  limite_utilisateurs: 1,
+  jours: null,
+});
+
+verifier("G2 un versement passe : aucune erreur", await encaisser("TX-1", "atelier_pro", 1), null);
+
+const apresPremier = await lireAtelier();
+verifier("G2 la formule est posee", apresPremier.formule, "atelier_pro");
+verifier("G2 le plafond de comptes suit la formule", apresPremier.limite_utilisateurs, 6);
+verifier("G2 l echeance est a un mois", dans(apresPremier.jours, 27, 32), true);
+
+/*
+ * Le coeur de la table : un webhook se rejoue. Le prestataire reessaie
+ * quand notre serveur a bronche, et rien n'empeche deux notifications pour
+ * un meme versement. Sans la contrainte d'unicite, l'echeance serait
+ * prolongee deux fois pour un seul paiement.
+ */
+const echeanceAvantRejeu = await echeance();
+verifier("G3 rejeu du meme versement : aucune erreur", await encaisser("TX-1", "atelier_pro", 1), null);
+verifier("G3 l echeance n a pas bouge", String(await echeance()), String(echeanceAvantRejeu));
+verifier(
+  "G3 un seul versement enregistre",
+  await compter(`select count(*) n from paiements_abonnement where atelier_id = $1`, [
+    atelierAbonne,
+  ]),
+  1
+);
+
+// Renouvellement avant terme : les jours deja payes sont conserves.
+verifier("G4 second versement : aucune erreur", await encaisser("TX-2", "atelier_pro", 1), null);
+verifier("G4 l echeance cumule au lieu de repartir de zero", dans((await lireAtelier()).jours, 57, 63), true);
+
+/*
+ * Reprise apres interruption : l'echeance repart de maintenant, pas de la
+ * date echue. Crediter le temps ou l'atelier n'etait pas abonne
+ * reviendrait a lui offrir son absence.
+ */
+await db.query(
+  `update ateliers set abonnement_jusquau = now() - interval '40 days' where id = $1`,
+  [atelierAbonne]
+);
+verifier("G5 versement apres interruption", await encaisser("TX-3", "atelier_pro", 1), null);
+verifier("G5 l echeance repart de maintenant", dans((await lireAtelier()).jours, 27, 32), true);
+
+/*
+ * Retrogradation. La promesse faite a l'utilisateur est qu'on ne perd
+ * rien : les plafonds de 0009 ne s'opposent qu'aux creations, jamais aux
+ * lignes deja en place. On le verifie plutot que de l'affirmer.
+ */
+const codeAbonne = await inviter(atelierAbonne);
+const apprentiAbonne = await inscrire({
+  email: "apprenti-abonne@atelier.bj",
+  meta: { nom: "Kofi", code_invitation: codeAbonne },
+});
+verifier("G6 un apprenti rejoint pendant l abonnement", apprentiAbonne.erreur, null);
+
+const membresAvant = await compter(
+  `select count(*) n from utilisateurs where atelier_id = $1`,
+  [atelierAbonne]
+);
+verifier("G6 l atelier compte deux membres", membresAvant, 2);
+
+await db.query(
+  `update ateliers set abonnement_jusquau = now() - interval '1 day' where id = $1`,
+  [atelierAbonne]
+);
+const retrogrades = Number(
+  (await db.query(`select retrograder_abonnements_expires() as n`)).rows[0].n
+);
+verifier("G7 un atelier expire est retrograde", retrogrades, 1);
+verifier("G7 retour sur la formule gratuite", await lireAtelier(), {
+  formule: "decouverte",
+  limite_utilisateurs: 1,
+  jours: null,
+});
+verifier(
+  "G7 les deux membres sont toujours la",
+  await compter(`select count(*) n from utilisateurs where atelier_id = $1`, [
+    atelierAbonne,
+  ]),
+  membresAvant
+);
+verifier(
+  "G7 et l historique des versements est conserve",
+  await compter(`select count(*) n from paiements_abonnement where atelier_id = $1`, [
+    atelierAbonne,
+  ]),
+  3
+);
+
+verifier(
+  "G8 un second passage ne retrograde plus personne",
+  Number((await db.query(`select retrograder_abonnements_expires() as n`)).rows[0].n),
+  0
+);
+
+// Refus de principe : mieux vaut une erreur bruyante qu'un versement range
+// sous un atelier qui n'existe pas.
+verifier(
+  "G9 atelier inconnu refuse",
+  /atelier_inconnu/.test(
+    (await (async () => {
+      try {
+        await db.query(
+          `select enregistrer_paiement_abonnement($1, 'TX-X', 'atelier_pro', 1, 5000)`,
+          ["00000000-0000-0000-0000-000000000000"]
+        );
+        return "";
+      } catch (e) {
+        return e.message;
+      }
+    })()) ?? ""
+  ),
+  true
+);
+verifier(
+  "G9 formule inconnue refusee",
+  /formule_inconnue/.test((await encaisser("TX-Y", "formule_qui_n_existe_pas", 1)) ?? ""),
+  true
+);
+verifier("G9 mois nul refuse", (await encaisser("TX-Z", "atelier_pro", 0)) !== null, true);
+
+/*
+ * Ces deux fonctions ne sont appelees que par le serveur, avec la cle de
+ * service. Les laisser ouvertes a authenticated permettrait a n'importe
+ * quel compte de s'offrir Atelier Pro depuis la console du navigateur.
+ */
+const droitsAbonnement = (
+  await db.query(`
+    select
+      has_function_privilege('anon',
+        'enregistrer_paiement_abonnement(uuid,text,text,integer,numeric,text)', 'execute') as anon_paie,
+      has_function_privilege('authenticated',
+        'enregistrer_paiement_abonnement(uuid,text,text,integer,numeric,text)', 'execute') as auth_paie,
+      has_function_privilege('authenticated',
+        'retrograder_abonnements_expires()', 'execute') as auth_retrograde
+  `)
+).rows[0];
+verifier("G10 anon ne peut pas s offrir un abonnement", droitsAbonnement.anon_paie, false);
+verifier("G10 authenticated non plus", droitsAbonnement.auth_paie, false);
+verifier("G10 ni retrograder qui que ce soit", droitsAbonnement.auth_retrograde, false);
+
+// G11 : la migration sera collee dans le SQL editor, peut-etre deux fois.
+let rejeuAbonnement = null;
+try {
+  await db.exec(await readFile(resolve(MIGRATIONS, "0013_abonnement.sql"), "utf8"));
+} catch (erreur) {
+  rejeuAbonnement = erreur.message;
+}
+verifier("G11 migration rejouable sans erreur", rejeuAbonnement, null);
+verifier(
+  "G11 les versements survivent au rejeu",
+  await compter(`select count(*) n from paiements_abonnement where atelier_id = $1`, [
+    atelierAbonne,
+  ]),
+  3
+);
+
+// =========================================================================
 console.log(
   `\n${rates === 0 ? `Les ${total} verifications passent.` : `${rates} verification(s) sur ${total} en echec.`}\n`
 );
