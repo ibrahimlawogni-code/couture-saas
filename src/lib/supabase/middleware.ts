@@ -9,9 +9,6 @@ const PUBLIC_PATHS = [
   // Redemander un lien de confirmation se fait justement quand on n'a pas
   // encore pu se connecter : cette page doit rester ouverte.
   "/renvoyer-confirmation",
-  // Appelee par la planification, sans session : elle verifie elle-meme un
-  // secret en en-tete. Le controle de session la renverrait vers /login.
-  "/api/purge-ateliers",
 ];
 
 // Accessibles dans le meme etat connecte ou non : la page de presentation
@@ -23,7 +20,27 @@ const PUBLIC_PATHS = [
 // pas de compte, mais le tailleur doit pouvoir ouvrir le lien lui-meme pour
 // verifier ce qu'il envoie. Rangee dans PUBLIC_PATHS, elle renverrait un
 // tailleur connecte vers son tableau de bord.
-const CHEMINS_LIBRES = ["/hors-ligne", "/avis"];
+//
+// Les routes d'API s'y trouvent aussi, et non dans PUBLIC_PATHS. Elles se
+// gardent elles-memes - un secret en en-tete pour la planification, une
+// signature pour la notification du prestataire - et elles n'ont pas de
+// session : le controle les renverrait toutes vers /login.
+//
+// PUBLIC_PATHS ne conviendrait pas : il renvoie vers le tableau de bord
+// quiconque est connecte, ce qui casserait le retour de paiement, ouvert
+// par le navigateur du tailleur avec ses cookies. Une route d'API doit
+// repondre la meme chose dans les deux etats.
+//
+// Constate en production : les trois adresses ajoutees pour l'abonnement
+// repondaient 307 vers /login, et la notification de SASPay serait tombee
+// dans cette redirection sans que rien ne le signale.
+const CHEMINS_LIBRES = [
+  "/hors-ligne",
+  "/avis",
+  "/api/purge-ateliers",
+  "/api/abonnements/",
+  "/api/paiements/",
+];
 
 function estCheminLibre(chemin: string) {
   return chemin === "/" || CHEMINS_LIBRES.some((libre) => chemin.startsWith(libre));
