@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CaretRight } from "@phosphor-icons/react/dist/ssr";
+import { traduire } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/server";
 import { Marque } from "../marque";
 import { BarreEtatReseau } from "../service-worker";
@@ -25,7 +26,7 @@ export default async function AppLayout({
 
   const { data: utilisateur, error } = await supabase
     .from("utilisateurs")
-    .select("nom, ateliers(nom)")
+    .select("nom, ateliers(nom, langue)")
     .eq("id", user.id)
     .single();
 
@@ -46,8 +47,16 @@ export default async function AppLayout({
     redirect("/bienvenue");
   }
 
-  const atelier = utilisateur?.ateliers as unknown as { nom: string } | null;
-  const nomAtelier = atelier?.nom ?? "Mon atelier";
+  const atelier = utilisateur?.ateliers as unknown as {
+    nom: string;
+    langue: string;
+  } | null;
+  /*
+   * Rendu sur le serveur : la langue vient de la requete, pas du miroir.
+   * Le hook des ecrans clients ne s'applique pas ici.
+   */
+  const mots = traduire(atelier?.langue);
+  const nomAtelier = atelier?.nom ?? mots.monAtelier;
   const nomUtilisateur = utilisateur?.nom ?? "";
 
   return (
@@ -103,7 +112,7 @@ export default async function AppLayout({
                 />
               </span>
               <span className="block truncate text-xs text-gris">
-                {nomUtilisateur || "Réglages"}
+                {nomUtilisateur || mots.reglages}
               </span>
             </span>
           </Link>
@@ -113,7 +122,7 @@ export default async function AppLayout({
               type="submit"
               className="min-h-11 rounded-controle px-3 text-sm font-medium text-gris active:bg-papier"
             >
-              Déconnexion
+              {mots.deconnexion}
             </button>
           </form>
         </header>

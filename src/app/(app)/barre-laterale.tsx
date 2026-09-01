@@ -7,6 +7,7 @@ import { plafonds } from "@/lib/formules";
 import { useDonnees } from "@/lib/offline/use-donnees";
 import { useEtatEnvoi } from "@/lib/offline/use-etat-envoi";
 import { Marque } from "../marque";
+import { useTraductions } from "@/lib/offline/use-traductions";
 import { ONGLETS } from "./onglets";
 
 /*
@@ -49,6 +50,7 @@ export function BarreLaterale({
 }) {
   const pathname = usePathname();
   const { atelier } = useDonnees();
+  const mots = useTraductions();
   const etat = useEtatEnvoi();
 
   const formule = plafonds(atelier?.formule).nom;
@@ -83,14 +85,14 @@ export function BarreLaterale({
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-semibold">{nomAtelier}</span>
           <span className="block truncate text-xs text-vert-pale">
-            {nomUtilisateur || "Réglages"}
+            {nomUtilisateur || mots.reglages}
           </span>
         </span>
         <CaretRight size={13} weight="bold" className="shrink-0 text-vert-pale" />
       </Link>
 
-      <nav aria-label="Navigation principale" className="mt-5 flex flex-col gap-0.5">
-        {ONGLETS.map(({ href, label, icone: Icone }) => {
+      <nav aria-label={mots.navigationPrincipale} className="mt-5 flex flex-col gap-0.5">
+        {ONGLETS.map(({ href, cle, icone: Icone }) => {
           const actif = pathname.startsWith(href);
 
           return (
@@ -105,7 +107,7 @@ export function BarreLaterale({
               }`}
             >
               <Icone size={18} weight={actif ? "fill" : "regular"} />
-              {label}
+              {mots.onglets[cle]}
             </Link>
           );
         })}
@@ -136,7 +138,7 @@ export function BarreLaterale({
             href="/reglages"
             className="rounded-controle px-2.5 py-1.5 text-xs text-vert-pale transition-colors duration-150 ease-doux hover:text-white"
           >
-            Offre {formule}
+            {mots.offre(formule)}
           </Link>
         )}
 
@@ -146,7 +148,7 @@ export function BarreLaterale({
             className="flex w-full items-center gap-2.5 rounded-controle px-2.5 py-2 text-left text-sm font-medium text-vert-pale transition-colors duration-150 ease-doux hover:bg-white/10 hover:text-white"
           >
             <SignOut size={18} />
-            Déconnexion
+            {mots.deconnexion}
           </button>
         </form>
       </div>

@@ -49,6 +49,20 @@ export type Traductions = {
   jalonEtape: (rang: number, total: number, libelle: string) => string;
   champLangue: string;
   aideLangue: string;
+  /*
+   * La coque : onglets, barre laterale, en-tete. Elle s'affiche sur chaque
+   * ecran, c'est donc elle qu'on lit le plus souvent.
+   */
+  onglets: Record<"accueil" | "commandes" | "clients" | "finances", string>;
+  navigationPrincipale: string;
+  reglages: string;
+  deconnexion: string;
+  monAtelier: string;
+  /*
+   * Le nom de l'offre n'est pas traduit : « Atelier Pro » est un nom
+   * commercial, pas une description. Seul ce qui l'entoure change.
+   */
+  offre: (nom: string) => string;
 };
 
 const FR: Traductions = {
@@ -88,6 +102,17 @@ const FR: Traductions = {
   champLangue: "Langue de l'atelier",
   aideLangue:
     "Elle vaut pour tout l'atelier, y compris les apprentis. Les reçus et messages envoyés aux clients restent en français pour l'instant.",
+  onglets: {
+    accueil: "Accueil",
+    commandes: "Commandes",
+    clients: "Clients",
+    finances: "Finances",
+  },
+  navigationPrincipale: "Navigation principale",
+  reglages: "Réglages",
+  deconnexion: "Déconnexion",
+  monAtelier: "Mon atelier",
+  offre: (nom) => `Offre ${nom}`,
 };
 
 /*
@@ -132,6 +157,17 @@ const EN: Traductions = {
   champLangue: "Workshop language",
   aideLangue:
     "It applies to the whole workshop, apprentices included. Receipts and messages sent to clients stay in French for now.",
+  onglets: {
+    accueil: "Home",
+    commandes: "Orders",
+    clients: "Clients",
+    finances: "Money",
+  },
+  navigationPrincipale: "Main navigation",
+  reglages: "Settings",
+  deconnexion: "Sign out",
+  monAtelier: "My workshop",
+  offre: (nom) => `${nom} plan`,
 };
 
 const TABLES: Record<Langue, Traductions> = { fr: FR, en: EN };

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTraductions } from "@/lib/offline/use-traductions";
 import { ONGLETS } from "./onglets";
 
 /**
@@ -10,10 +11,11 @@ import { ONGLETS } from "./onglets";
  */
 export function NavigationPrincipale() {
   const pathname = usePathname();
+  const mots = useTraductions();
 
   return (
     <nav
-      aria-label="Navigation principale"
+      aria-label={mots.navigationPrincipale}
       /*
        * pb-securite reserve la hauteur de l'indicateur d'accueil de
        * l'iPhone. Sans elle, une fois l'application installee en PWA, le
@@ -23,7 +25,7 @@ export function NavigationPrincipale() {
       className="fixed inset-x-0 bottom-0 z-40 border-t border-bordure bg-white/95 pb-securite backdrop-blur-sm lg:hidden"
     >
       <ul className="mx-auto flex max-w-2xl">
-        {ONGLETS.map(({ href, label, icone: Icone }) => {
+        {ONGLETS.map(({ href, cle, icone: Icone }) => {
           const actif = pathname.startsWith(href);
 
           return (
@@ -60,7 +62,7 @@ export function NavigationPrincipale() {
                     actif ? "text-foret" : "text-gris"
                   }`}
                 >
-                  {label}
+                  {mots.onglets[cle]}
                 </span>
               </Link>
             </li>
