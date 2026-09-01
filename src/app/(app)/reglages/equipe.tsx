@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Check, Copy, UserPlus } from "@phosphor-icons/react/dist/ssr";
 import { createClient } from "@/lib/supabase/client";
 import { useFileAttente } from "@/lib/offline/use-file-attente";
+import { useTraductions } from "@/lib/offline/use-traductions";
 import { Bouton } from "@/ui/bouton";
 import { Carte } from "@/ui/carte";
 import { EnTeteSection } from "@/ui/page";
@@ -42,6 +43,7 @@ export function Equipe({
   const router = useRouter();
   const { horsLigne } = useFileAttente();
   const [occupe, setOccupe] = useState(false);
+  const mots = useTraductions();
   const [copie, setCopie] = useState<string | null>(null);
   /*
    * Retirer un compte effacait la ligne au premier appui, sans rien
@@ -101,10 +103,10 @@ export function Equipe({
   return (
     <section className="mt-10">
       <EnTeteSection
-        titre="Atelier"
+        titre={mots.reglagesEcran.equipe}
         action={
           <span className="chiffres text-xs text-gris">
-            {occupees} place{occupees > 1 ? "s" : ""} sur {places}
+            {mots.reglagesEcran.places(occupees, places)}
           </span>
         }
       />
@@ -118,7 +120,9 @@ export function Equipe({
                   {membre.nom}
                 </span>
                 <span className="block text-xs text-gris">
-                  {membre.role === "proprietaire" ? "Propriétaire" : "Apprenti"}
+                  {membre.role === "proprietaire"
+                    ? mots.reglagesEcran.proprietaire
+                    : mots.reglagesEcran.apprenti}
                   {membre.id === utilisateurId ? " · vous" : ""}
                 </span>
               </span>
@@ -136,7 +140,9 @@ export function Equipe({
                   disabled={occupe || horsLigne}
                   classe="shrink-0"
                 >
-                  {aConfirmer === membre.id ? "Confirmer" : "Retirer"}
+                  {aConfirmer === membre.id
+                    ? mots.reglagesEcran.confirmer
+                    : mots.reglagesEcran.retirer}
                 </Bouton>
               )}
             </Carte>
@@ -159,8 +165,9 @@ export function Equipe({
                   {invitation.code}
                 </span>
                 <span className="block text-xs text-gris">
-                  En attente · expire le{" "}
-                  {new Date(invitation.expire_le).toLocaleDateString("fr-FR")}
+                  {mots.reglagesEcran.expireLe(
+                    new Date(invitation.expire_le).toLocaleDateString(mots.locale)
+                  )}
                 </span>
               </span>
 
@@ -175,12 +182,12 @@ export function Equipe({
                   {copie === invitation.code ? (
                     <>
                       <Check size={12} weight="bold" />
-                      Copié
+                      {mots.reglagesEcran.copie}
                     </>
                   ) : (
                     <>
                       <Copy size={12} />
-                      Copier
+                      {mots.reglagesEcran.copier}
                     </>
                   )}
                 </Bouton>
@@ -193,7 +200,7 @@ export function Equipe({
                     onClick={() => annuler(invitation.id)}
                     disabled={occupe || horsLigne}
                   >
-                    Annuler
+                    {mots.annuler}
                   </Bouton>
                 )}
               </span>
@@ -213,15 +220,15 @@ export function Equipe({
             classe="mt-3"
           >
             {!complet && <UserPlus size={15} />}
-            {complet ? "Toutes les places sont prises" : "Inviter un apprenti"}
+            {complet ? mots.reglagesEcran.placesPrises : mots.reglagesEcran.inviter}
           </Bouton>
 
           <p className="mt-2 text-xs text-gris">
             {complet
-              ? "Retirez un compte ou une invitation pour libérer une place."
+              ? mots.reglagesEcran.aidePlacesPrises
               : horsLigne
-                ? "L'invitation demande une connexion."
-                : "Un code est généré. Transmettez-le à votre apprenti : il le saisira en créant son compte."}
+                ? mots.reglagesEcran.inviterHorsLigne
+                : mots.reglagesEcran.aideInviter}
           </p>
         </>
       )}

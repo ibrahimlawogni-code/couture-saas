@@ -1,5 +1,6 @@
 import { ArrowRight } from "@phosphor-icons/react/dist/ssr";
 import { formaterMontant } from "@/lib/commandes";
+import type { Traductions } from "@/lib/i18n";
 import { OFFRES_PAYANTES, TARIFS } from "@/lib/tarifs";
 import { Carte } from "@/ui/carte";
 import { Message } from "@/ui/message";
@@ -15,37 +16,16 @@ import { ouvrirPaiement } from "./actions-abonnement";
  * s'apprend en encaissant, pas en supposant.
  */
 
-const RETOURS: Record<
-  string,
-  { ton: "metier" | "systeme" | "probleme"; titre: string; texte: string }
-> = {
-  regle: {
-    ton: "metier",
-    titre: "Paiement reçu",
-    texte: "Votre offre est à jour. Merci.",
-  },
-  attente: {
-    ton: "systeme",
-    titre: "Paiement en cours de traitement",
-    texte:
-      "Votre versement est bien parti. L'offre se met à jour d'elle-même, en général en quelques secondes. Rien à refaire de votre côté.",
-  },
-  indisponible: {
-    ton: "probleme",
-    titre: "Paiement indisponible",
-    texte:
-      "La page de paiement n'a pas pu s'ouvrir. Réessayez dans un moment ; rien n'a été débité.",
-  },
-  offre_inconnue: {
-    ton: "probleme",
-    titre: "Offre inconnue",
-    texte: "Cette offre n'existe pas. Reprenez depuis cet écran.",
-  },
-  duree_invalide: {
-    ton: "probleme",
-    titre: "Durée invalide",
-    texte: "La durée demandée n'est pas acceptée. Reprenez depuis cet écran.",
-  },
+/*
+ * Le ton de chaque retour. Les mots, eux, vivent dans le dictionnaire :
+ * une couleur ne se traduit pas, une phrase si.
+ */
+const TONS_RETOUR: Record<string, "metier" | "systeme" | "probleme"> = {
+  regle: "metier",
+  attente: "systeme",
+  indisponible: "probleme",
+  offre_inconnue: "probleme",
+  duree_invalide: "probleme",
 };
 
 /*
@@ -70,28 +50,36 @@ export function Abonnement({
   formule,
   echeance,
   retour,
+  mots,
 }: {
   formule: string;
   echeance: string | null;
   /** Message rapporte par la route de retour, apres un paiement. */
   retour?: string;
+  mots: Traductions;
 }) {
   const actuelle = TARIFS[formule];
-  const message = retour ? RETOURS[retour] : undefined;
+  const ton = retour ? TONS_RETOUR[retour] : undefined;
+  const message =
+    retour && ton
+      ? mots.reglagesEcran.retours[
+          retour as keyof typeof mots.reglagesEcran.retours
+        ]
+      : undefined;
 
   return (
     <section className="mt-10">
-      <EnTeteSection titre="Abonnement" />
+      <EnTeteSection titre={mots.reglagesEcran.abonnement} />
 
-      {message && (
-        <Message ton={message.ton} titre={message.titre} classe="mt-2">
+      {message && ton && (
+        <Message ton={ton} titre={message.titre} classe="mt-2">
           {message.texte}
         </Message>
       )}
 
       <Carte classe="mt-2 p-4">
         <div className="flex items-baseline justify-between gap-3 text-sm">
-          <span className="text-gris">Offre actuelle</span>
+          <span className="text-gris">{mots.reglagesEcran.offreActuelle}</span>
           <span className="font-medium text-encre">
             {actuelle?.nom ?? "Découverte"}
           </span>
@@ -99,12 +87,14 @@ export function Abonnement({
 
         <p className="mt-1.5 text-xs text-gris">
           {echeance
-            ? `Réglée jusqu'au ${new Date(echeance).toLocaleDateString("fr-FR", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              })}.`
-            : "Gratuite, sans limite de durée. Cinq clients et cinq commandes en cours."}
+            ? mots.reglagesEcran.regleeJusquau(
+                new Date(echeance).toLocaleDateString(mots.locale, {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })
+              )
+            : mots.reglagesEcran.offreGratuite}
         </p>
       </Carte>
 
@@ -126,18 +116,20 @@ export function Abonnement({
               >
                 <span className="min-w-0">
                   <span className="block text-sm font-medium text-encre">
-                    {enCours ? `Prolonger ${tarif.nom}` : `Passer à ${tarif.nom}`}
+                    {enCours
+                      ? mots.reglagesEcran.prolonger(tarif.nom)
+                      : mots.reglagesEcran.passerA(tarif.nom)}
                   </span>
                   <span className="block text-xs text-gris">
                     {offre === "atelier_pro"
-                      ? "Clients et commandes sans limite, jusqu'à 5 apprentis"
-                      : "Clients et commandes sans limite, un seul compte"}
+                      ? mots.reglagesEcran.descriptionAtelierPro
+                      : mots.reglagesEcran.descriptionAtelier}
                   </span>
                 </span>
 
                 <span className="flex shrink-0 items-center gap-2">
                   <span className="text-sm font-semibold text-encre">
-                    {formaterMontant(tarif.parMois)}
+                    {formaterMontant(tarif.parMois, mots.locale)}
                   </span>
                   <ArrowRight size={15} weight="bold" className="text-gris" />
                 </span>
@@ -153,10 +145,7 @@ export function Abonnement({
        * perdre qui fait renoncer a essayer.
        */}
       <p className="mt-2 text-xs leading-relaxed text-gris">
-        Paiement par Mobile Money, un mois à la fois, sans engagement. À
-        l&apos;échéance l&apos;atelier revient à l&apos;offre gratuite : vos
-        clients, commandes et mesures sont conservés, vous ne pouvez
-        simplement plus en ajouter au-delà des limites de Découverte.
+        {mots.reglagesEcran.conditionsPaiement}
       </p>
     </section>
   );

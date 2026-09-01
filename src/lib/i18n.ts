@@ -210,6 +210,53 @@ export type Traductions = {
     partVersee: (pourcent: number) => string;
     chargement: string;
   };
+  /** Les reglages : atelier, equipe, abonnement, compte. */
+  reglagesEcran: {
+    nomAtelier: string;
+    aideNomAtelier: string;
+    telephoneAtelier: string;
+    aideTelephoneAtelier: string;
+    whatsappAtelier: string;
+    aideWhatsappAtelier: string;
+    votreNom: string;
+    echecEnregistrement: string;
+    enregistre: string;
+    equipe: string;
+    places: (occupees: number, total: number) => string;
+    proprietaire: string;
+    apprenti: string;
+    confirmer: string;
+    retirer: string;
+    copier: string;
+    copie: string;
+    expireLe: (date: string) => string;
+    inviter: string;
+    aideInviter: string;
+    inviterHorsLigne: string;
+    placesPrises: string;
+    aidePlacesPrises: string;
+    modificationHorsLigne: string;
+    plateforme: string;
+    administration: string;
+    aideAdministration: string;
+    compte: string;
+    email: string;
+    motDePasse: string;
+    modifier: string;
+    abonnement: string;
+    offreActuelle: string;
+    offreGratuite: string;
+    regleeJusquau: (date: string) => string;
+    prolonger: (offre: string) => string;
+    passerA: (offre: string) => string;
+    descriptionAtelier: string;
+    descriptionAtelierPro: string;
+    conditionsPaiement: string;
+    retours: Record<
+      "regle" | "attente" | "indisponible" | "offre_inconnue" | "duree_invalide",
+      { titre: string; texte: string }
+    >;
+  };
   /** Les trois formulaires de creation : client, commande, mesures. */
   formulaires: {
     chargement: string;
@@ -464,6 +511,82 @@ const FR: Traductions = {
     chargement: "Chargement de la commande",
     partagerRecu: "Partager le reçu",
     preparationRecu: "Préparation...",
+  },
+  reglagesEcran: {
+    nomAtelier: "Nom de l'atelier",
+    aideNomAtelier:
+      "Il apparaît sur les reçus et les messages envoyés à vos clients.",
+    telephoneAtelier: "Téléphone de l'atelier",
+    aideTelephoneAtelier:
+      "Imprimé en pied de reçu, pour que le client puisse vous joindre.",
+    whatsappAtelier: "WhatsApp de l'atelier",
+    aideWhatsappAtelier: "Laissez vide si c'est le même numéro.",
+    votreNom: "Votre nom",
+    echecEnregistrement: "L'enregistrement n'a pas abouti. Réessayez.",
+    enregistre: "Modifications enregistrées.",
+    equipe: "Atelier",
+    places: (occupees, total) =>
+      `${occupees} place${occupees > 1 ? "s" : ""} sur ${total}`,
+    proprietaire: "Propriétaire",
+    apprenti: "Apprenti",
+    confirmer: "Confirmer",
+    retirer: "Retirer",
+    copier: "Copier",
+    copie: "Copié",
+    expireLe: (date) => `En attente · expire le ${date}`,
+    inviter: "Inviter un apprenti",
+    aideInviter:
+      "Un code est généré. Transmettez-le à votre apprenti : il le saisira en créant son compte.",
+    inviterHorsLigne: "L'invitation demande une connexion.",
+    placesPrises: "Toutes les places sont prises",
+    aidePlacesPrises:
+      "Retirez un compte ou une invitation pour libérer une place.",
+    modificationHorsLigne:
+      "Cette modification demande une connexion : elle change des lignes déjà enregistrées, et la file locale ne sait rejouer que des créations.",
+    plateforme: "Plateforme",
+    administration: "Administration TailorHub",
+    aideAdministration: "Les ateliers inscrits et leur offre",
+    compte: "Compte",
+    email: "Email",
+    motDePasse: "Mot de passe",
+    modifier: "Modifier",
+    abonnement: "Abonnement",
+    offreActuelle: "Offre actuelle",
+    offreGratuite:
+      "Gratuite, sans limite de durée. Cinq clients et cinq commandes en cours.",
+    regleeJusquau: (date) => `Réglée jusqu'au ${date}.`,
+    prolonger: (offre) => `Prolonger ${offre}`,
+    passerA: (offre) => `Passer à ${offre}`,
+    descriptionAtelier: "Clients et commandes sans limite, un seul compte",
+    descriptionAtelierPro:
+      "Clients et commandes sans limite, jusqu'à 5 apprentis",
+    conditionsPaiement:
+      "Paiement par Mobile Money, un mois à la fois, sans engagement. À l'échéance l'atelier revient à l'offre gratuite : vos clients, commandes et mesures sont conservés, vous ne pouvez simplement plus en ajouter au-delà des limites de Découverte.",
+    retours: {
+      regle: {
+        titre: "Paiement reçu",
+        texte: "Votre offre est à jour. Merci.",
+      },
+      attente: {
+        titre: "Paiement en cours de traitement",
+        texte:
+          "Votre versement est bien parti. L'offre se met à jour d'elle-même, en général en quelques secondes. Rien à refaire de votre côté.",
+      },
+      indisponible: {
+        titre: "Paiement indisponible",
+        texte:
+          "La page de paiement n'a pas pu s'ouvrir. Réessayez dans un moment ; rien n'a été débité.",
+      },
+      offre_inconnue: {
+        titre: "Offre inconnue",
+        texte: "Cette offre n'existe pas. Reprenez depuis cet écran.",
+      },
+      duree_invalide: {
+        titre: "Durée invalide",
+        texte:
+          "La durée demandée n'est pas acceptée. Reprenez depuis cet écran.",
+      },
+    },
   },
   formulaires: {
     chargement: "Chargement...",
@@ -729,6 +852,79 @@ const EN: Traductions = {
     chargement: "Loading the order",
     partagerRecu: "Share the receipt",
     preparationRecu: "Preparing...",
+  },
+  reglagesEcran: {
+    nomAtelier: "Workshop name",
+    aideNomAtelier: "It appears on receipts and on messages sent to your clients.",
+    telephoneAtelier: "Workshop phone",
+    aideTelephoneAtelier:
+      "Printed at the foot of receipts, so the client can reach you.",
+    whatsappAtelier: "Workshop WhatsApp",
+    aideWhatsappAtelier: "Leave empty if it is the same number.",
+    votreNom: "Your name",
+    echecEnregistrement: "Saving did not go through. Try again.",
+    enregistre: "Changes saved.",
+    equipe: "Workshop",
+    places: (occupees, total) => `${occupees} of ${total} seats used`,
+    proprietaire: "Owner",
+    apprenti: "Apprentice",
+    confirmer: "Confirm",
+    retirer: "Remove",
+    copier: "Copy",
+    copie: "Copied",
+    expireLe: (date) => `Pending · expires on ${date}`,
+    inviter: "Invite an apprentice",
+    aideInviter:
+      "A code is generated. Pass it to your apprentice: they will enter it when creating their account.",
+    inviterHorsLigne: "Inviting needs a connection.",
+    placesPrises: "Every seat is taken",
+    aidePlacesPrises:
+      "Remove an account or an invitation to free a seat.",
+    modificationHorsLigne:
+      "This change needs a connection: it modifies rows already saved, and the local queue only replays new entries.",
+    plateforme: "Platform",
+    administration: "TailorHub administration",
+    aideAdministration: "Registered workshops and their plan",
+    compte: "Account",
+    email: "Email",
+    motDePasse: "Password",
+    modifier: "Change",
+    abonnement: "Subscription",
+    offreActuelle: "Current plan",
+    offreGratuite:
+      "Free, with no time limit. Five clients and five orders in progress.",
+    regleeJusquau: (date) => `Paid until ${date}.`,
+    prolonger: (offre) => `Extend ${offre}`,
+    passerA: (offre) => `Move to ${offre}`,
+    descriptionAtelier: "Unlimited clients and orders, a single account",
+    descriptionAtelierPro: "Unlimited clients and orders, up to 5 apprentices",
+    conditionsPaiement:
+      "Payment by Mobile Money, one month at a time, no commitment. When it lapses the workshop returns to the free plan: your clients, orders and measurements are kept, you simply cannot add more beyond the Découverte limits.",
+    retours: {
+      regle: {
+        titre: "Payment received",
+        texte: "Your plan is up to date. Thank you.",
+      },
+      attente: {
+        titre: "Payment being processed",
+        texte:
+          "Your payment went through. The plan updates on its own, usually within seconds. Nothing more to do on your side.",
+      },
+      indisponible: {
+        titre: "Payment unavailable",
+        texte:
+          "The payment page could not open. Try again in a moment; nothing was charged.",
+      },
+      offre_inconnue: {
+        titre: "Unknown plan",
+        texte: "This plan does not exist. Start again from this screen.",
+      },
+      duree_invalide: {
+        titre: "Invalid duration",
+        texte:
+          "The requested duration is not accepted. Start again from this screen.",
+      },
+    },
   },
   formulaires: {
     chargement: "Loading...",

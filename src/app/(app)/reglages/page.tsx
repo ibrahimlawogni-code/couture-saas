@@ -4,6 +4,7 @@ import { CaretRight } from "@phosphor-icons/react/dist/ssr";
 import { administrateurConnecte } from "@/lib/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getAtelierId } from "@/lib/atelier";
+import { traduire } from "@/lib/i18n";
 import { Carte } from "@/ui/carte";
 import { EnTetePage, EnTeteSection, LienRetour, Page } from "@/ui/page";
 import { Abonnement } from "./abonnement";
@@ -44,13 +45,14 @@ export default async function ReglagesPage({
         .order("created_at"),
     ]);
 
+  const mots = traduire(atelier?.langue);
   const moi = (membres ?? []).find((membre) => membre.id === user.id);
   const estAdministrateur = Boolean(await administrateurConnecte());
 
   return (
     <Page>
-      <LienRetour href="/tableau-de-bord">Accueil</LienRetour>
-      <EnTetePage titre="Réglages" />
+      <LienRetour href="/tableau-de-bord">{mots.onglets.accueil}</LienRetour>
+      <EnTetePage titre={mots.reglages} />
 
       <FormulaireReglages
         atelierId={atelierId}
@@ -75,6 +77,7 @@ export default async function ReglagesPage({
         formule={atelier?.formule ?? "decouverte"}
         echeance={atelier?.abonnement_jusquau ?? null}
         retour={paiement}
+        mots={mots}
       />
 
       {/*
@@ -84,7 +87,7 @@ export default async function ReglagesPage({
        */}
       {estAdministrateur && (
         <section className="mt-10">
-          <EnTeteSection titre="Plateforme" />
+          <EnTeteSection titre={mots.reglagesEcran.plateforme} />
           <Carte classe="mt-2 p-4">
             <Link
               href="/admin"
@@ -92,10 +95,10 @@ export default async function ReglagesPage({
             >
               <span className="min-w-0">
                 <span className="block font-medium text-encre">
-                  Administration TailorHub
+                  {mots.reglagesEcran.administration}
                 </span>
                 <span className="block text-gris">
-                  Les ateliers inscrits et leur offre
+                  {mots.reglagesEcran.aideAdministration}
                 </span>
               </span>
               <CaretRight size={14} weight="bold" className="shrink-0 text-gris" />
@@ -105,19 +108,19 @@ export default async function ReglagesPage({
       )}
 
       <section className="mt-10">
-        <EnTeteSection titre="Compte" />
+        <EnTeteSection titre={mots.reglagesEcran.compte} />
         <Carte classe="mt-2 p-4">
           <div className="flex items-baseline justify-between gap-3 py-0.5 text-sm">
-            <span className="text-gris">Email</span>
+            <span className="text-gris">{mots.reglagesEcran.email}</span>
             <span className="truncate font-medium text-encre">{user.email}</span>
           </div>
           <div className="mt-1.5 flex items-baseline justify-between gap-3 py-0.5 text-sm">
-            <span className="text-gris">Mot de passe</span>
+            <span className="text-gris">{mots.reglagesEcran.motDePasse}</span>
             <Link
               href="/nouveau-mot-de-passe"
               className="font-medium text-vert underline underline-offset-2"
             >
-              Modifier
+              {mots.reglagesEcran.modifier}
             </Link>
           </div>
         </Carte>

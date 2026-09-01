@@ -90,8 +90,8 @@ export function FormulaireReglages({
         id="atelier"
         name="atelier"
         type="text"
-        libelle="Nom de l'atelier"
-        aide="Il apparaît sur les reçus et les messages envoyés à vos clients."
+        libelle={mots.reglagesEcran.nomAtelier}
+        aide={mots.reglagesEcran.aideNomAtelier}
         defaultValue={nomAtelier}
         required
       />
@@ -105,8 +105,8 @@ export function FormulaireReglages({
         id="telephone"
         name="telephone"
         type="tel"
-        libelle="Téléphone de l'atelier"
-        aide="Imprimé en pied de reçu, pour que le client puisse vous joindre."
+        libelle={mots.reglagesEcran.telephoneAtelier}
+        aide={mots.reglagesEcran.aideTelephoneAtelier}
         defaultValue={telephoneAtelier}
         autoComplete="tel"
         inputMode="tel"
@@ -116,8 +116,8 @@ export function FormulaireReglages({
         id="whatsapp"
         name="whatsapp"
         type="tel"
-        libelle="WhatsApp de l'atelier"
-        aide="Laissez vide si c'est le même numéro."
+        libelle={mots.reglagesEcran.whatsappAtelier}
+        aide={mots.reglagesEcran.aideWhatsappAtelier}
         defaultValue={whatsappAtelier}
         inputMode="tel"
       />
@@ -126,7 +126,7 @@ export function FormulaireReglages({
         id="utilisateur"
         name="utilisateur"
         type="text"
-        libelle="Votre nom"
+        libelle={mots.reglagesEcran.votreNom}
         defaultValue={nomUtilisateur}
         autoComplete="name"
         required
@@ -161,12 +161,12 @@ export function FormulaireReglages({
 
       {etat === "echec" && (
         <Message ton="probleme">
-          L&apos;enregistrement n&apos;a pas abouti. Réessayez.
+          {mots.reglagesEcran.echecEnregistrement}
         </Message>
       )}
 
       {etat === "enregistre" && (
-        <Message ton="metier">Modifications enregistrées.</Message>
+        <Message ton="metier">{mots.reglagesEcran.enregistre}</Message>
       )}
 
       <Bouton
@@ -175,13 +175,14 @@ export function FormulaireReglages({
         pleineLargeur
         classe="mt-2 min-h-12"
       >
-        {etat === "envoi" ? "Enregistrement..." : "Enregistrer"}
+        {etat === "envoi"
+          ? mots.formulaires.enregistrement
+          : mots.formulaires.enregistrer}
       </Bouton>
 
       {horsLigne && (
         <p className="text-xs text-gris">
-          Cette modification demande une connexion : elle change des lignes déjà
-          enregistrées, et la file locale ne sait rejouer que des créations.
+          {mots.reglagesEcran.modificationHorsLigne}
         </p>
       )}
     </form>
