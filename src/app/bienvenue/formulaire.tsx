@@ -3,6 +3,7 @@
 import { useState, useSyncExternalStore } from "react";
 import { ChampCode } from "../signup/champ-code";
 import { reprendreCode } from "@/lib/code-invitation";
+import { traduire, type Langue } from "@/lib/i18n";
 import { terminerInscription } from "./actions";
 
 const sansAbonnement = () => () => {};
@@ -17,11 +18,20 @@ const sansAbonnement = () => () => {};
 export function FormulaireBienvenue({
   nomPropose,
   erreur,
+  langue,
 }: {
   /** Nom transmis par le fournisseur, que la personne peut corriger. */
   nomPropose: string;
   erreur?: string;
+  /*
+   * Le code de langue, et non le dictionnaire : cet ecran est rendu par le
+   * serveur, que les fonctions d'accord ne peuvent pas traverser. Il y a
+   * une session mais pas encore d'atelier, donc la langue vient du cookie
+   * du visiteur, comme sur les ecrans d'acces.
+   */
+  langue: Langue;
 }) {
+  const mots = traduire(langue);
   /*
    * Le code depose avant le depart chez Google.
    *
@@ -49,12 +59,14 @@ export function FormulaireBienvenue({
   return (
     <>
       <h1 className="mt-6 text-2xl font-semibold tracking-tight text-encre">
-        {rejoint ? "Rejoindre l'atelier" : "Nommez votre atelier"}
+        {rejoint
+          ? mots.acces.rejoindreAtelier
+          : mots.acces.nommezVotreAtelier}
       </h1>
       <p className="mt-1.5 text-sm text-gris">
         {rejoint
-          ? "Votre compte est prêt, il ne reste qu'à vous rattacher"
-          : "Votre compte est prêt. Encore une chose et c'est parti"}
+          ? mots.acces.compteInvite
+          : mots.acces.comptePret}
       </p>
 
       {erreur && (
@@ -73,10 +85,10 @@ export function FormulaireBienvenue({
               htmlFor="atelier"
               className="block text-sm font-medium text-encre"
             >
-              Nom de l&apos;atelier
+              {mots.acces.nomAtelier}
             </label>
             <p className="mt-1 text-xs text-gris">
-              Il apparaîtra sur les reçus remis à vos clients.
+              {mots.acces.aideNomAtelierBienvenue}
             </p>
             <input
               id="atelier"
@@ -92,7 +104,7 @@ export function FormulaireBienvenue({
 
         <div>
           <label htmlFor="nom" className="block text-sm font-medium text-encre">
-            Votre nom
+            {mots.acces.votreNom}
           </label>
           <input
             id="nom"
@@ -106,6 +118,7 @@ export function FormulaireBienvenue({
         </div>
 
         <ChampCode
+          langue={langue}
           valeur={saisi}
           surSaisie={setModifie}
           ouvert={ouvert}
@@ -117,7 +130,9 @@ export function FormulaireBienvenue({
           type="submit"
           className="mt-2 min-h-12 rounded-controle bg-vert px-4 text-base font-medium text-white transition-colors duration-150 ease-doux hover:bg-foret active:translate-y-px"
         >
-          {rejoint ? "Rejoindre l'atelier" : "Ouvrir mon atelier"}
+          {rejoint
+            ? mots.acces.rejoindreAtelier
+            : mots.acces.ouvrirMonAtelier}
         </button>
       </form>
     </>

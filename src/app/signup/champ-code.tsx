@@ -1,5 +1,7 @@
 "use client";
 
+import { traduire, type Langue } from "@/lib/i18n";
+
 /**
  * La plupart des gens qui creent un atelier n'ont pas de code. Leur montrer
  * un champ vide de plus ajoute une friction et fait deborder le formulaire
@@ -13,13 +15,24 @@
  * base rattachant alors la personne a l'atelier existant. L'etat est donc
  * tenu par le formulaire, pas ici.
  */
+/*
+ * La langue et non le dictionnaire.
+ *
+ * Ce composant est rendu cote client, et certains ecrans qui l'affichent
+ * sont rendus cote serveur. Or le dictionnaire porte des fonctions - celles
+ * qui accordent les phrases au nombre - et une fonction ne franchit pas la
+ * frontiere serveur vers client. On passe donc le code de langue, qui est
+ * une chaine, et on relit le dictionnaire ici.
+ */
 export function ChampCode({
+  langue,
   valeur,
   surSaisie,
   ouvert,
   surOuverture,
   impose,
 }: {
+  langue: Langue;
   valeur: string;
   surSaisie: (valeur: string) => void;
   ouvert: boolean;
@@ -27,6 +40,7 @@ export function ChampCode({
   /** Code recu par lien : le champ s'affiche deja rempli. */
   impose: boolean;
 }) {
+  const mots = traduire(langue);
   if (!ouvert) {
     return (
       <button
@@ -34,7 +48,7 @@ export function ChampCode({
         onClick={surOuverture}
         className="self-start text-sm text-gris underline underline-offset-2 hover:text-encre"
       >
-        J&apos;ai un code d&apos;invitation
+        {mots.acces.jaiUnCode}
       </button>
     );
   }
@@ -42,11 +56,11 @@ export function ChampCode({
   return (
     <div>
       <label htmlFor="code" className="block text-sm font-medium text-encre">
-        Code d&apos;invitation
+        {mots.acces.codeInvitation}
       </label>
       {impose && (
         <p className="mt-1 text-xs text-gris">
-          Fourni par le propriétaire de l&apos;atelier.
+          {mots.acces.aideCodeInvitation}
         </p>
       )}
       <input

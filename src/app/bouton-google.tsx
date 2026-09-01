@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { GoogleLogo } from "@phosphor-icons/react/dist/ssr";
+import { traduire, type Langue } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
 import { deposerCode } from "@/lib/code-invitation";
 
@@ -19,13 +20,19 @@ import { deposerCode } from "@/lib/code-invitation";
  * compte Google perdu ne doit pas fermer la porte de l'atelier.
  */
 export function BoutonGoogle({
+  langue,
   code,
   surFondSombre = false,
 }: {
+  /* Le code de langue et non le dictionnaire : ce bouton est affiche par
+     des ecrans rendus cote serveur, que les fonctions d'accord du
+     dictionnaire ne peuvent pas traverser. */
+  langue: Langue;
   /** Code d'invitation en cours de saisie, a reporter apres le detour. */
   code?: string;
   surFondSombre?: boolean;
 }) {
+  const mots = traduire(langue);
   const [occupe, setOccupe] = useState(false);
   const [echec, setEchec] = useState(false);
 
@@ -68,7 +75,7 @@ export function BoutonGoogle({
         }`}
       >
         <GoogleLogo size={19} weight="bold" aria-hidden />
-        {occupe ? "Ouverture..." : "Continuer avec Google"}
+        {occupe ? mots.acces.ouvertureGoogle : mots.acces.continuerAvecGoogle}
       </button>
 
       {echec && (
@@ -76,8 +83,7 @@ export function BoutonGoogle({
           role="alert"
           className={`text-xs ${surFondSombre ? "text-ambre-clair" : "text-rouge"}`}
         >
-          La connexion avec Google n&apos;a pas pu s&apos;ouvrir. Réessayez, ou
-          utilisez votre email et votre mot de passe.
+          {mots.acces.echecGoogle}
         </p>
       )}
     </div>
@@ -85,14 +91,20 @@ export function BoutonGoogle({
 }
 
 /** Filet « ou » entre le bouton du fournisseur et le formulaire. */
-export function Separateur({ surFondSombre = false }: { surFondSombre?: boolean }) {
+export function Separateur({
+  langue,
+  surFondSombre = false,
+}: {
+  langue: Langue;
+  surFondSombre?: boolean;
+}) {
   const trait = surFondSombre ? "bg-white/20" : "bg-bordure";
   const texte = surFondSombre ? "text-vert-pale" : "text-gris";
 
   return (
     <div className="flex items-center gap-3" aria-hidden>
       <span className={`h-px flex-1 ${trait}`} />
-      <span className={`text-xs ${texte}`}>ou</span>
+      <span className={`text-xs ${texte}`}>{traduire(langue).acces.ou}</span>
       <span className={`h-px flex-1 ${trait}`} />
     </div>
   );

@@ -2,12 +2,18 @@
 
 import { useState } from "react";
 import { Eye, EyeSlash, LockSimple } from "@phosphor-icons/react/dist/ssr";
+import { traduire, type Langue } from "@/lib/i18n";
 
+/*
+ * Les regles portent une cle et non un libelle : le test ne depend pas de
+ * la langue, le mot qui le decrit si. Les deux vivaient ensemble, ce qui
+ * rendait la regle intraduisible sans toucher a ce qu'elle verifie.
+ */
 export const REGLES = [
-  { libelle: "Au moins 8 caractères", teste: (v: string) => v.length >= 8 },
-  { libelle: "Une lettre", teste: (v: string) => /\p{L}/u.test(v) },
-  { libelle: "Un chiffre", teste: (v: string) => /\d/.test(v) },
-];
+  { cle: "auMoinsHuit", teste: (v: string) => v.length >= 8 },
+  { cle: "uneLettre", teste: (v: string) => /\p{L}/u.test(v) },
+  { cle: "unChiffre", teste: (v: string) => /\d/.test(v) },
+] as const;
 
 export function motDePasseValide(valeur: string) {
   return REGLES.every((regle) => regle.teste(valeur));
@@ -18,19 +24,33 @@ export function motDePasseValide(valeur: string) {
  * clavier de telephone. L'oeil le rend visible, et les criteres s'affichent
  * pendant la saisie plutot qu'apres un refus.
  */
+/*
+ * La langue et non le dictionnaire.
+ *
+ * Ce composant est rendu cote client, et certains ecrans qui l'affichent
+ * sont rendus cote serveur. Or le dictionnaire porte des fonctions - celles
+ * qui accordent les phrases au nombre - et une fonction ne franchit pas la
+ * frontiere serveur vers client. On passe donc le code de langue, qui est
+ * une chaine, et on relit le dictionnaire ici.
+ */
 export function ChampMotDePasse({
+  langue,
   nom = "password",
-  libelle = "Mot de passe",
+  libelle,
   autoComplete = "new-password",
   criteres = true,
   surFondSombre = false,
 }: {
+  langue: Langue;
   nom?: string;
+  /** Par defaut « Mot de passe », dans la langue demandee. */
   libelle?: string;
   autoComplete?: string;
   criteres?: boolean;
   surFondSombre?: boolean;
 }) {
+  const mots = traduire(langue);
+  const intitule = libelle ?? mots.acces.motDePasse;
   const [valeur, setValeur] = useState("");
   const [visible, setVisible] = useState(false);
 
@@ -40,7 +60,7 @@ export function ChampMotDePasse({
     return (
       <div>
         <label htmlFor={nom} className="sr-only">
-          {libelle}
+          {intitule}
         </label>
         <div className="flex items-center gap-3 border-b border-white/25 pb-2 focus-within:border-white">
           <LockSimple size={20} weight="light" className="text-vert-pale" />
@@ -50,7 +70,7 @@ export function ChampMotDePasse({
             type={visible ? "text" : "password"}
             autoComplete={autoComplete}
             required
-            placeholder={libelle}
+            placeholder={intitule}
             value={valeur}
             onChange={(e) => setValeur(e.target.value)}
             className="w-full border-0 bg-transparent p-0 text-base text-white placeholder:text-vert-pale focus:outline-none"
@@ -58,7 +78,11 @@ export function ChampMotDePasse({
           <button
             type="button"
             onClick={() => setVisible(!visible)}
-            aria-label={visible ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+            aria-label={
+              visible
+                ? mots.acces.masquerMotDePasse
+                : mots.acces.afficherMotDePasse
+            }
             className="shrink-0 text-vert-pale hover:text-white"
           >
             <Icone size={20} weight="light" />
@@ -71,7 +95,7 @@ export function ChampMotDePasse({
   return (
     <div>
       <label htmlFor={nom} className="block text-sm font-medium text-encre">
-        {libelle}
+        {intitule}
       </label>
       <div className="mt-1.5 flex items-center gap-2 rounded-controle border border-bordure bg-white px-4 focus-within:border-vert">
         <input
@@ -90,7 +114,11 @@ export function ChampMotDePasse({
         <button
           type="button"
           onClick={() => setVisible(!visible)}
-          aria-label={visible ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+          aria-label={
+              visible
+                ? mots.acces.masquerMotDePasse
+                : mots.acces.afficherMotDePasse
+            }
           className="shrink-0 text-gris hover:text-encre"
         >
           <Icone size={20} weight="light" />
@@ -103,7 +131,7 @@ export function ChampMotDePasse({
             const ok = regle.teste(valeur);
             return (
               <li
-                key={regle.libelle}
+                key={regle.cle}
                 className={`flex items-center gap-1.5 text-xs ${
                   ok ? "text-vert" : "text-gris"
                 }`}
@@ -114,7 +142,7 @@ export function ChampMotDePasse({
                     ok ? "bg-vert" : "bg-bordure"
                   }`}
                 />
-                {regle.libelle}
+                {mots.acces[regle.cle]}
               </li>
             );
           })}

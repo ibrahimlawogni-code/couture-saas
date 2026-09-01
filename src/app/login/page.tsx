@@ -2,6 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { EnvelopeSimple } from "@phosphor-icons/react/dist/ssr";
 import { GOOGLE_ACTIF } from "@/lib/fournisseurs";
+import { traduire } from "@/lib/i18n";
+import { langueVisiteur } from "@/lib/langue-visiteur";
+import { SelecteurLangue } from "../selecteur-langue";
 import { BoutonGoogle, Separateur } from "../bouton-google";
 import { ChampMotDePasse } from "../champ-mot-de-passe";
 import { Marque } from "../marque";
@@ -13,6 +16,8 @@ export default async function LoginPage({
   searchParams: Promise<{ error?: string; message?: string; aide?: string }>;
 }) {
   const { error, message, aide } = await searchParams;
+  const langue = await langueVisiteur();
+  const mots = traduire(langue);
 
   return (
     <div className="relative flex flex-1 items-center justify-center overflow-hidden bg-papier px-5 py-6">
@@ -50,7 +55,7 @@ export default async function LoginPage({
             TailorHub
           </p>
           <p className="mt-1 text-center text-sm text-vert-pale">
-            Accédez à votre atelier
+            {mots.acces.accroche}
           </p>
 
           {/* Un refus doit se distinguer d'une simple information, meme sur
@@ -69,7 +74,7 @@ export default async function LoginPage({
                   href="/renvoyer-confirmation"
                   className="mt-2 inline-block font-medium text-white underline underline-offset-2"
                 >
-                  Renvoyer le lien
+                  {mots.acces.renvoyerLien}
                 </Link>
               )}
             </div>
@@ -92,8 +97,8 @@ export default async function LoginPage({
            */}
           {GOOGLE_ACTIF && (
             <div className="mt-6 flex flex-col gap-5">
-              <BoutonGoogle surFondSombre />
-              <Separateur surFondSombre />
+              <BoutonGoogle langue={langue} surFondSombre />
+              <Separateur langue={langue} surFondSombre />
             </div>
           )}
 
@@ -103,7 +108,7 @@ export default async function LoginPage({
           >
             <div>
               <label htmlFor="email" className="sr-only">
-                Email
+                {mots.acces.email}
               </label>
               <div className="flex items-center gap-3 border-b border-white/25 pb-2 focus-within:border-white">
                 <EnvelopeSimple size={20} weight="light" className="text-vert-pale" />
@@ -113,13 +118,14 @@ export default async function LoginPage({
                   type="email"
                   autoComplete="email"
                   required
-                  placeholder="Adresse email"
+                  placeholder={mots.acces.adresseEmail}
                   className="w-full border-0 bg-transparent p-0 text-base text-white placeholder:text-vert-pale focus:outline-none"
                 />
               </div>
             </div>
 
             <ChampMotDePasse
+              langue={langue}
               autoComplete="current-password"
               criteres={false}
               surFondSombre
@@ -135,7 +141,7 @@ export default async function LoginPage({
                 href="/mot-de-passe-oublie"
                 className="text-sm text-vert-pale underline underline-offset-2 hover:text-white"
               >
-                Mot de passe oublié ?
+                {mots.acces.motDePasseOublie}
               </Link>
             </div>
 
@@ -143,7 +149,7 @@ export default async function LoginPage({
               type="submit"
               className="mt-1 flex min-h-12 items-center justify-center rounded-controle bg-white px-4 text-base font-semibold tracking-wide text-foret transition-colors duration-150 ease-doux hover:bg-vert-clair active:translate-y-px"
             >
-              Se connecter
+              {mots.acces.seConnecter}
             </button>
           </form>
         </div>
@@ -151,14 +157,24 @@ export default async function LoginPage({
         {/* Sur grand ecran cette ligne repose sur la photo assombrie : le gris
             du fond papier n'y aurait pas assez de contraste. */}
         <p className="mt-5 text-center text-sm text-gris lg:text-vert-pale">
-          Pas encore d&apos;atelier ?{" "}
+          {mots.acces.pasEncoreAtelier}{" "}
           <Link
             href="/signup"
             className="font-medium text-encre underline lg:text-white"
           >
-            En créer un
+            {mots.acces.enCreerUn}
           </Link>
         </p>
+
+        {/*
+         * Le choix de langue vit ici, sous la carte : avant toute connexion
+         * il n'y a pas d'atelier dont lire la langue, et un tailleur
+         * anglophone qui tombe sur une page qu'il ne lit pas s'en va avant
+         * d'avoir vu le produit.
+         */}
+        <div className="mt-4">
+          <SelecteurLangue langue={langue} />
+        </div>
       </div>
     </div>
   );

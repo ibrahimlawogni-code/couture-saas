@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { traduire } from "@/lib/i18n";
+import { langueVisiteur } from "@/lib/langue-visiteur";
 import { createClient } from "@/lib/supabase/server";
 import { FormulaireBienvenue } from "./formulaire";
 
@@ -41,6 +43,8 @@ export default async function BienvenuePage({
   }
 
   // Google transmet le nom sous full_name, d'autres sous name.
+  const langue = await langueVisiteur();
+  const mots = traduire(langue);
   const metadonnees = user.user_metadata ?? {};
   const nomPropose = String(metadonnees.full_name ?? metadonnees.name ?? "");
 
@@ -52,7 +56,11 @@ export default async function BienvenuePage({
             TailorHub
           </Link>
 
-          <FormulaireBienvenue nomPropose={nomPropose} erreur={error} />
+          <FormulaireBienvenue
+            nomPropose={nomPropose}
+            erreur={error}
+            langue={langue}
+          />
         </div>
       </div>
 
@@ -60,7 +68,7 @@ export default async function BienvenuePage({
       <div className="relative hidden lg:block">
         <Image
           src="/photos/atelier.jpg"
-          alt="Un tailleur au travail dans son atelier"
+          alt={mots.acces.photoAtelier}
           fill
           sizes="50vw"
           priority
@@ -69,7 +77,7 @@ export default async function BienvenuePage({
         <div className="absolute inset-0 bg-foret/55" />
         <div className="absolute inset-x-0 bottom-0 p-12">
           <p className="max-w-sm text-2xl font-semibold leading-snug tracking-tight text-white">
-            Plus qu&apos;une étape avant votre premier client.
+            {mots.acces.plusQuUneEtape}
           </p>
         </div>
       </div>

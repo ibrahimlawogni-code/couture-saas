@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { GOOGLE_ACTIF } from "@/lib/fournisseurs";
+import { traduire, type Langue } from "@/lib/i18n";
 import { BoutonGoogle, Separateur } from "../bouton-google";
 import { ChampCode } from "./champ-code";
 import { ChampMotDePasse } from "../champ-mot-de-passe";
@@ -23,10 +24,19 @@ import { signup } from "./actions";
 export function FormulaireInscription({
   code,
   erreur,
+  langue,
 }: {
   code?: string;
   erreur?: string;
+  /*
+   * Le code de langue, et non le dictionnaire : il vient d'un ecran rendu
+   * par le serveur, et les fonctions d'accord du dictionnaire ne franchissent
+   * pas cette frontiere. Il sort du cookie du visiteur, puisqu'avant
+   * l'inscription il n'y a pas encore d'atelier dont lire la langue.
+   */
+  langue: Langue;
 }) {
+  const mots = traduire(langue);
   const impose = Boolean(code);
   const [saisi, setSaisi] = useState(code ?? "");
   const [ouvert, setOuvert] = useState(impose);
@@ -38,12 +48,14 @@ export function FormulaireInscription({
   return (
     <>
       <h1 className="mt-6 text-2xl font-semibold tracking-tight text-encre">
-        {rejoint ? "Rejoindre l'atelier" : "Créer votre atelier"}
+        {rejoint
+          ? mots.acces.rejoindreAtelier
+          : mots.acces.creerVotreAtelier}
       </h1>
       <p className="mt-1.5 text-sm text-gris">
         {rejoint
-          ? "Vous avez été invité, il ne reste qu'à créer votre compte"
-          : "Quelques informations et c'est parti"}
+          ? mots.acces.sousTitreInvite
+          : mots.acces.sousTitreCreation}
       </p>
 
       {erreur && (
@@ -60,8 +72,8 @@ export function FormulaireInscription({
        */}
       {GOOGLE_ACTIF && (
         <div className="mt-5 flex flex-col gap-4">
-          <BoutonGoogle code={saisi.trim()} />
-          <Separateur />
+          <BoutonGoogle langue={langue} code={saisi.trim()} />
+          <Separateur langue={langue} />
         </div>
       )}
 
@@ -72,17 +84,28 @@ export function FormulaireInscription({
         {!rejoint && (
           <Champ
             id="atelier"
-            label="Nom de l'atelier"
+            label={mots.acces.nomAtelier}
             type="text"
             autoComplete="organization"
           />
         )}
-        <Champ id="nom" label="Votre nom" type="text" autoComplete="name" />
-        <Champ id="email" label="Email" type="email" autoComplete="email" />
+        <Champ
+          id="nom"
+          label={mots.acces.votreNom}
+          type="text"
+          autoComplete="name"
+        />
+        <Champ
+          id="email"
+          label={mots.acces.email}
+          type="email"
+          autoComplete="email"
+        />
 
-        <ChampMotDePasse />
+        <ChampMotDePasse langue={langue} />
 
         <ChampCode
+          langue={langue}
           valeur={saisi}
           surSaisie={setSaisi}
           ouvert={ouvert}
@@ -94,7 +117,9 @@ export function FormulaireInscription({
           type="submit"
           className="mt-2 min-h-12 rounded-controle bg-vert px-4 text-base font-medium text-white transition-colors duration-150 ease-doux hover:bg-foret active:translate-y-px"
         >
-          {rejoint ? "Rejoindre l'atelier" : "Créer mon atelier"}
+          {rejoint
+            ? mots.acces.rejoindreAtelier
+            : mots.acces.creerMonAtelier}
         </button>
       </form>
     </>

@@ -210,6 +210,51 @@ export type Traductions = {
     partVersee: (pourcent: number) => string;
     chargement: string;
   };
+  /*
+   * Les ecrans d'acces, vus avant toute connexion. Leur langue ne vient pas
+   * de l'atelier - il n'y en a pas encore - mais du choix du visiteur,
+   * garde dans un cookie.
+   */
+  acces: {
+    accroche: string;
+    email: string;
+    adresseEmail: string;
+    motDePasse: string;
+    motDePasseOublie: string;
+    seConnecter: string;
+    renvoyerLien: string;
+    pasEncoreAtelier: string;
+    enCreerUn: string;
+    dejaUnCompte: string;
+    argumentaire: string;
+    argumentaireSuite: string;
+    photoAtelier: string;
+    rejoindreAtelier: string;
+    creerVotreAtelier: string;
+    sousTitreInvite: string;
+    sousTitreCreation: string;
+    nomAtelier: string;
+    votreNom: string;
+    creerMonAtelier: string;
+    jaiUnCode: string;
+    codeInvitation: string;
+    aideCodeInvitation: string;
+    auMoinsHuit: string;
+    uneLettre: string;
+    unChiffre: string;
+    masquerMotDePasse: string;
+    afficherMotDePasse: string;
+    nommezVotreAtelier: string;
+    compteInvite: string;
+    comptePret: string;
+    aideNomAtelierBienvenue: string;
+    ouvrirMonAtelier: string;
+    plusQuUneEtape: string;
+    continuerAvecGoogle: string;
+    ouvertureGoogle: string;
+    echecGoogle: string;
+    ou: string;
+  };
   /** Les reglages : atelier, equipe, abonnement, compte. */
   reglagesEcran: {
     nomAtelier: string;
@@ -511,6 +556,48 @@ const FR: Traductions = {
     chargement: "Chargement de la commande",
     partagerRecu: "Partager le reçu",
     preparationRecu: "Préparation...",
+  },
+  acces: {
+    accroche: "Accédez à votre atelier",
+    email: "Email",
+    adresseEmail: "Adresse email",
+    motDePasse: "Mot de passe",
+    motDePasseOublie: "Mot de passe oublié ?",
+    seConnecter: "Se connecter",
+    renvoyerLien: "Renvoyer le lien",
+    pasEncoreAtelier: "Pas encore d'atelier ?",
+    enCreerUn: "En créer un",
+    dejaUnCompte: "Déjà un compte ?",
+    argumentaire: "Commencez gratuitement, sans carte bancaire ni engagement.",
+    argumentaireSuite:
+      "Vous passerez à l'offre payante quand votre carnet se remplira.",
+    photoAtelier: "Un tailleur au travail dans son atelier",
+    rejoindreAtelier: "Rejoindre l'atelier",
+    creerVotreAtelier: "Créer votre atelier",
+    sousTitreInvite: "Vous avez été invité, il ne reste qu'à créer votre compte",
+    sousTitreCreation: "Quelques informations et c'est parti",
+    nomAtelier: "Nom de l'atelier",
+    votreNom: "Votre nom",
+    creerMonAtelier: "Créer mon atelier",
+    jaiUnCode: "J'ai un code d'invitation",
+    codeInvitation: "Code d'invitation",
+    aideCodeInvitation: "Fourni par le propriétaire de l'atelier.",
+    auMoinsHuit: "Au moins 8 caractères",
+    uneLettre: "Une lettre",
+    unChiffre: "Un chiffre",
+    masquerMotDePasse: "Masquer le mot de passe",
+    afficherMotDePasse: "Afficher le mot de passe",
+    nommezVotreAtelier: "Nommez votre atelier",
+    compteInvite: "Votre compte est prêt, il ne reste qu'à vous rattacher",
+    comptePret: "Votre compte est prêt. Encore une chose et c'est parti",
+    aideNomAtelierBienvenue: "Il apparaîtra sur les reçus remis à vos clients.",
+    ouvrirMonAtelier: "Ouvrir mon atelier",
+    plusQuUneEtape: "Plus qu'une étape avant votre premier client.",
+    continuerAvecGoogle: "Continuer avec Google",
+    ouvertureGoogle: "Ouverture...",
+    echecGoogle:
+      "La connexion avec Google n'a pas pu s'ouvrir. Réessayez, ou utilisez votre email et votre mot de passe.",
+    ou: "ou",
   },
   reglagesEcran: {
     nomAtelier: "Nom de l'atelier",
@@ -852,6 +939,48 @@ const EN: Traductions = {
     chargement: "Loading the order",
     partagerRecu: "Share the receipt",
     preparationRecu: "Preparing...",
+  },
+  acces: {
+    accroche: "Reach your workshop",
+    email: "Email",
+    adresseEmail: "Email address",
+    motDePasse: "Password",
+    motDePasseOublie: "Forgot your password?",
+    seConnecter: "Sign in",
+    renvoyerLien: "Send the link again",
+    pasEncoreAtelier: "No workshop yet?",
+    enCreerUn: "Create one",
+    dejaUnCompte: "Already have an account?",
+    argumentaire: "Start for free, no bank card and no commitment.",
+    argumentaireSuite:
+      "You will move to a paid plan when your book fills up.",
+    photoAtelier: "A tailor at work in their workshop",
+    rejoindreAtelier: "Join the workshop",
+    creerVotreAtelier: "Create your workshop",
+    sousTitreInvite: "You have been invited, you only need to create your account",
+    sousTitreCreation: "A few details and you are set",
+    nomAtelier: "Workshop name",
+    votreNom: "Your name",
+    creerMonAtelier: "Create my workshop",
+    jaiUnCode: "I have an invitation code",
+    codeInvitation: "Invitation code",
+    aideCodeInvitation: "Given to you by the workshop owner.",
+    auMoinsHuit: "At least 8 characters",
+    uneLettre: "One letter",
+    unChiffre: "One digit",
+    masquerMotDePasse: "Hide the password",
+    afficherMotDePasse: "Show the password",
+    nommezVotreAtelier: "Name your workshop",
+    compteInvite: "Your account is ready, you only need to join",
+    comptePret: "Your account is ready. One more thing and you are set",
+    aideNomAtelierBienvenue: "It will appear on the receipts given to your clients.",
+    ouvrirMonAtelier: "Open my workshop",
+    plusQuUneEtape: "One step away from your first client.",
+    continuerAvecGoogle: "Continue with Google",
+    ouvertureGoogle: "Opening...",
+    echecGoogle:
+      "The Google sign-in could not open. Try again, or use your email and password.",
+    ou: "or",
   },
   reglagesEcran: {
     nomAtelier: "Workshop name",

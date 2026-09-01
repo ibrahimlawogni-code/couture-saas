@@ -1,3 +1,4 @@
+import { langueVisiteur } from "@/lib/langue-visiteur";
 import { ChampMotDePasse } from "../../champ-mot-de-passe";
 import { definirMotDePasse } from "./actions";
 
@@ -24,7 +25,7 @@ export default async function NouveauMotDePassePage({
       )}
 
       <form action={definirMotDePasse} className="mt-8 flex flex-col gap-4">
-        <ChampMotDePasse libelle="Nouveau mot de passe" />
+        <ChampMotDePasse langue={await langueVisiteur()} />
 
         <button
           type="submit"
