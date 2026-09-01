@@ -1,4 +1,13 @@
-import { STATUT_LABELS, formaterMontant, type Statut } from "@/lib/commandes";
+import { formaterMontant, type Statut } from "@/lib/commandes";
+import { traduire } from "@/lib/i18n";
+
+/*
+ * Les messages restent en francais tant qu'ils ne sont pas traduits en
+ * entier. Reprendre ici le seul libelle de statut donnerait un message
+ * francais ou l'etat de la commande serait en anglais - pire que pas de
+ * traduction du tout, et adresse au client, pas au tailleur.
+ */
+const MOTS_FR = traduire("fr");
 
 const INDICATIF_BENIN = "229";
 
@@ -51,7 +60,7 @@ export function messageRecapitulatif(
     `Reste à payer : ${formaterMontant(resteAPayer)}`,
     `Essayage : ${formaterDate(commande.date_essayage)}`,
     `Livraison : ${formaterDate(commande.date_livraison)}`,
-    `État : ${STATUT_LABELS[commande.statut]}`,
+    `État : ${MOTS_FR.statuts[commande.statut]}`,
     "",
     "Merci de votre confiance.",
   ].join("\n");

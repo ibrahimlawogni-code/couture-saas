@@ -1,10 +1,13 @@
-import {
-  STATUTS,
-  STATUT_LABELS,
-  rangStatut,
-  type Statut,
-} from "@/lib/commandes";
+import { STATUTS, rangStatut, type Statut } from "@/lib/commandes";
 import { classes } from "./classes";
+
+import type { Traductions } from "@/lib/i18n";
+
+/*
+ * Les mots arrivent en props plutot que d'etre lus dans les donnees de
+ * l'atelier : une primitive de src/ui ne doit rien savoir de la session ni
+ * du miroir. C'est l'ecran qui sait dans quelle langue il parle.
+ */
 
 /**
  * L'avancement d'une commande, en sept traits.
@@ -24,9 +27,11 @@ import { classes } from "./classes";
  */
 export function Jalons({
   statut,
+  mots,
   classe,
 }: {
   statut: Statut;
+  mots: Traductions;
   classe?: string;
 }) {
   const rang = rangStatut(statut);
@@ -34,7 +39,7 @@ export function Jalons({
   return (
     <span
       role="img"
-      aria-label={`Étape ${rang + 1} sur ${STATUTS.length} : ${STATUT_LABELS[statut]}`}
+      aria-label={mots.jalonEtape(rang + 1, STATUTS.length, mots.statuts[statut])}
       className={classes("flex shrink-0 items-center gap-[0.15625rem]", classe)}
     >
       {STATUTS.map((etape, n) => (
@@ -66,7 +71,13 @@ export function Jalons({
  */
 const RAMPE = ["#dcede5", "#bfdfd0", "#9fcfba", "#6fb397", "#3f9375", "#12684e"];
 
-export function Repartition({ parEtape }: { parEtape: Record<string, number> }) {
+export function Repartition({
+  parEtape,
+  mots,
+}: {
+  parEtape: Record<string, number>;
+  mots: Traductions;
+}) {
   const etapes = STATUTS.filter((statut) => statut !== "livre");
   const total = etapes.reduce((somme, etape) => somme + (parEtape[etape] ?? 0), 0);
 
@@ -110,7 +121,7 @@ export function Repartition({ parEtape }: { parEtape: Record<string, number> }) 
               {parEtape[etape] ?? 0}
             </div>
             <div className="truncate text-[0.625rem] text-gris">
-              {etape === "pret" ? "Prêt" : STATUT_LABELS[etape]}
+              {mots.statutsCourts[etape]}
             </div>
           </div>
         ))}

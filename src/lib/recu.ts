@@ -1,9 +1,13 @@
-import {
-  STATUT_LABELS,
-  formaterMontant,
-  resteAPayer,
-  type Statut,
-} from "@/lib/commandes";
+import { formaterMontant, resteAPayer, type Statut } from "@/lib/commandes";
+import { traduire } from "@/lib/i18n";
+
+/*
+ * Le recu reste en francais tant qu'il ne l'est pas en entier. Traduire
+ * ici le seul libelle de statut donnerait un document francais portant un
+ * etat en anglais - et c'est le seul objet du produit qui sorte de
+ * l'atelier, remis en main propre a un client.
+ */
+const MOTS_FR = traduire("fr");
 import { METHODE_LABELS, methodeConnue } from "@/lib/paiements";
 
 const LARGEUR = 800;
@@ -234,7 +238,7 @@ export async function genererRecu(donnees: DonneesRecu): Promise<Blob> {
   ligne("Modèle", donnees.modele ?? "Non précisé");
   // Le recu annoncait la date de livraison sans jamais dire ou en etait la
   // piece, alors que c'est la question posee au comptoir.
-  ligne("État", STATUT_LABELS[donnees.statut] ?? donnees.statut);
+  ligne("État", MOTS_FR.statuts[donnees.statut] ?? donnees.statut);
   ligne("Livraison prévue", formaterDate(donnees.dateLivraison));
 
   separateur(yPrix - 28);

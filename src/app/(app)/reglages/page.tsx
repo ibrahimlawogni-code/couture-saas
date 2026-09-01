@@ -31,7 +31,7 @@ export default async function ReglagesPage({
       supabase
         .from("ateliers")
         .select(
-          "nom, limite_utilisateurs, telephone, whatsapp_number, formule, abonnement_jusquau"
+          "nom, limite_utilisateurs, telephone, whatsapp_number, formule, abonnement_jusquau, langue"
         )
         .eq("id", atelierId)
         .single(),
@@ -59,6 +59,7 @@ export default async function ReglagesPage({
         nomUtilisateur={moi?.nom ?? ""}
         telephoneAtelier={atelier?.telephone ?? ""}
         whatsappAtelier={atelier?.whatsapp_number ?? ""}
+        langueAtelier={atelier?.langue ?? "fr"}
       />
 
       <Equipe

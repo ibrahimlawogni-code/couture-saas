@@ -12,7 +12,6 @@ import {
   UserPlus,
 } from "@phosphor-icons/react/dist/ssr";
 import {
-  STATUT_LABELS,
   formaterMontant,
   groupeEcheance,
   ponctualite,
@@ -22,6 +21,7 @@ import {
   type Statut,
 } from "@/lib/commandes";
 import { useDonnees } from "@/lib/offline/use-donnees";
+import { useTraductions } from "@/lib/offline/use-traductions";
 import { Carte, CarteLien, Panneau } from "@/ui/carte";
 import { Etiquette, type TonEtiquette } from "@/ui/etiquette";
 import { Jalons } from "@/ui/jalons";
@@ -70,6 +70,7 @@ function motif(commande: {
 export function TableauDeBord() {
   const { atelier, clients, commandes, paiements, historique, avis, chargee } =
     useDonnees();
+  const mots = useTraductions();
 
   const bilan = useMemo(() => {
     const maintenant = new Date();
@@ -392,7 +393,7 @@ export function TableauDeBord() {
                       <span className="mt-1 flex items-baseline justify-between gap-3">
                         <span className="truncate text-xs text-gris">
                           {commande.nom_modele ?? "Sans modèle"} ·{" "}
-                          {STATUT_LABELS[commande.statut as Statut]}
+                          {mots.statuts[commande.statut as Statut]}
                         </span>
                         <span
                           className={`chiffres shrink-0 text-xs font-medium ${
@@ -406,7 +407,7 @@ export function TableauDeBord() {
                       </span>
 
                       <span className="mt-2.5 block">
-                        <Jalons statut={commande.statut as Statut} />
+                        <Jalons statut={commande.statut as Statut} mots={mots} />
                       </span>
                     </CarteLien>
                   </li>

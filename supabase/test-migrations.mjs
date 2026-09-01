@@ -1048,6 +1048,74 @@ verifier(
 );
 
 // =========================================================================
+console.log("\nH. Langue de l'atelier\n");
+// =========================================================================
+
+const parlant = await inscrire({
+  email: "parlant@atelier.bj",
+  meta: { atelier_nom: "Atelier Parlant", nom: "Ama" },
+});
+const atelierParlant = (
+  await db.query(`select atelier_id from utilisateurs where id = $1`, [parlant.id])
+).rows[0].atelier_id;
+
+const langueDe = async (id = atelierParlant) =>
+  (await db.query(`select langue from ateliers where id = $1`, [id])).rows[0].langue;
+
+verifier("H1 un atelier neuf est en francais", await langueDe(), "fr");
+
+/*
+ * Le defaut vaut pour les ateliers anterieurs a la migration : aucun ne
+ * doit changer de langue parce qu'une colonne est apparue.
+ */
+verifier(
+  "H1 et tous les ateliers existants aussi",
+  await compter(`select count(*) n from ateliers where langue <> 'fr'`),
+  0
+);
+
+const poserLangue = async (valeur) => {
+  try {
+    await db.query(`update ateliers set langue = $1 where id = $2`, [
+      valeur,
+      atelierParlant,
+    ]);
+    return null;
+  } catch (erreur) {
+    return erreur.message;
+  }
+};
+
+verifier("H2 l anglais est accepte", await poserLangue("en"), null);
+verifier("H2 et enregistre", await langueDe(), "en");
+verifier("H3 le francais revient", await poserLangue("fr"), null);
+
+/*
+ * La contrainte est le coeur de cette migration. Une colonne libre
+ * laisserait s'installer un 'FR' ou un 'english' que l'application
+ * traiterait en silence comme du francais, et la faute ne se verrait
+ * jamais - juste une interface qui refuse de changer de langue.
+ */
+for (const invalide of ["FR", "en-GB", "english", "es", ""]) {
+  verifier(
+    `H4 « ${invalide} » est refuse`,
+    /ateliers_langue_connue|check constraint/.test((await poserLangue(invalide)) ?? ""),
+    true
+  );
+}
+verifier("H4 et la langue n a pas bouge", await langueDe(), "fr");
+
+// H5 : la migration sera collee dans le SQL editor, peut-etre deux fois.
+let rejeuLangue = null;
+try {
+  await db.exec(await readFile(resolve(MIGRATIONS, "0014_langue.sql"), "utf8"));
+} catch (erreur) {
+  rejeuLangue = erreur.message;
+}
+verifier("H5 migration rejouable sans erreur", rejeuLangue, null);
+verifier("H5 la contrainte tient toujours", /check/.test((await poserLangue("de")) ?? ""), true);
+
+// =========================================================================
 console.log(
   `\n${rates === 0 ? `Les ${total} verifications passent.` : `${rates} verification(s) sur ${total} en echec.`}\n`
 );

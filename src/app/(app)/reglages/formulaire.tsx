@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { rafraichirMiroir } from "@/lib/offline/miroir";
 import { useFileAttente } from "@/lib/offline/use-file-attente";
 import { useHydratation } from "@/lib/hydratation";
+import { LANGUES, estLangue, traduire } from "@/lib/i18n";
 import { Bouton } from "@/ui/bouton";
 import { Champ } from "@/ui/champ";
 import { Message } from "@/ui/message";
@@ -19,6 +20,7 @@ export function FormulaireReglages({
   nomUtilisateur,
   telephoneAtelier,
   whatsappAtelier,
+  langueAtelier,
 }: {
   atelierId: string;
   utilisateurId: string;
@@ -26,7 +28,9 @@ export function FormulaireReglages({
   nomUtilisateur: string;
   telephoneAtelier: string;
   whatsappAtelier: string;
+  langueAtelier: string;
 }) {
+  const mots = traduire(langueAtelier);
   const router = useRouter();
   const pret = useHydratation();
   const { horsLigne } = useFileAttente();
@@ -41,6 +45,10 @@ export function FormulaireReglages({
     const utilisateur = String(formulaire.get("utilisateur") ?? "").trim();
     const telephone = String(formulaire.get("telephone") ?? "").trim();
     const whatsapp = String(formulaire.get("whatsapp") ?? "").trim();
+    // Revalide malgre le menu deroulant : la base porte une contrainte, et
+    // un envoi fabrique a la main y ferait echouer tout l'enregistrement.
+    const choisie = formulaire.get("langue");
+    const langue = estLangue(choisie) ? choisie : langueAtelier;
 
     if (!atelier || !utilisateur) {
       setEtat("echec");
@@ -58,6 +66,7 @@ export function FormulaireReglages({
           // chaine vide, que le recu afficherait comme un libelle sans rien.
           telephone: telephone || null,
           whatsapp_number: whatsapp || null,
+          langue,
         })
         .eq("id", atelierId),
       supabase.from("utilisateurs").update({ nom: utilisateur }).eq("id", utilisateurId),
@@ -122,6 +131,33 @@ export function FormulaireReglages({
         autoComplete="name"
         required
       />
+
+      {/*
+       * La langue est portee par l'atelier et non par le compte : les
+       * documents qui sortent doivent suivre la meme langue quel que soit
+       * l'apprenti qui les produit.
+       *
+       * Chaque langue est ecrite dans la sienne - un anglophone doit
+       * reconnaitre « English » sur une interface encore francaise.
+       */}
+      <div>
+        <label htmlFor="langue" className="block text-sm font-medium text-encre">
+          {mots.champLangue}
+        </label>
+        <p className="mt-1 text-xs text-gris">{mots.aideLangue}</p>
+        <select
+          id="langue"
+          name="langue"
+          defaultValue={langueAtelier}
+          className="mt-1.5 min-h-11 w-full rounded-controle border border-bordure px-4 py-3 text-base transition-colors duration-150 ease-doux hover:border-vert-pale"
+        >
+          {LANGUES.map((code) => (
+            <option key={code} value={code}>
+              {mots.langues[code]}
+            </option>
+          ))}
+        </select>
+      </div>
 
       {etat === "echec" && (
         <Message ton="probleme">

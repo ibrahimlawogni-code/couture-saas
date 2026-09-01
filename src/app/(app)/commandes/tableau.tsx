@@ -6,9 +6,7 @@ import { ArrowRight, ClipboardText } from "@phosphor-icons/react/dist/ssr";
 import { createClient } from "@/lib/supabase/client";
 import {
   GROUPES_ECHEANCE,
-  GROUPE_LABELS,
   STATUTS,
-  STATUT_LABELS,
   TON_GROUPE,
   formaterMontant,
   groupeEcheance,
@@ -20,6 +18,7 @@ import {
 } from "@/lib/commandes";
 import { rafraichirMiroir } from "@/lib/offline/miroir";
 import { useDonnees } from "@/lib/offline/use-donnees";
+import { useTraductions } from "@/lib/offline/use-traductions";
 import { useFileAttente } from "@/lib/offline/use-file-attente";
 import { Carte } from "@/ui/carte";
 import { Compteur, Etiquette } from "@/ui/etiquette";
@@ -42,6 +41,7 @@ const DUREE_ANNULATION = 6000;
 
 export function TableauCommandes() {
   const { clients, commandes, paiements, chargee } = useDonnees();
+  const mots = useTraductions();
   const { horsLigne } = useFileAttente();
 
   const [annulation, setAnnulation] = useState<{
@@ -194,7 +194,7 @@ export function TableauCommandes() {
           Où en est l&apos;atelier
         </h2>
         <div className="mt-2.5">
-          <Repartition parEtape={parEtape} />
+          <Repartition parEtape={parEtape} mots={mots} />
         </div>
       </Carte>
 
@@ -213,7 +213,7 @@ export function TableauCommandes() {
           <section key={groupe}>
             <div className="flex items-center gap-2">
               <h2 className="text-sm font-semibold tracking-wide text-gris uppercase">
-                {GROUPE_LABELS[groupe]}
+                {mots.groupes[groupe]}
               </h2>
               <Compteur ton={TON_GROUPE[groupe]}>{lignes.length}</Compteur>
             </div>
@@ -289,9 +289,9 @@ export function TableauCommandes() {
                         </span>
 
                         <div className="mt-2.5 flex items-center gap-3 lg:mt-0 lg:min-w-0 lg:flex-1">
-                          <Jalons statut={commande.statut} />
+                          <Jalons statut={commande.statut} mots={mots} />
                           <span className="hidden truncate text-xs text-gris lg:inline">
-                            {STATUT_LABELS[commande.statut]}
+                            {mots.statuts[commande.statut]}
                           </span>
 
                           {commande.suivant && !provisoire && (
@@ -310,7 +310,7 @@ export function TableauCommandes() {
                               disabled={horsLigne}
                               className="ml-auto flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-controle bg-vert-clair px-3.5 text-xs font-semibold text-foret transition-colors duration-150 ease-doux hover:bg-vert hover:text-white disabled:pointer-events-none disabled:opacity-40"
                             >
-                              {STATUT_LABELS[commande.suivant]}
+                              {mots.statuts[commande.suivant]}
                               <ArrowRight size={13} weight="bold" />
                             </button>
                           )}
@@ -343,7 +343,7 @@ export function TableauCommandes() {
               {annulation.client}
             </span>
             <span className="block truncate text-xs text-vert-pale">
-              Passé à {STATUT_LABELS[annulation.apres]} · envoyé
+              Passé à {mots.statuts[annulation.apres]} · envoyé
             </span>
           </span>
           <button

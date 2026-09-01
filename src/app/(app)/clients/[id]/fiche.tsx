@@ -10,13 +10,13 @@ import {
 } from "@phosphor-icons/react/dist/ssr";
 import { useIdentifiantUrl } from "@/lib/identifiant-url";
 import {
-  STATUT_LABELS,
   formaterMontant,
   resteAPayer,
   versesParCommande,
   type Statut,
 } from "@/lib/commandes";
 import { useDonnees } from "@/lib/offline/use-donnees";
+import { useTraductions } from "@/lib/offline/use-traductions";
 import { normaliserNumero } from "@/lib/whatsapp";
 import { LienBouton } from "@/ui/bouton";
 import { Carte, CarteLien } from "@/ui/carte";
@@ -44,6 +44,7 @@ export function FicheClient() {
   const clientId = useIdentifiantUrl();
 
   const { clients, mesures, commandes, paiements, chargee } = useDonnees();
+  const mots = useTraductions();
 
   const client = clients.find((candidat) => candidat.id === clientId);
 
@@ -300,7 +301,7 @@ export function FicheClient() {
                     <span className="block truncate text-xs text-gris">
                       {commande.enAttente
                         ? "En attente d'envoi"
-                        : STATUT_LABELS[commande.statut as Statut]}
+                        : mots.statuts[commande.statut as Statut]}
                       {commande.date_livraison
                         ? ` · ${new Date(commande.date_livraison).toLocaleDateString("fr-FR")}`
                         : ""}

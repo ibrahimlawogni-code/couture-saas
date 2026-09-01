@@ -54,6 +54,12 @@ export type LigneAtelier = {
   /** Code de la formule. La base reste seule juge des limites. */
   formule: string;
   /*
+   * Langue de l'atelier. Elle suit la copie locale pour la meme raison que
+   * les coordonnees : les ecrans lisent le miroir, et une application qui
+   * repasserait en francais des que le reseau coupe serait deroutante.
+   */
+  langue: string;
+  /*
    * Coordonnees portees par le recu remis au client. Elles suivent la copie
    * locale plutot que le serveur : un recu se prepare souvent au comptoir,
    * sans reseau, et un pied de page vide serait pire que pas de pied.

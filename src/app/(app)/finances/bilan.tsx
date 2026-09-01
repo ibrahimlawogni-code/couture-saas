@@ -3,7 +3,6 @@
 import { useMemo } from "react";
 import { CheckCircle, TrendDown, TrendUp } from "@phosphor-icons/react/dist/ssr";
 import {
-  STATUT_LABELS,
   formaterMontant,
   partVersee,
   resteAPayer,
@@ -11,6 +10,7 @@ import {
   type Statut,
 } from "@/lib/commandes";
 import { useDonnees } from "@/lib/offline/use-donnees";
+import { useTraductions } from "@/lib/offline/use-traductions";
 import { Carte, CarteLien, Panneau } from "@/ui/carte";
 import { EnTeteSection } from "@/ui/page";
 import {
@@ -42,6 +42,7 @@ function debutDuMois(recul = 0) {
 
 export function BilanFinancier() {
   const { clients, commandes, paiements, chargee } = useDonnees();
+  const mots = useTraductions();
 
   const bilan = useMemo(() => {
     const debutMois = debutDuMois();
@@ -287,7 +288,7 @@ export function BilanFinancier() {
                   <span className="mt-1 flex items-baseline justify-between gap-3">
                     <span className="truncate text-xs text-gris">
                       {commande.nom_modele ?? "Sans modèle"} ·{" "}
-                      {STATUT_LABELS[commande.statut as Statut]}
+                      {mots.statuts[commande.statut as Statut]}
                     </span>
                     <span className="chiffres shrink-0 text-xs text-gris">
                       {commande.part === 0

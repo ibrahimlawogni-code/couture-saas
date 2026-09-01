@@ -10,15 +10,11 @@ export const STATUTS = [
 
 export type Statut = (typeof STATUTS)[number];
 
-export const STATUT_LABELS: Record<Statut, string> = {
-  recu: "Reçu",
-  coupe: "Coupe",
-  couture: "Couture",
-  essayage: "Essayage",
-  finitions: "Finitions",
-  pret: "Prêt à retirer",
-  livre: "Livré",
-};
+/*
+ * Les libelles ont quitte ce fichier pour i18n.ts, ou ils existent dans
+ * chaque langue. Ce module garde les codes et les regles : un statut reste
+ * « recu » en base quelle que soit la langue de l'atelier.
+ */
 
 export function statutSuivant(statut: Statut): Statut | null {
   const index = STATUTS.indexOf(statut);
@@ -90,12 +86,6 @@ export const TON_PRIORITE: Record<Priorite, "probleme" | "attention" | "metier">
   normal: "metier",
 };
 
-export const PRIORITE_LABELS: Record<Priorite, string> = {
-  en_retard: "En retard",
-  urgent: "À livrer bientôt",
-  normal: "Dans les temps",
-};
-
 /** Rang de l'etape dans la chaine, de 0 pour Recu a 6 pour Livre. */
 export function rangStatut(statut: Statut) {
   const rang = STATUTS.indexOf(statut);
@@ -128,15 +118,6 @@ export const GROUPES_ECHEANCE: readonly GroupeEcheance[] = [
   "sans_date",
   "livre",
 ] as const;
-
-export const GROUPE_LABELS: Record<GroupeEcheance, string> = {
-  en_retard: "En retard",
-  aujourdhui: "Aujourd'hui",
-  cette_semaine: "Cette semaine",
-  plus_tard: "Plus tard",
-  sans_date: "Sans date",
-  livre: "Livré",
-};
 
 export const TON_GROUPE: Record<GroupeEcheance, TonEtiquetteCommande> = {
   en_retard: "probleme",

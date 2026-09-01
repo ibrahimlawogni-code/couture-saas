@@ -10,8 +10,6 @@ import {
 import { useIdentifiantUrl } from "@/lib/identifiant-url";
 import { createClient } from "@/lib/supabase/client";
 import {
-  PRIORITE_LABELS,
-  STATUT_LABELS,
   TON_PRIORITE,
   formaterMontant,
   partVersee,
@@ -36,6 +34,7 @@ import {
   type Methode,
 } from "@/lib/paiements";
 import { useDonnees } from "@/lib/offline/use-donnees";
+import { useTraductions } from "@/lib/offline/use-traductions";
 import { ChoixMethode } from "@/ui/choix-methode";
 import { useFileAttente } from "@/lib/offline/use-file-attente";
 import { Bouton } from "@/ui/bouton";
@@ -56,6 +55,7 @@ export function DetailCommande() {
   const commandeId = useIdentifiantUrl() ?? "";
 
   const { atelier, clients, commandes, paiements, avis, chargee } = useDonnees();
+  const mots = useTraductions();
   const nomAtelier = atelier?.nom ?? "Mon atelier";
   const { horsLigne } = useFileAttente();
   const [signatures, setSignatures] = useState<string[]>([]);
@@ -246,11 +246,11 @@ export function DetailCommande() {
             <CaretRight size={11} weight="bold" />
           </Link>
         </div>
-        <Etiquette ton={TON_PRIORITE[niveau]}>{PRIORITE_LABELS[niveau]}</Etiquette>
+        <Etiquette ton={TON_PRIORITE[niveau]}>{mots.priorites[niveau]}</Etiquette>
       </div>
 
       <Bloc titre="Statut" classe="mt-5">
-        <p className="text-lg font-semibold text-encre">{STATUT_LABELS[statut]}</p>
+        <p className="text-lg font-semibold text-encre">{mots.statuts[statut]}</p>
 
         {suivant && (
           <Bouton
@@ -260,7 +260,7 @@ export function DetailCommande() {
             pleineLargeur
             classe="mt-3 min-h-12"
           >
-            Passer à : {STATUT_LABELS[suivant]}
+            Passer à : {mots.statuts[suivant]}
             <ArrowRight size={15} weight="bold" />
           </Bouton>
         )}
