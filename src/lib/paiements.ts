@@ -16,11 +16,11 @@ export const METHODES = ["especes", "mobile_money", "virement"] as const;
 
 export type Methode = (typeof METHODES)[number];
 
-export const METHODE_LABELS: Record<Methode, string> = {
-  especes: "Espèces",
-  mobile_money: "Mobile Money",
-  virement: "Virement",
-};
+/*
+ * Les libelles ont rejoint i18n.ts, ou ils existent dans chaque langue. Ce
+ * module garde les codes : un versement reste « especes » en base quelle
+ * que soit la langue de l'atelier.
+ */
 
 /*
  * Les especes restent le defaut : c'est ce qui se passe au comptoir, et la

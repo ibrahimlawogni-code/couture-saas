@@ -9,18 +9,16 @@ import {
   versesParCommande,
   type Statut,
 } from "@/lib/commandes";
+import { formateurNombre, type Traductions } from "@/lib/i18n";
 import { useDonnees } from "@/lib/offline/use-donnees";
 import { useTraductions } from "@/lib/offline/use-traductions";
 import { Carte, CarteLien, Panneau } from "@/ui/carte";
 import { EnTeteSection } from "@/ui/page";
 import {
-  METHODE_LABELS,
   repartitionParMethode,
 } from "@/lib/paiements";
 import { Squelette, SqueletteLigne } from "@/ui/squelette";
 import { Vignette } from "@/ui/vignette";
-
-const nombre = new Intl.NumberFormat("fr-FR");
 
 /*
  * Trois nuances de la meme famille, et non trois couleurs de la palette.
@@ -43,6 +41,7 @@ function debutDuMois(recul = 0) {
 export function BilanFinancier() {
   const { clients, commandes, paiements, chargee } = useDonnees();
   const mots = useTraductions();
+  const nombre = formateurNombre(mots.locale);
 
   const bilan = useMemo(() => {
     const debutMois = debutDuMois();
@@ -101,7 +100,7 @@ export function BilanFinancier() {
         const verse = verseParCommande.get(commande.id) ?? 0;
         return {
           ...commande,
-          client: nomsClients.get(commande.client_id) ?? "Client inconnu",
+          client: nomsClients.get(commande.client_id) ?? mots.clientInconnu,
           reste: resteAPayer(prix, verse),
           // Part deja encaissee : distingue le client qui n'a rien verse
           // de celui a qui il ne manque qu'un solde symbolique.
@@ -125,24 +124,25 @@ export function BilanFinancier() {
       valeurCommandesMois,
       impayes,
       ecart,
-      moisPrecedent: debutPrecedent.toLocaleDateString("fr-FR", { month: "long" }),
+      moisPrecedent: debutPrecedent.toLocaleDateString(mots.locale, { month: "long" }),
       totalCreances: impayes.reduce((somme, commande) => somme + commande.reste, 0),
       // Rien versé du tout : le cas qui demande une relance, pas un rappel.
       jamaisVerse: impayes.filter((commande) => commande.part === 0).length,
     };
-  }, [clients, commandes, paiements]);
+  }, [clients, commandes, paiements, mots.locale, mots.clientInconnu]);
 
-  if (!chargee) return <SqueletteBilan />;
+  if (!chargee) return <SqueletteBilan mots={mots} />;
 
   return (
     <>
       <Panneau classe="mt-4 p-5">
         <p className="text-[11px] font-medium tracking-[0.12em] text-vert-pale uppercase">
-          Encaissé en{" "}
-          {bilan.debutMois.toLocaleDateString("fr-FR", {
-            month: "long",
-            year: "numeric",
-          })}
+          {mots.finances.encaisseEn(
+            bilan.debutMois.toLocaleDateString(mots.locale, {
+              month: "long",
+              year: "numeric",
+            })
+          )}
         </p>
 
         <p className="mt-1 flex items-baseline gap-2">
@@ -165,34 +165,38 @@ export function BilanFinancier() {
                 <TrendDown size={15} weight="bold" aria-hidden />
               )}
               {bilan.ecart >= 0 ? "+" : "−"}
-              {Math.abs(Math.round(bilan.ecart))} % sur {bilan.moisPrecedent}
+              {Math.abs(Math.round(bilan.ecart))} %{" "}
+              {mots.bord.surLeMois(bilan.moisPrecedent)}
             </span>
           )}
           <span className="text-vert-pale">
-            dont {formaterMontant(bilan.acomptesMois)} d&apos;acomptes
+            {mots.finances.dontAcomptes(
+              formaterMontant(bilan.acomptesMois, mots.locale)
+            )}
           </span>
         </div>
       </Panneau>
 
       <div className="mt-3 grid grid-cols-2 gap-2">
         <Vignette
-          libelle="Commandes du mois"
+          libelle={mots.finances.commandesDuMois}
           valeur={nombre.format(bilan.valeurCommandesMois)}
           unite="FCFA"
-          precision={`${bilan.commandesMois.length} commande${
-            bilan.commandesMois.length > 1 ? "s" : ""
-          } prise${bilan.commandesMois.length > 1 ? "s" : ""}`}
+          precision={mots.finances.prisesCeMois(bilan.commandesMois.length)}
         />
         <Vignette
-          libelle="Créances"
+          libelle={mots.finances.creances}
           valeur={nombre.format(bilan.totalCreances)}
           unite="FCFA"
           precision={
             bilan.impayes.length === 0
-              ? "tout est soldé"
+              ? mots.finances.toutSolde
               : bilan.jamaisVerse > 0
-                ? `${bilan.impayes.length} commandes · ${bilan.jamaisVerse} sans acompte`
-                : `${bilan.impayes.length} commande${bilan.impayes.length > 1 ? "s" : ""}`
+                ? mots.finances.impayesSansAcompte(
+                    bilan.impayes.length,
+                    bilan.jamaisVerse
+                  )
+                : mots.finances.impayes(bilan.impayes.length)
           }
           alerte={bilan.totalCreances > 0}
         />
@@ -208,7 +212,7 @@ export function BilanFinancier() {
       {bilan.repartition.length > 0 && (
         <Carte classe="mt-3 p-5">
           <h2 className="text-[10px] font-medium tracking-[0.1em] text-gris uppercase">
-            Reçu en
+            {mots.recuEn}
           </h2>
 
           <div
@@ -236,7 +240,7 @@ export function BilanFinancier() {
                     className={`size-2 shrink-0 rounded-full ${TEINTES_METHODE[part.methode]}`}
                   />
                   <span className="truncate text-gris">
-                    {METHODE_LABELS[part.methode]}
+                    {mots.methodes[part.methode]}
                   </span>
                 </span>
                 <span className="chiffres shrink-0 text-encre">
@@ -252,7 +256,7 @@ export function BilanFinancier() {
       )}
 
       <section className="mt-6">
-        <EnTeteSection titre="À recouvrer" />
+        <EnTeteSection titre={mots.finances.aRecouvrer} />
 
         {bilan.impayes.length === 0 ? (
           <Carte classe="mt-2 flex items-center gap-3 px-4 py-4">
@@ -263,7 +267,7 @@ export function BilanFinancier() {
               aria-hidden
             />
             <p className="text-sm text-gris">
-              Aucun impayé. Toutes les commandes sont soldées.
+              {mots.finances.aucunImpaye}
             </p>
           </Carte>
         ) : (
@@ -281,19 +285,19 @@ export function BilanFinancier() {
                      * ordres de grandeur s'alignent a l'oeil.
                      */}
                     <span className="chiffres shrink-0 text-sm font-semibold text-rouge">
-                      {formaterMontant(commande.reste)}
+                      {formaterMontant(commande.reste, mots.locale)}
                     </span>
                   </span>
 
                   <span className="mt-1 flex items-baseline justify-between gap-3">
                     <span className="truncate text-xs text-gris">
-                      {commande.nom_modele ?? "Sans modèle"} ·{" "}
+                      {commande.nom_modele ?? mots.sansModele} ·{" "}
                       {mots.statuts[commande.statut as Statut]}
                     </span>
                     <span className="chiffres shrink-0 text-xs text-gris">
                       {commande.part === 0
-                        ? "rien versé"
-                        : `${Math.round(commande.part)} % versé`}
+                        ? mots.finances.rienVerse
+                        : mots.finances.partVersee(Math.round(commande.part))}
                     </span>
                   </span>
 
@@ -319,9 +323,9 @@ export function BilanFinancier() {
   );
 }
 
-function SqueletteBilan() {
+function SqueletteBilan({ mots }: { mots: Traductions }) {
   return (
-    <div role="status" aria-label="Chargement du bilan">
+    <div role="status" aria-label={mots.finances.chargement}>
       <Squelette rayon="panneau" classe="mt-4 h-36" />
 
       <div className="mt-3 grid grid-cols-2 gap-2">

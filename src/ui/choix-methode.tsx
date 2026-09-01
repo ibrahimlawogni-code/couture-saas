@@ -1,6 +1,7 @@
 "use client";
 
-import { METHODES, METHODE_LABELS, type Methode } from "@/lib/paiements";
+import type { Traductions } from "@/lib/i18n";
+import { METHODES, type Methode } from "@/lib/paiements";
 import { classes } from "./classes";
 
 /**
@@ -16,22 +17,28 @@ import { classes } from "./classes";
  * navigateur, sans avoir a les reconstruire.
  */
 export function ChoixMethode({
+  mots,
   nom,
   valeur,
   onChange,
-  libelle = "Reçu en",
+  libelle,
   classe,
 }: {
+  /* Les mots arrivent en props : une primitive de src/ui ne lit ni la
+     session ni le miroir. C'est l'ecran qui sait dans quelle langue il
+     parle. */
+  mots: Traductions;
   nom: string;
   valeur: Methode;
   onChange: (methode: Methode) => void;
+  /** Par defaut « Reçu en », dans la langue de l'atelier. */
   libelle?: string;
   classe?: string;
 }) {
   return (
     <fieldset className={classes("min-w-0", classe)}>
       <legend className="mb-1.5 text-sm font-medium text-encre">
-        {libelle}
+        {libelle ?? mots.recuEn}
       </legend>
 
       <div className="flex gap-1.5">
@@ -57,7 +64,7 @@ export function ChoixMethode({
                 onChange={() => onChange(methode)}
                 className="sr-only"
               />
-              {METHODE_LABELS[methode]}
+              {mots.methodes[methode]}
             </label>
           );
         })}

@@ -14,6 +14,7 @@ import { useFileAttente } from "@/lib/offline/use-file-attente";
 import { useHydratation } from "@/lib/hydratation";
 import { Bouton, LienBouton } from "@/ui/bouton";
 import { Champ, Selecteur } from "@/ui/champ";
+import { useTraductions } from "@/lib/offline/use-traductions";
 import { ChoixMethode } from "@/ui/choix-methode";
 import { EtatVide } from "@/ui/etat-vide";
 import { Message } from "@/ui/message";
@@ -32,6 +33,7 @@ export function FormulaireCommande({
   clients: ClientOption[];
   clientPreselectionne?: string;
 }) {
+  const mots = useTraductions();
   const router = useRouter();
   const { enAttente } = useFileAttente();
   const pret = useHydratation();
@@ -272,6 +274,7 @@ export function FormulaireCommande({
        */}
       {Number(acompte) > 0 && (
         <ChoixMethode
+          mots={mots}
           nom="methode"
           valeur={methode}
           onChange={setMethode}

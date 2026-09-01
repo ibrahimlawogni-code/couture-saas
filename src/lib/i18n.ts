@@ -139,6 +139,60 @@ export type Traductions = {
     passeA: (statut: string) => string;
     chargement: string;
   };
+  /*
+   * Moyens et natures de versement. Les codes restent en base ; seuls les
+   * libelles changent. « Mobile Money » ne se traduit pas : c'est le nom du
+   * service, pas une description.
+   */
+  methodes: Record<"especes" | "mobile_money" | "virement", string>;
+  /** Titre du choix du moyen, partage par le formulaire, le detail et le bilan. */
+  recuEn: string;
+  typesPaiement: Record<"acompte" | "solde" | "complement", string>;
+  /** Le detail d'une commande. */
+  detail: {
+    commande: string;
+    statut: string;
+    passerA: (statut: string) => string;
+    avancementHorsLigne: string;
+    aucunNumero: string;
+    messageRecapitulatif: string;
+    messageEssayage: string;
+    messagePret: string;
+    messageAvis: string;
+    dates: string;
+    essayage: string;
+    livraison: string;
+    nonDefinie: string;
+    resteAPayer: string;
+    paiement: string;
+    soldeMajuscule: string;
+    partEncaissee: string;
+    prixTotal: string;
+    dejaVerse: (pourcent: number) => string;
+    montantRecu: string;
+    ajouter: string;
+    enAttenteSuffixe: string;
+    photo: string;
+    introuvable: string;
+    introuvableTexte: string;
+    chargement: string;
+  };
+  /** L'ecran des finances. */
+  finances: {
+    encaisseEn: (mois: string) => string;
+    dontAcomptes: (montant: string) => string;
+    commandesDuMois: string;
+    prisesCeMois: (n: number) => string;
+    creances: string;
+    toutSolde: string;
+    impayes: (n: number) => string;
+    impayesSansAcompte: (n: number, sans: number) => string;
+    aRecouvrer: string;
+    aucunImpaye: string;
+    rienVerse: string;
+    partVersee: (pourcent: number) => string;
+    chargement: string;
+  };
   /** Les deux ecrans clients : le carnet et la fiche. */
   clientsEcran: {
     aucun: string;
@@ -295,6 +349,62 @@ const FR: Traductions = {
     sansDate: "Sans date",
     passeA: (statut) => `Passé à ${statut} · envoyé`,
     chargement: "Chargement des commandes",
+  },
+  recuEn: "Reçu en",
+  finances: {
+    encaisseEn: (mois) => `Encaissé en ${mois}`,
+    dontAcomptes: (montant) => `dont ${montant} d'acomptes`,
+    commandesDuMois: "Commandes du mois",
+    prisesCeMois: (n) => `${n} commande${n > 1 ? "s" : ""} prise${n > 1 ? "s" : ""}`,
+    creances: "Créances",
+    toutSolde: "tout est soldé",
+    impayes: (n) => `${n} commande${n > 1 ? "s" : ""}`,
+    impayesSansAcompte: (n, sans) => `${n} commandes · ${sans} sans acompte`,
+    aRecouvrer: "À recouvrer",
+    aucunImpaye: "Aucun impayé. Toutes les commandes sont soldées.",
+    rienVerse: "rien versé",
+    partVersee: (pourcent) => `${pourcent} % versé`,
+    chargement: "Chargement du bilan",
+  },
+  methodes: {
+    especes: "Espèces",
+    mobile_money: "Mobile Money",
+    virement: "Virement",
+  },
+  typesPaiement: {
+    acompte: "acompte",
+    solde: "solde",
+    complement: "complément",
+  },
+  detail: {
+    commande: "Commande",
+    statut: "Statut",
+    passerA: (statut) => `Passer à : ${statut}`,
+    avancementHorsLigne:
+      "L'avancement du statut demande une connexion : il modifie une commande déjà enregistrée, et la file locale ne sait rejouer que des créations.",
+    aucunNumero: "Aucun numéro enregistré pour ce client.",
+    messageRecapitulatif: "Envoyer le récapitulatif",
+    messageEssayage: "Rappeler l'essayage",
+    messagePret: "Prévenir que c'est prêt",
+    messageAvis: "Demander un avis",
+    dates: "Dates",
+    essayage: "Essayage",
+    livraison: "Livraison",
+    nonDefinie: "Non définie",
+    resteAPayer: "Reste à payer",
+    paiement: "Paiement",
+    soldeMajuscule: "Soldé",
+    partEncaissee: "Part du prix déjà encaissée",
+    prixTotal: "Prix total",
+    dejaVerse: (pourcent) => `Déjà versé · ${pourcent} %`,
+    montantRecu: "Montant reçu",
+    ajouter: "Ajouter",
+    enAttenteSuffixe: " · en attente",
+    photo: "Photo de la commande",
+    introuvable: "Commande introuvable",
+    introuvableTexte:
+      "Cette commande n'est pas dans les données enregistrées sur cet appareil. Si elle a été créée ailleurs, elle apparaîtra au prochain passage en ligne.",
+    chargement: "Chargement de la commande",
   },
   clientsEcran: {
     aucun: "Aucun client",
@@ -458,6 +568,62 @@ const EN: Traductions = {
     sansDate: "No date",
     passeA: (statut) => `Moved to ${statut} · sent`,
     chargement: "Loading orders",
+  },
+  recuEn: "Received in",
+  finances: {
+    encaisseEn: (mois) => `Received in ${mois}`,
+    dontAcomptes: (montant) => `including ${montant} in deposits`,
+    commandesDuMois: "Orders this month",
+    prisesCeMois: (n) => `${n} order${n === 1 ? "" : "s"} taken`,
+    creances: "Owed to you",
+    toutSolde: "everything is paid",
+    impayes: (n) => `${n} order${n === 1 ? "" : "s"}`,
+    impayesSansAcompte: (n, sans) => `${n} orders · ${sans} with no deposit`,
+    aRecouvrer: "To collect",
+    aucunImpaye: "Nothing unpaid. Every order is settled.",
+    rienVerse: "nothing paid",
+    partVersee: (pourcent) => `${pourcent} % paid`,
+    chargement: "Loading the summary",
+  },
+  methodes: {
+    especes: "Cash",
+    mobile_money: "Mobile Money",
+    virement: "Bank transfer",
+  },
+  typesPaiement: {
+    acompte: "deposit",
+    solde: "balance",
+    complement: "part payment",
+  },
+  detail: {
+    commande: "Order",
+    statut: "Status",
+    passerA: (statut) => `Move to: ${statut}`,
+    avancementHorsLigne:
+      "Moving the status forward needs a connection: it changes an order already saved, and the local queue only replays new entries.",
+    aucunNumero: "No number saved for this client.",
+    messageRecapitulatif: "Send the summary",
+    messageEssayage: "Remind about the fitting",
+    messagePret: "Tell them it is ready",
+    messageAvis: "Ask for a review",
+    dates: "Dates",
+    essayage: "Fitting",
+    livraison: "Delivery",
+    nonDefinie: "Not set",
+    resteAPayer: "Left to pay",
+    paiement: "Payment",
+    soldeMajuscule: "Paid",
+    partEncaissee: "Share of the price already received",
+    prixTotal: "Total price",
+    dejaVerse: (pourcent) => `Already paid · ${pourcent} %`,
+    montantRecu: "Amount received",
+    ajouter: "Add",
+    enAttenteSuffixe: " · pending",
+    photo: "Order photo",
+    introuvable: "Order not found",
+    introuvableTexte:
+      "This order is not among the data saved on this device. If it was created elsewhere, it will appear the next time you are online.",
+    chargement: "Loading the order",
   },
   clientsEcran: {
     aucun: "No clients yet",

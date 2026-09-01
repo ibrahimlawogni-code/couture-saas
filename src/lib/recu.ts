@@ -1,14 +1,14 @@
 import { formaterMontant, resteAPayer, type Statut } from "@/lib/commandes";
 import { traduire } from "@/lib/i18n";
+import { methodeConnue } from "@/lib/paiements";
 
 /*
  * Le recu reste en francais tant qu'il ne l'est pas en entier. Traduire
- * ici le seul libelle de statut donnerait un document francais portant un
- * etat en anglais - et c'est le seul objet du produit qui sorte de
- * l'atelier, remis en main propre a un client.
+ * ici le seul libelle de statut ou de moyen donnerait un document francais
+ * portant un mot anglais au milieu - et c'est le seul objet du produit qui
+ * sorte de l'atelier, remis en main propre a un client.
  */
 const MOTS_FR = traduire("fr");
-import { METHODE_LABELS, methodeConnue } from "@/lib/paiements";
 
 const LARGEUR = 800;
 const MARGE = 56;
@@ -254,7 +254,7 @@ export async function genererRecu(donnees: DonneesRecu): Promise<Blob> {
     ctx.fillText(
       `${new Date(versement.date).toLocaleDateString("fr-FR")} · ${
         TYPES[versement.type] ?? versement.type
-      } · ${METHODE_LABELS[methodeConnue(versement.methode)]}`,
+      } · ${MOTS_FR.methodes[methodeConnue(versement.methode)]}`,
       MARGE + 16,
       y
     );

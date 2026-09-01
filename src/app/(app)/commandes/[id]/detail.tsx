@@ -25,11 +25,11 @@ import {
   messageRappelEssayage,
   messageRecapitulatif,
 } from "@/lib/whatsapp";
+import { formateurNombre, type Traductions } from "@/lib/i18n";
 import { enregistrer } from "@/lib/offline/enregistrer";
 import { rafraichirMiroir } from "@/lib/offline/miroir";
 import {
   METHODE_DEFAUT,
-  METHODE_LABELS,
   methodeConnue,
   type Methode,
 } from "@/lib/paiements";
@@ -46,8 +46,6 @@ import { BoutonRecu } from "./recu";
 const BUCKET = "commandes";
 const HEURE_EN_SECONDES = 3600;
 
-const nombre = new Intl.NumberFormat("fr-FR");
-
 export function DetailCommande() {
   // Lu dans l'adresse du navigateur : hors ligne, la page vient d'un cache
   // partage entre toutes les commandes, et les donnees de navigation de Next
@@ -56,7 +54,8 @@ export function DetailCommande() {
 
   const { atelier, clients, commandes, paiements, avis, chargee } = useDonnees();
   const mots = useTraductions();
-  const nomAtelier = atelier?.nom ?? "Mon atelier";
+  const nombre = formateurNombre(mots.locale);
+  const nomAtelier = atelier?.nom ?? mots.monAtelier;
   const { horsLigne } = useFileAttente();
   const [signatures, setSignatures] = useState<string[]>([]);
   const [montant, setMontant] = useState("");
@@ -111,7 +110,7 @@ export function DetailCommande() {
   // Sans reseau, les URLs signees ne peuvent pas etre obtenues ni renouvelees.
   const photos = horsLigne || cheminsPhotos.length === 0 ? [] : signatures;
 
-  if (!chargee) return <SqueletteDetail />;
+  if (!chargee) return <SqueletteDetail mots={mots} />;
 
   if (!commande) {
     return (
@@ -189,19 +188,19 @@ export function DetailCommande() {
   const messagesWhatsApp = [
     {
       cle: "recapitulatif",
-      label: "Envoyer le récapitulatif",
+      label: mots.detail.messageRecapitulatif,
       texte: messageRecapitulatif(nomAtelier, nomClient, donneesMessage, reste),
       visible: true,
     },
     {
       cle: "essayage",
-      label: "Rappeler l'essayage",
+      label: mots.detail.messageEssayage,
       texte: messageRappelEssayage(nomAtelier, nomClient, donneesMessage),
       visible: Boolean(commande.date_essayage) && statut !== "livre",
     },
     {
       cle: "pret",
-      label: "Prévenir que c'est prêt",
+      label: mots.detail.messagePret,
       texte: messagePret(nomAtelier, nomClient, donneesMessage, reste),
       visible: statut === "pret",
     },
@@ -215,7 +214,7 @@ export function DetailCommande() {
      */
     {
       cle: "avis",
-      label: "Demander un avis",
+      label: mots.detail.messageAvis,
       texte: commande.jeton_avis
         ? messageAvis(
             nomAtelier,
@@ -236,20 +235,20 @@ export function DetailCommande() {
       <div className="mt-2 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h1 className="truncate text-2xl font-semibold tracking-tight text-encre">
-            {commande.nom_modele ?? "Commande"}
+            {commande.nom_modele ?? mots.detail.commande}
           </h1>
           <Link
             href={`/clients/${commande.client_id}`}
             className="mt-1 inline-flex items-center gap-1 text-sm text-gris underline underline-offset-2 hover:text-encre"
           >
-            {nomClient || "Client inconnu"}
+            {nomClient || mots.clientInconnu}
             <CaretRight size={11} weight="bold" />
           </Link>
         </div>
         <Etiquette ton={TON_PRIORITE[niveau]}>{mots.priorites[niveau]}</Etiquette>
       </div>
 
-      <Bloc titre="Statut" classe="mt-5">
+      <Bloc titre={mots.detail.statut} classe="mt-5">
         <p className="text-lg font-semibold text-encre">{mots.statuts[statut]}</p>
 
         {suivant && (
@@ -260,16 +259,14 @@ export function DetailCommande() {
             pleineLargeur
             classe="mt-3 min-h-12"
           >
-            Passer à : {mots.statuts[suivant]}
+            {mots.detail.passerA(mots.statuts[suivant])}
             <ArrowRight size={15} weight="bold" />
           </Bouton>
         )}
 
         {horsLigne && (
           <p className="mt-2 text-xs text-gris">
-            L&apos;avancement du statut demande une connexion : il modifie une
-            commande déjà enregistrée, et la file locale ne sait rejouer que des
-            créations.
+            {mots.detail.avancementHorsLigne}
           </p>
         )}
       </Bloc>
@@ -292,31 +289,34 @@ export function DetailCommande() {
           </div>
         ) : (
           <p className="text-sm text-gris">
-            Aucun numéro enregistré pour ce client.
+            {mots.detail.aucunNumero}
           </p>
         )}
       </Bloc>
 
-      <Bloc titre="Dates" classe="mt-3">
+      <Bloc titre={mots.detail.dates} classe="mt-3">
         <Ligne
-          libelle="Essayage"
+          libelle={mots.detail.essayage}
           valeur={
             commande.date_essayage
-              ? new Date(commande.date_essayage).toLocaleDateString("fr-FR")
-              : "Non définie"
+              ? new Date(commande.date_essayage).toLocaleDateString(mots.locale)
+              : mots.detail.nonDefinie
           }
         />
         <Ligne
-          libelle="Livraison"
+          libelle={mots.detail.livraison}
           valeur={
             commande.date_livraison
               ? new Date(commande.date_livraison).toLocaleDateString("fr-FR")
-              : "Non définie"
+              : mots.detail.nonDefinie
           }
         />
       </Bloc>
 
-      <Bloc titre={reste > 0 ? "Reste à payer" : "Paiement"} classe="mt-3">
+      <Bloc
+        titre={reste > 0 ? mots.detail.resteAPayer : mots.detail.paiement}
+        classe="mt-3"
+      >
         {/*
          * Le solde en grand, le detail en dessous. C'est la seule question
          * qui se pose au moment de remettre la piece, et elle se lisait
@@ -329,7 +329,7 @@ export function DetailCommande() {
               reste > 0 ? "text-rouge" : "text-vert"
             }`}
           >
-            {reste > 0 ? nombre.format(reste) : "Soldé"}
+            {reste > 0 ? nombre.format(reste) : mots.detail.soldeMajuscule}
           </span>
           {reste > 0 && (
             <span className="text-xs font-medium text-gris">FCFA</span>
@@ -345,7 +345,7 @@ export function DetailCommande() {
         {prixTotal > 0 && (
           <div
             role="progressbar"
-            aria-label="Part du prix déjà encaissée"
+            aria-label={mots.detail.partEncaissee}
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={Math.round(partPayee)}
@@ -359,10 +359,13 @@ export function DetailCommande() {
         )}
 
         <div className="mt-3 border-t border-bordure pt-2.5">
-          <Ligne libelle="Prix total" valeur={formaterMontant(prixTotal)} />
           <Ligne
-            libelle={`Déjà versé · ${Math.round(partPayee)} %`}
-            valeur={formaterMontant(totalPaye)}
+            libelle={mots.detail.prixTotal}
+            valeur={formaterMontant(prixTotal, mots.locale)}
+          />
+          <Ligne
+            libelle={mots.detail.dejaVerse(Math.round(partPayee))}
+            valeur={formaterMontant(totalPaye, mots.locale)}
           />
         </div>
 
@@ -370,7 +373,7 @@ export function DetailCommande() {
           <form onSubmit={ajouterPaiement} className="mt-3">
             <div className="flex gap-2">
               <label htmlFor="montant" className="sr-only">
-                Montant reçu
+                {mots.detail.montantRecu}
               </label>
               <input
                 id="montant"
@@ -380,16 +383,17 @@ export function DetailCommande() {
                 min="1"
                 step="1"
                 inputMode="numeric"
-                placeholder="Montant reçu"
+                placeholder={mots.detail.montantRecu}
                 required
                 className="min-h-11 w-full min-w-0 flex-1 rounded-controle border border-bordure px-4 py-3 text-base transition-colors duration-150 ease-doux hover:border-vert-pale"
               />
               <Bouton type="submit" classe="shrink-0">
-                Ajouter
+                {mots.detail.ajouter}
               </Bouton>
             </div>
 
             <ChoixMethode
+              mots={mots}
               nom="methode"
               valeur={methode}
               onChange={setMethode}
@@ -409,9 +413,15 @@ export function DetailCommande() {
                   <span className="chiffres">
                     {new Date(paiement.created_at).toLocaleDateString("fr-FR")}
                   </span>{" "}
-                  · {paiement.type} ·{" "}
-                  {METHODE_LABELS[methodeConnue(paiement.methode)]}
-                  {paiement.enAttente && " · en attente"}
+                  ·{" "}
+                  {
+                    mots.typesPaiement[
+                      paiement.type as keyof typeof mots.typesPaiement
+                    ]
+                  }{" "}
+                  ·{" "}
+                  {mots.methodes[methodeConnue(paiement.methode)]}
+                  {paiement.enAttente && mots.detail.enAttenteSuffixe}
                 </span>
                 {/* Colonne de montants : chasse fixe pour qu'ils s'alignent. */}
                 <span className="chiffres shrink-0 text-encre">
@@ -458,7 +468,7 @@ export function DetailCommande() {
               <img
                 key={url}
                 src={url}
-                alt="Photo de la commande"
+                alt={mots.detail.photo}
                 className="aspect-square w-full rounded-carte border border-bordure bg-vert-clair object-cover"
               />
             ))}
@@ -499,9 +509,9 @@ function Ligne({ libelle, valeur }: { libelle: string; valeur: string }) {
   );
 }
 
-function SqueletteDetail() {
+function SqueletteDetail({ mots }: { mots: Traductions }) {
   return (
-    <div role="status" aria-label="Chargement de la commande">
+    <div role="status" aria-label={mots.detail.chargement}>
       <Squelette classe="mt-2 h-7 w-3/5" />
       <Squelette classe="mt-2 h-4 w-2/5" />
       <Squelette rayon="carte" classe="mt-5 h-32" />
