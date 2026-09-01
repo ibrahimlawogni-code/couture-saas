@@ -20,6 +20,7 @@ import {
   versesParCommande,
   type Statut,
 } from "@/lib/commandes";
+import { formateurNombre, type Traductions } from "@/lib/i18n";
 import { useDonnees } from "@/lib/offline/use-donnees";
 import { useTraductions } from "@/lib/offline/use-traductions";
 import { Carte, CarteLien, Panneau } from "@/ui/carte";
@@ -31,8 +32,6 @@ import { GraphiqueEncaissements, type PointMensuel } from "./graphique";
 
 const MOIS_AFFICHES = 6;
 const A_TRAITER_MAX = 6;
-
-const nombre = new Intl.NumberFormat("fr-FR");
 
 function memeJour(a: string | null, b: Date) {
   if (!a) return false;
@@ -51,19 +50,23 @@ function memeJour(a: string | null, b: Date) {
  * aujourd'hui est d'abord en retard. Le retard est le seul des quatre cas
  * ou quelque chose a deja mal tourne.
  */
-function motif(commande: {
-  niveau: string;
-  livraisonAujourdhui: boolean;
-  essayageAujourdhui: boolean;
-  statut: string;
-}): { texte: string; ton: TonEtiquette } | null {
+function motif(
+  commande: {
+    niveau: string;
+    livraisonAujourdhui: boolean;
+    essayageAujourdhui: boolean;
+    statut: string;
+  },
+  mots: Traductions
+): { texte: string; ton: TonEtiquette } | null {
   if (commande.niveau === "en_retard")
-    return { texte: "En retard", ton: "probleme" };
+    return { texte: mots.bord.motifs.en_retard, ton: "probleme" };
   if (commande.livraisonAujourdhui)
-    return { texte: "À livrer", ton: "attention" };
+    return { texte: mots.bord.motifs.a_livrer, ton: "attention" };
   if (commande.essayageAujourdhui)
-    return { texte: "Essayage", ton: "attention" };
-  if (commande.statut === "pret") return { texte: "À retirer", ton: "metier" };
+    return { texte: mots.bord.motifs.essayage, ton: "attention" };
+  if (commande.statut === "pret")
+    return { texte: mots.bord.motifs.a_retirer, ton: "metier" };
   return null;
 }
 
@@ -71,6 +74,7 @@ export function TableauDeBord() {
   const { atelier, clients, commandes, paiements, historique, avis, chargee } =
     useDonnees();
   const mots = useTraductions();
+  const nombre = formateurNombre(mots.locale);
 
   const bilan = useMemo(() => {
     const maintenant = new Date();
@@ -140,7 +144,7 @@ export function TableauDeBord() {
 
         return {
           ...commande,
-          client: nomsClients.get(commande.client_id) ?? "Client inconnu",
+          client: nomsClients.get(commande.client_id) ?? mots.clientInconnu,
           niveau: priorite(commande.date_livraison, commande.statut as Statut),
           livraisonAujourdhui: groupe === "aujourdhui",
           essayageAujourdhui: memeJour(commande.date_essayage, maintenant),
@@ -199,7 +203,7 @@ export function TableauDeBord() {
       points.push({
         mois: debut.toISOString().slice(0, 7),
         libelle: debut
-          .toLocaleDateString("fr-FR", { month: "short" })
+          .toLocaleDateString(mots.locale, { month: "short" })
           .replace(".", ""),
         montant: paiements
           .filter((p) => {
@@ -242,12 +246,24 @@ export function TableauDeBord() {
       ecart,
       moisPrecedent: precedent?.libelle ?? "",
     };
-  }, [clients, commandes, paiements, historique, avis]);
+    // mots.locale en dependance : les libelles de mois du graphique en
+    // dependent, et ils resteraient en francais apres un changement de
+    // langue sans rechargement.
+  }, [
+    clients,
+    commandes,
+    paiements,
+    historique,
+    avis,
+    mots.locale,
+    mots.clientInconnu,
+  ]);
 
-  if (!chargee) return <SqueletteBord />;
+  if (!chargee) return <SqueletteBord mots={mots} />;
 
   const heure = new Date().getHours();
-  const salutation = heure < 18 ? "Bonjour" : "Bonsoir";
+  const salutation =
+    heure < 18 ? mots.bord.salutationJour : mots.bord.salutationSoir;
 
   return (
     <>
@@ -267,7 +283,7 @@ export function TableauDeBord() {
             <p className="text-sm text-vert-pale">
               {salutation}
               {atelier?.nom ? `, ${atelier.nom}` : ""} ·{" "}
-              {new Date().toLocaleDateString("fr-FR", {
+              {new Date().toLocaleDateString(mots.locale, {
                 weekday: "long",
                 day: "numeric",
                 month: "long",
@@ -284,27 +300,25 @@ export function TableauDeBord() {
                 {bilan.aLivrer}
               </span>
               <span className="max-w-36 text-[0.9375rem] leading-tight font-medium">
-                {bilan.aLivrer > 1 ? "pièces à livrer" : "pièce à livrer"}{" "}
-                aujourd&apos;hui
+                {mots.bord.aLivrer(bilan.aLivrer)}
               </span>
             </p>
 
             <div className="mt-3.5 flex flex-wrap gap-2">
               {bilan.enRetard > 0 && (
                 <Etiquette ton="probleme">
-                  {bilan.enRetard} en retard
+                  {mots.bord.enRetard(bilan.enRetard)}
                 </Etiquette>
               )}
               {bilan.essayages > 0 && (
                 <span className="inline-flex shrink-0 items-center rounded-full bg-white/12 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-white">
-                  {bilan.essayages} essayage
-                  {bilan.essayages > 1 ? "s" : ""} aujourd&apos;hui
+                  {mots.bord.essayages(bilan.essayages)}
                 </span>
               )}
               {bilan.enRetard === 0 && bilan.essayages === 0 && (
                 <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/12 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-white">
                   <CheckCircle size={13} weight="fill" aria-hidden />
-                  Aucun retard
+                  {mots.bord.aucunRetard}
                 </span>
               )}
             </div>
@@ -316,14 +330,14 @@ export function TableauDeBord() {
               className="inline-flex min-h-11 items-center justify-center gap-2 rounded-controle bg-white px-5 text-sm font-medium text-foret transition-colors duration-150 ease-doux hover:bg-vert-clair"
             >
               <Plus size={16} weight="bold" />
-              Nouvelle commande
+              {mots.bord.nouvelleCommande}
             </Link>
             <Link
               href="/clients/new"
               className="inline-flex min-h-11 items-center justify-center gap-2 rounded-controle border border-white/25 px-5 text-sm font-medium text-white transition-colors duration-150 ease-doux hover:bg-white/10"
             >
               <UserPlus size={16} />
-              Nouveau client
+              {mots.bord.nouveauClient}
             </Link>
           </div>
         </div>
@@ -338,14 +352,14 @@ export function TableauDeBord() {
       <div className="mt-6 grid gap-6 lg:grid-cols-[1.3fr_1fr] lg:items-start lg:gap-5">
         <section>
           <EnTeteSection
-            titre="Aujourd'hui et en retard"
+            titre={mots.bord.aTraiter}
             action={
               bilan.aTraiter.length > A_TRAITER_MAX && (
                 <Link
                   href="/commandes"
                   className="rounded-controle text-xs font-medium text-vert hover:text-foret"
                 >
-                  Tout voir
+                  {mots.bord.toutVoir}
                 </Link>
               )
             }
@@ -360,14 +374,13 @@ export function TableauDeBord() {
                 aria-hidden
               />
               <p className="text-sm text-gris">
-                Rien d&apos;urgent aujourd&apos;hui. Aucun retard, aucune
-                livraison prévue, aucune commande en attente de retrait.
+                {mots.bord.rienUrgent}
               </p>
             </Carte>
           ) : (
             <ul className="mt-2 grid gap-2">
               {bilan.aTraiter.slice(0, A_TRAITER_MAX).map((commande) => {
-                const raison = motif(commande);
+                const raison = motif(commande, mots);
 
                 return (
                   <li key={commande.id}>
@@ -392,7 +405,7 @@ export function TableauDeBord() {
                        */}
                       <span className="mt-1 flex items-baseline justify-between gap-3">
                         <span className="truncate text-xs text-gris">
-                          {commande.nom_modele ?? "Sans modèle"} ·{" "}
+                          {commande.nom_modele ?? mots.bord.sansModele} ·{" "}
                           {mots.statuts[commande.statut as Statut]}
                         </span>
                         <span
@@ -401,8 +414,8 @@ export function TableauDeBord() {
                           }`}
                         >
                           {commande.reste > 0
-                            ? `reste ${formaterMontant(commande.reste)}`
-                            : "soldé"}
+                            ? mots.bord.reste(formaterMontant(commande.reste))
+                            : mots.bord.solde}
                         </span>
                       </span>
 
@@ -429,7 +442,7 @@ export function TableauDeBord() {
             classe={`p-5 ${bilan.creances > 0 ? "border-rouge-clair bg-rouge-clair/40" : ""}`}
           >
             <h2 className="text-[10px] font-medium tracking-[0.1em] text-gris uppercase">
-              Créances
+              {mots.bord.creances}
             </h2>
             <p className="mt-1 flex items-baseline gap-1.5">
               <span
@@ -443,8 +456,8 @@ export function TableauDeBord() {
             </p>
             <p className="mt-2 text-xs text-gris">
               {bilan.nbImpayes > 0
-                ? `sur ${bilan.nbImpayes} commande${bilan.nbImpayes > 1 ? "s" : ""}`
-                : "tout est soldé"}
+                ? mots.bord.surCommandes(bilan.nbImpayes)
+                : mots.bord.toutSolde}
             </p>
 
             {bilan.nbImpayes > 0 && (
@@ -452,7 +465,7 @@ export function TableauDeBord() {
                 href="/finances"
                 className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-controle bg-rouge px-4 text-sm font-medium text-white transition-colors duration-150 ease-doux hover:bg-encre"
               >
-                Relancer
+                {mots.bord.relancer}
                 <ArrowRight size={15} weight="bold" />
               </Link>
             )}
@@ -469,22 +482,22 @@ export function TableauDeBord() {
            */}
           <Carte classe="p-5">
             <h2 className="text-[10px] font-medium tracking-[0.1em] text-gris uppercase">
-              Clients
+              {mots.bord.clients}
             </h2>
             <p className="mt-1 flex items-baseline gap-1.5">
               <span className="text-[2.125rem] leading-none font-semibold tracking-tight text-encre">
                 {clients.length}
               </span>
               <span className="text-xs text-gris">
-                au total
+                {mots.bord.auTotal}
               </span>
             </p>
             <p className="mt-2 text-xs text-gris">
               {clients.length === 0
-                ? "aucun client enregistré"
+                ? mots.bord.aucunClient
                 : bilan.clientsActifs > 0
-                  ? `dont ${bilan.clientsActifs} avec une pièce en cours`
-                  : "aucune pièce en cours"}
+                  ? mots.bord.avecPieceEnCours(bilan.clientsActifs)
+                  : mots.bord.aucunePieceEnCours}
             </p>
           </Carte>
 
@@ -492,6 +505,7 @@ export function TableauDeBord() {
             tenue={bilan.tenue}
             satisfaction={bilan.satisfaction}
             nbAvis={bilan.nbAvis}
+            mots={mots}
           />
 
           {/*
@@ -503,11 +517,11 @@ export function TableauDeBord() {
             <span className="font-semibold text-encre">
               {bilan.enCours.length}
             </span>{" "}
-            commande{bilan.enCours.length > 1 ? "s" : ""} en cours ·{" "}
+            {mots.bord.commandesEnCours(bilan.enCours.length)} ·{" "}
             <span className="font-semibold text-encre">
               {bilan.livreesCeMois}
             </span>{" "}
-            livrée{bilan.livreesCeMois > 1 ? "s" : ""} ce mois
+            {mots.bord.livreesCeMois(bilan.livreesCeMois)}
           </p>
 
           {/*
@@ -517,7 +531,7 @@ export function TableauDeBord() {
            */}
           <Carte classe="p-5">
             <h2 className="text-[10px] font-medium tracking-[0.1em] text-gris uppercase">
-              Encaissé ce mois
+              {mots.bord.encaisseCeMois}
             </h2>
             <p className="mt-1 flex items-baseline gap-1.5">
               <span className="text-[2.125rem] leading-none font-semibold tracking-tight text-encre">
@@ -539,8 +553,8 @@ export function TableauDeBord() {
                 )}
                 <span>
                   {bilan.ecart >= 0 ? "+" : "−"}
-                  {Math.abs(Math.round(bilan.ecart))} % sur{" "}
-                  {bilan.moisPrecedent}
+                  {Math.abs(Math.round(bilan.ecart))} %{" "}
+                  {mots.bord.surLeMois(bilan.moisPrecedent)}
                 </span>
               </p>
             )}
@@ -551,7 +565,7 @@ export function TableauDeBord() {
              * curseur et sa ligne de lecture pour le dire.
              */}
             <p className="mt-4 text-xs text-gris lg:hidden">
-              Touchez une barre pour voir le montant exact.
+              {mots.bord.toucherBarre}
             </p>
             <div className="mt-4">
               <GraphiqueEncaissements points={bilan.points} />
@@ -581,6 +595,7 @@ function Evaluation({
   tenue,
   satisfaction,
   nbAvis,
+  mots,
 }: {
   tenue: {
     mesurees: number;
@@ -590,6 +605,7 @@ function Evaluation({
   };
   satisfaction: number | null;
   nbAvis: number;
+  mots: Traductions;
 }) {
   const ton =
     tenue.part === null
@@ -605,13 +621,13 @@ function Evaluation({
   return (
     <Carte classe="p-5">
       <h2 className="text-[10px] font-medium tracking-[0.1em] text-gris uppercase">
-        Évaluation de l&apos;atelier
+        {mots.bord.evaluation}
       </h2>
 
       {/* --- Ce que l'atelier tient : les delais ------------------------ */}
       <div className="mt-3">
         <p className="flex items-baseline justify-between gap-2">
-          <span className="text-sm text-gris">Ponctualité</span>
+          <span className="text-sm text-gris">{mots.bord.ponctualite}</span>
           {tenue.part === null ? (
             <span className="text-sm text-gris">—</span>
           ) : (
@@ -625,8 +641,7 @@ function Evaluation({
 
         {tenue.part === null ? (
           <p className="mt-1.5 text-xs leading-relaxed text-gris">
-            Rien à mesurer pour l&apos;instant. Le score apparaîtra dès
-            qu&apos;une commande datée sera passée à « Livré ».
+            {mots.bord.ponctualiteVide}
           </p>
         ) : (
           <>
@@ -645,12 +660,14 @@ function Evaluation({
               />
             </div>
             <p className="mt-2 text-xs text-gris">
-              sur {tenue.mesurees} pièce{tenue.mesurees > 1 ? "s" : ""} livrée
-              {tenue.mesurees > 1 ? "s" : ""}
+              {mots.bord.surPiecesLivrees(tenue.mesurees)}
               {retard > 0 &&
-                ` · retard moyen ${tenue.retardMoyen.toLocaleString("fr-FR", {
-                  maximumFractionDigits: 1,
-                })} jour${tenue.retardMoyen >= 2 ? "s" : ""}`}
+                mots.bord.retardMoyen(
+                  tenue.retardMoyen.toLocaleString(mots.locale, {
+                    maximumFractionDigits: 1,
+                  }),
+                  tenue.retardMoyen
+                )}
             </p>
           </>
         )}
@@ -661,25 +678,24 @@ function Evaluation({
       {/* --- Ce que les clients en disent ------------------------------- */}
       <div>
         <p className="flex items-baseline justify-between gap-2">
-          <span className="text-sm text-gris">Satisfaction</span>
+          <span className="text-sm text-gris">{mots.bord.satisfaction}</span>
           {satisfaction === null ? (
             <span className="text-sm text-gris">—</span>
           ) : (
             <span className="flex items-baseline gap-1.5">
               <span className="text-2xl leading-none font-semibold tracking-tight text-encre">
-                {satisfaction.toLocaleString("fr-FR", {
+                {satisfaction.toLocaleString(mots.locale, {
                   maximumFractionDigits: 1,
                 })}
               </span>
-              <span className="text-xs text-gris">sur 5</span>
+              <span className="text-xs text-gris">{mots.bord.surCinq}</span>
             </span>
           )}
         </p>
 
         {satisfaction === null ? (
           <p className="mt-1.5 text-xs leading-relaxed text-gris">
-            Aucun avis reçu. Le lien de notation s&apos;envoie sur WhatsApp
-            depuis une commande livrée.
+            {mots.bord.satisfactionVide}
           </p>
         ) : (
           <>
@@ -698,7 +714,7 @@ function Evaluation({
               ))}
             </p>
             <p className="mt-2 text-xs text-gris">
-              sur {nbAvis} avis
+              {mots.bord.surAvis(nbAvis)}
             </p>
           </>
         )}
@@ -707,9 +723,9 @@ function Evaluation({
   );
 }
 
-function SqueletteBord() {
+function SqueletteBord({ mots }: { mots: Traductions }) {
   return (
-    <div role="status" aria-label="Chargement du tableau de bord">
+    <div role="status" aria-label={mots.bord.chargement}>
       <Squelette rayon="panneau" classe="h-56" />
 
       <div className="mt-6 flex flex-col gap-2">

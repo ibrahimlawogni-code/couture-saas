@@ -31,6 +31,12 @@ export type Traductions = {
   /** Nom de chaque langue, ecrit dans cette langue : un anglophone doit
    *  reconnaitre « English » meme sur une interface francaise. */
   langues: Record<Langue, string>;
+  /*
+   * Etiquette de langue pour Intl : dates et nombres. En anglais, en-GB
+   * plutot qu'en-US - le jour precede le mois, comme partout en Afrique de
+   * l'Ouest, et une date inversee se lit de travers sans prevenir.
+   */
+  locale: string;
   statuts: Record<Statut, string>;
   /*
    * Forme breve, pour les colonnes etroites de la repartition. Chaque
@@ -58,15 +64,66 @@ export type Traductions = {
   reglages: string;
   deconnexion: string;
   monAtelier: string;
+  /** Repli quand un identifiant client ne resout pas : partage par les ecrans. */
+  clientInconnu: string;
   /*
    * Le nom de l'offre n'est pas traduit : « Atelier Pro » est un nom
    * commercial, pas une description. Seul ce qui l'entoure change.
    */
   offre: (nom: string) => string;
+  /*
+   * Le tableau de bord. Les accords sont portes par des fonctions parce
+   * qu'ils ne suivent pas la meme regle d'une langue a l'autre : le
+   * francais accorde a partir de deux, l'anglais des que ce n'est pas un.
+   */
+  bord: {
+    /** Pourquoi une commande remonte dans « a traiter ». */
+    motifs: Record<"en_retard" | "a_livrer" | "essayage" | "a_retirer", string>;
+    salutationJour: string;
+    salutationSoir: string;
+    /** « pièce à livrer aujourd'hui », accorde au nombre. */
+    aLivrer: (n: number) => string;
+    enRetard: (n: number) => string;
+    essayages: (n: number) => string;
+    aucunRetard: string;
+    nouvelleCommande: string;
+    nouveauClient: string;
+    aTraiter: string;
+    toutVoir: string;
+    rienUrgent: string;
+    sansModele: string;
+    reste: (montant: string) => string;
+    solde: string;
+    creances: string;
+    surCommandes: (n: number) => string;
+    toutSolde: string;
+    relancer: string;
+    clients: string;
+    auTotal: string;
+    aucunClient: string;
+    avecPieceEnCours: (n: number) => string;
+    aucunePieceEnCours: string;
+    commandesEnCours: (n: number) => string;
+    livreesCeMois: (n: number) => string;
+    encaisseCeMois: string;
+    surLeMois: (mois: string) => string;
+    toucherBarre: string;
+    evaluation: string;
+    ponctualite: string;
+    ponctualiteVide: string;
+    surPiecesLivrees: (n: number) => string;
+    retardMoyen: (jours: string, n: number) => string;
+    satisfaction: string;
+    satisfactionVide: string;
+    surCinq: string;
+    surAvis: (n: number) => string;
+    chargement: string;
+  };
 };
 
 const FR: Traductions = {
   langues: { fr: "Français", en: "English" },
+  locale: "fr-FR",
   statuts: {
     recu: "Reçu",
     coupe: "Coupe",
@@ -112,7 +169,58 @@ const FR: Traductions = {
   reglages: "Réglages",
   deconnexion: "Déconnexion",
   monAtelier: "Mon atelier",
+  clientInconnu: "Client inconnu",
   offre: (nom) => `Offre ${nom}`,
+  bord: {
+    motifs: {
+      en_retard: "En retard",
+      a_livrer: "À livrer",
+      essayage: "Essayage",
+      a_retirer: "À retirer",
+    },
+    salutationJour: "Bonjour",
+    salutationSoir: "Bonsoir",
+    aLivrer: (n) => `${n > 1 ? "pièces" : "pièce"} à livrer aujourd'hui`,
+    enRetard: (n) => `${n} en retard`,
+    essayages: (n) => `${n} essayage${n > 1 ? "s" : ""} aujourd'hui`,
+    aucunRetard: "Aucun retard",
+    nouvelleCommande: "Nouvelle commande",
+    nouveauClient: "Nouveau client",
+    aTraiter: "Aujourd'hui et en retard",
+    toutVoir: "Tout voir",
+    rienUrgent:
+      "Rien d'urgent aujourd'hui. Aucun retard, aucune livraison prévue, aucune commande en attente de retrait.",
+    sansModele: "Sans modèle",
+    reste: (montant) => `reste ${montant}`,
+    solde: "soldé",
+    creances: "Créances",
+    surCommandes: (n) => `sur ${n} commande${n > 1 ? "s" : ""}`,
+    toutSolde: "tout est soldé",
+    relancer: "Relancer",
+    clients: "Clients",
+    auTotal: "au total",
+    aucunClient: "aucun client enregistré",
+    avecPieceEnCours: (n) => `dont ${n} avec une pièce en cours`,
+    aucunePieceEnCours: "aucune pièce en cours",
+    commandesEnCours: (n) => `commande${n > 1 ? "s" : ""} en cours`,
+    livreesCeMois: (n) => `livrée${n > 1 ? "s" : ""} ce mois`,
+    encaisseCeMois: "Encaissé ce mois",
+    surLeMois: (mois) => `sur ${mois}`,
+    toucherBarre: "Touchez une barre pour voir le montant exact.",
+    evaluation: "Évaluation de l'atelier",
+    ponctualite: "Ponctualité",
+    ponctualiteVide:
+      "Rien à mesurer pour l'instant. Le score apparaîtra dès qu'une commande datée sera passée à « Livré ».",
+    surPiecesLivrees: (n) =>
+      `sur ${n} pièce${n > 1 ? "s" : ""} livrée${n > 1 ? "s" : ""}`,
+    retardMoyen: (jours, n) => ` · retard moyen ${jours} jour${n >= 2 ? "s" : ""}`,
+    satisfaction: "Satisfaction",
+    satisfactionVide:
+      "Aucun avis reçu. Le lien de notation s'envoie sur WhatsApp depuis une commande livrée.",
+    surCinq: "sur 5",
+    surAvis: (n) => `sur ${n} avis`,
+    chargement: "Chargement du tableau de bord",
+  },
 };
 
 /*
@@ -122,6 +230,7 @@ const FR: Traductions = {
  */
 const EN: Traductions = {
   langues: { fr: "Français", en: "English" },
+  locale: "en-GB",
   statuts: {
     recu: "Received",
     coupe: "Cutting",
@@ -167,7 +276,59 @@ const EN: Traductions = {
   reglages: "Settings",
   deconnexion: "Sign out",
   monAtelier: "My workshop",
+  clientInconnu: "Unknown client",
   offre: (nom) => `${nom} plan`,
+  bord: {
+    motifs: {
+      en_retard: "Overdue",
+      a_livrer: "Due today",
+      essayage: "Fitting",
+      a_retirer: "For pickup",
+    },
+    salutationJour: "Good morning",
+    salutationSoir: "Good evening",
+    aLivrer: (n) => `${n === 1 ? "item" : "items"} to deliver today`,
+    enRetard: (n) => `${n} overdue`,
+    essayages: (n) => `${n} fitting${n === 1 ? "" : "s"} today`,
+    aucunRetard: "Nothing overdue",
+    nouvelleCommande: "New order",
+    nouveauClient: "New client",
+    aTraiter: "Today and overdue",
+    toutVoir: "See all",
+    rienUrgent:
+      "Nothing urgent today. Nothing overdue, no delivery due, no order waiting for pickup.",
+    sansModele: "No model",
+    reste: (montant) => `${montant} left`,
+    solde: "paid",
+    creances: "Owed to you",
+    surCommandes: (n) => `across ${n} order${n === 1 ? "" : "s"}`,
+    toutSolde: "everything is paid",
+    relancer: "Chase payment",
+    clients: "Clients",
+    auTotal: "in total",
+    aucunClient: "no client yet",
+    avecPieceEnCours: (n) => `${n} with an item in progress`,
+    aucunePieceEnCours: "no item in progress",
+    commandesEnCours: (n) => `order${n === 1 ? "" : "s"} in progress`,
+    // L'anglais n'accorde pas ici : le nombre precede, le participe non.
+    livreesCeMois: () => "delivered this month",
+    encaisseCeMois: "Received this month",
+    surLeMois: (mois) => `vs ${mois}`,
+    toucherBarre: "Tap a bar to see the exact amount.",
+    evaluation: "Workshop score",
+    ponctualite: "On-time delivery",
+    ponctualiteVide:
+      "Nothing to measure yet. The score appears once a dated order has been marked “Delivered”.",
+    surPiecesLivrees: (n) => `across ${n} delivered item${n === 1 ? "" : "s"}`,
+    retardMoyen: (jours, n) =>
+      ` · ${jours} day${n >= 2 ? "s" : ""} late on average`,
+    satisfaction: "Satisfaction",
+    satisfactionVide:
+      "No review yet. The rating link is sent on WhatsApp from a delivered order.",
+    surCinq: "out of 5",
+    surAvis: (n) => `from ${n} review${n === 1 ? "" : "s"}`,
+    chargement: "Loading the dashboard",
+  },
 };
 
 const TABLES: Record<Langue, Traductions> = { fr: FR, en: EN };
@@ -181,4 +342,23 @@ const TABLES: Record<Langue, Traductions> = { fr: FR, en: EN };
  */
 export function traduire(langue: unknown): Traductions {
   return estLangue(langue) ? TABLES[langue] : FR;
+}
+
+/*
+ * Formateur de nombres, un par langue et mis en cache.
+ *
+ * Construire un Intl.NumberFormat coute environ cent fois le formatage
+ * lui-meme : le construire a chaque appel avait deja ete corrige une fois
+ * sur les montants, il n'y a pas de raison de le refaire ici. La carte
+ * garde au plus une instance par langue.
+ */
+const FORMATEURS = new Map<string, Intl.NumberFormat>();
+
+export function formateurNombre(locale: string): Intl.NumberFormat {
+  let formateur = FORMATEURS.get(locale);
+  if (!formateur) {
+    formateur = new Intl.NumberFormat(locale);
+    FORMATEURS.set(locale, formateur);
+  }
+  return formateur;
 }
