@@ -231,7 +231,7 @@ export function FicheClient() {
                   className="flex items-baseline justify-between gap-2 border-b border-bordure py-2"
                 >
                   <dt className="truncate text-xs text-gris">
-                    {mots.clientsEcran.champs[cle as keyof typeof mots.clientsEcran.champs] ?? cle}
+                    {mots.mesuresChamps[cle as keyof typeof mots.mesuresChamps] ?? cle}
                   </dt>
                   {/*
                    * La mesure pesait autant que son libelle. C'est

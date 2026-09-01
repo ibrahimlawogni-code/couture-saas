@@ -72,6 +72,20 @@ export type Traductions = {
    */
   clientInconnu: string;
   sansModele: string;
+  /*
+   * Les mesures : des parties du corps, pas du jargon. Partagees par la
+   * fiche qui les affiche et le formulaire qui les prend.
+   */
+  mesuresChamps: Record<
+    | "poitrine"
+    | "taille"
+    | "hanches"
+    | "longueur_bras"
+    | "longueur_jambe"
+    | "col"
+    | "epaule",
+    string
+  >;
   reste: (montant: string) => string;
   solde: string;
   annuler: string;
@@ -196,6 +210,48 @@ export type Traductions = {
     partVersee: (pourcent: number) => string;
     chargement: string;
   };
+  /** Les trois formulaires de creation : client, commande, mesures. */
+  formulaires: {
+    chargement: string;
+    enregistrement: string;
+    enregistrer: string;
+    voirLesOffres: string;
+    nom: string;
+    nomObligatoire: string;
+    telephone: string;
+    whatsapp: string;
+    aideWhatsapp: string;
+    notes: string;
+    client: string;
+    choisirClient: string;
+    aucunClient: string;
+    aucunClientTexte: string;
+    creerUnClient: string;
+    modele: string;
+    autreModele: string;
+    preciserModele: string;
+    exempleModele: string;
+    photoModele: string;
+    photoTissu: string;
+    prixTotal: string;
+    acompteVerse: string;
+    acompteRecuEn: string;
+    dateEssayage: string;
+    dateLivraison: string;
+    enregistrerCommande: string;
+    libelleMesure: string;
+    aideLibelleMesure: string;
+    mesuresDefaut: string;
+    mesuresStandard: string;
+    aideCentimetres: string;
+    champPersonnalise: string;
+    aideChampPersonnalise: string;
+    exempleNomMesure: string;
+    valeur: string;
+    sansNom: string;
+    /** Un client encore dans la file d'envoi, dans la liste deroulante. */
+    nomEnAttente: (nom: string) => string;
+  };
   /** Les deux ecrans clients : le carnet et la fiche. */
   clientsEcran: {
     aucun: string;
@@ -223,17 +279,6 @@ export type Traductions = {
     aucuneCommande: string;
     enAttenteEnvoi: string;
     chargement: string;
-    /* Les mesures : ce sont des parties du corps, pas du jargon. */
-    champs: Record<
-      | "poitrine"
-      | "taille"
-      | "hanches"
-      | "longueur_bras"
-      | "longueur_jambe"
-      | "col"
-      | "epaule",
-      string
-    >;
   };
 };
 
@@ -287,6 +332,15 @@ const FR: Traductions = {
   monAtelier: "Mon atelier",
   clientInconnu: "Client inconnu",
   sansModele: "Sans modèle",
+  mesuresChamps: {
+    poitrine: "Poitrine",
+    taille: "Taille",
+    hanches: "Hanches",
+    longueur_bras: "Longueur bras",
+    longueur_jambe: "Longueur jambe",
+    col: "Col",
+    epaule: "Épaule",
+  },
   reste: (montant) => `reste ${montant}`,
   solde: "soldé",
   annuler: "Annuler",
@@ -411,6 +465,50 @@ const FR: Traductions = {
     partagerRecu: "Partager le reçu",
     preparationRecu: "Préparation...",
   },
+  formulaires: {
+    chargement: "Chargement...",
+    enregistrement: "Enregistrement...",
+    enregistrer: "Enregistrer",
+    voirLesOffres: "Voir les offres",
+    nom: "Nom",
+    nomObligatoire: "Le nom est obligatoire",
+    telephone: "Téléphone",
+    whatsapp: "WhatsApp",
+    aideWhatsapp: "Laissez vide si c'est le même numéro que le téléphone.",
+    notes: "Notes",
+    client: "Client",
+    choisirClient: "Choisir un client",
+    aucunClient: "Aucun client à qui rattacher la commande",
+    aucunClientTexte:
+      "Une commande appartient toujours à un client : c'est sa fiche qui porte les mesures.",
+    creerUnClient: "Créer un client",
+    modele: "Modèle",
+    autreModele: "Autre…",
+    preciserModele: "Préciser le modèle",
+    exempleModele: "Boubou brodé, tenue de mariée...",
+    photoModele: "Photo modèle",
+    photoTissu: "Photo tissu",
+    prixTotal: "Prix total (FCFA)",
+    acompteVerse: "Acompte versé",
+    acompteRecuEn: "Acompte reçu en",
+    dateEssayage: "Date d'essayage",
+    dateLivraison: "Date de livraison",
+    enregistrerCommande: "Enregistrer la commande",
+    libelleMesure: "Libellé",
+    aideLibelleMesure:
+      "Pour retrouver ces mesures plus tard : « Boubou », « Costume »…",
+    mesuresDefaut: "Mesures",
+    mesuresStandard: "Mesures standard",
+    aideCentimetres:
+      "Toutes les valeurs en centimètres. Laissez vide ce que vous ne prenez pas.",
+    champPersonnalise: "Champ personnalisé",
+    aideChampPersonnalise:
+      "Pour une mesure propre à votre pratique. Les deux cases doivent être remplies pour être enregistrées.",
+    exempleNomMesure: "Tour de cuisse",
+    valeur: "Valeur",
+    sansNom: "Sans nom",
+    nomEnAttente: (nom) => `${nom} (en attente)`,
+  },
   clientsEcran: {
     aucun: "Aucun client",
     aucunTexte:
@@ -440,15 +538,6 @@ const FR: Traductions = {
     aucuneCommande: "Aucune commande pour ce client.",
     enAttenteEnvoi: "En attente d'envoi",
     chargement: "Chargement de la fiche",
-    champs: {
-      poitrine: "Poitrine",
-      taille: "Taille",
-      hanches: "Hanches",
-      longueur_bras: "Longueur bras",
-      longueur_jambe: "Longueur jambe",
-      col: "Col",
-      epaule: "Épaule",
-    },
   },
 };
 
@@ -507,6 +596,15 @@ const EN: Traductions = {
   monAtelier: "My workshop",
   clientInconnu: "Unknown client",
   sansModele: "No model",
+  mesuresChamps: {
+    poitrine: "Chest",
+    taille: "Waist",
+    hanches: "Hips",
+    longueur_bras: "Arm length",
+    longueur_jambe: "Leg length",
+    col: "Neck",
+    epaule: "Shoulder",
+  },
   reste: (montant) => `${montant} left`,
   solde: "paid",
   annuler: "Undo",
@@ -632,6 +730,50 @@ const EN: Traductions = {
     partagerRecu: "Share the receipt",
     preparationRecu: "Preparing...",
   },
+  formulaires: {
+    chargement: "Loading...",
+    enregistrement: "Saving...",
+    enregistrer: "Save",
+    voirLesOffres: "See the plans",
+    nom: "Name",
+    nomObligatoire: "The name is required",
+    telephone: "Phone",
+    whatsapp: "WhatsApp",
+    aideWhatsapp: "Leave empty if it is the same as the phone number.",
+    notes: "Notes",
+    client: "Client",
+    choisirClient: "Choose a client",
+    aucunClient: "No client to attach the order to",
+    aucunClientTexte:
+      "An order always belongs to a client: their file is what holds the measurements.",
+    creerUnClient: "Create a client",
+    modele: "Model",
+    autreModele: "Other…",
+    preciserModele: "Describe the model",
+    exempleModele: "Embroidered boubou, wedding outfit...",
+    photoModele: "Model photo",
+    photoTissu: "Fabric photo",
+    prixTotal: "Total price (FCFA)",
+    acompteVerse: "Deposit paid",
+    acompteRecuEn: "Deposit received in",
+    dateEssayage: "Fitting date",
+    dateLivraison: "Delivery date",
+    enregistrerCommande: "Save the order",
+    libelleMesure: "Label",
+    aideLibelleMesure:
+      "To find these measurements later: “Boubou”, “Suit”…",
+    mesuresDefaut: "Measurements",
+    mesuresStandard: "Standard measurements",
+    aideCentimetres:
+      "All values in centimetres. Leave blank whatever you do not take.",
+    champPersonnalise: "Custom field",
+    aideChampPersonnalise:
+      "For a measurement of your own. Both boxes must be filled to be saved.",
+    exempleNomMesure: "Thigh",
+    valeur: "Value",
+    sansNom: "No name",
+    nomEnAttente: (nom) => `${nom} (pending)`,
+  },
   clientsEcran: {
     aucun: "No clients yet",
     aucunTexte:
@@ -661,15 +803,6 @@ const EN: Traductions = {
     aucuneCommande: "No order for this client yet.",
     enAttenteEnvoi: "Waiting to be sent",
     chargement: "Loading the client file",
-    champs: {
-      poitrine: "Chest",
-      taille: "Waist",
-      hanches: "Hips",
-      longueur_bras: "Arm length",
-      longueur_jambe: "Leg length",
-      col: "Neck",
-      epaule: "Shoulder",
-    },
   },
 };
 

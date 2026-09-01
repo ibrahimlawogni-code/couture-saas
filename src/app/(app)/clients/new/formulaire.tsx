@@ -1,5 +1,6 @@
 "use client";
 
+import { useTraductions } from "@/lib/offline/use-traductions";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -11,6 +12,7 @@ import { Champ, ZoneTexte } from "@/ui/champ";
 import { Message } from "@/ui/message";
 
 export function FormulaireClient({ atelierId }: { atelierId: string }) {
+  const mots = useTraductions();
   const router = useRouter();
   const pret = useHydratation();
   const [envoi, setEnvoi] = useState(false);
@@ -33,7 +35,7 @@ export function FormulaireClient({ atelierId }: { atelierId: string }) {
     const nom = String(formulaire.get("nom") ?? "").trim();
 
     if (!nom) {
-      setFauteNom("Le nom est obligatoire");
+      setFauteNom(mots.formulaires.nomObligatoire);
       return;
     }
 
@@ -75,7 +77,7 @@ export function FormulaireClient({ atelierId }: { atelierId: string }) {
       {erreur &&
         (limite ? (
           <Message ton="attention" titre={erreur}>
-            <Link href="/#tarifs">Voir les offres</Link>
+            <Link href="/#tarifs">{mots.formulaires.voirLesOffres}</Link>
           </Message>
         ) : (
           <Message ton="probleme">{erreur}</Message>
@@ -85,7 +87,7 @@ export function FormulaireClient({ atelierId }: { atelierId: string }) {
         id="nom"
         name="nom"
         type="text"
-        libelle="Nom"
+        libelle={mots.formulaires.nom}
         required
         autoComplete="name"
         erreur={fauteNom}
@@ -94,7 +96,7 @@ export function FormulaireClient({ atelierId }: { atelierId: string }) {
         id="telephone"
         name="telephone"
         type="tel"
-        libelle="Téléphone"
+        libelle={mots.formulaires.telephone}
         inputMode="tel"
         autoComplete="tel"
       />
@@ -102,11 +104,11 @@ export function FormulaireClient({ atelierId }: { atelierId: string }) {
         id="whatsapp"
         name="whatsapp"
         type="tel"
-        libelle="WhatsApp"
-        aide="Laissez vide si c'est le même numéro que le téléphone."
+        libelle={mots.formulaires.whatsapp}
+        aide={mots.formulaires.aideWhatsapp}
         inputMode="tel"
       />
-      <ZoneTexte id="notes" name="notes" libelle="Notes" rows={3} />
+      <ZoneTexte id="notes" name="notes" libelle={mots.formulaires.notes} rows={3} />
 
       <Bouton
         type="submit"
@@ -114,7 +116,11 @@ export function FormulaireClient({ atelierId }: { atelierId: string }) {
         pleineLargeur
         classe="mt-2 min-h-12"
       >
-        {!pret ? "Chargement..." : envoi ? "Enregistrement..." : "Enregistrer"}
+        {!pret
+          ? mots.formulaires.chargement
+          : envoi
+            ? mots.formulaires.enregistrement
+            : mots.formulaires.enregistrer}
       </Bouton>
     </form>
   );

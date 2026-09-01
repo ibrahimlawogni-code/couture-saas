@@ -50,7 +50,9 @@ export function FormulaireCommande({
     .filter((operation) => operation.table === "clients")
     .map((operation) => ({
       id: String(operation.donnees.id),
-      nom: `${String(operation.donnees.nom ?? "Sans nom")} (en attente)`,
+      nom: mots.formulaires.nomEnAttente(
+        String(operation.donnees.nom ?? mots.formulaires.sansNom)
+      ),
     }));
 
   const tousLesClients = [...clients, ...clientsEnAttente];
@@ -165,8 +167,8 @@ export function FormulaireCommande({
       <EtatVide
         classe="mt-6"
         icone={Users}
-        titre="Aucun client à qui rattacher la commande"
-        texte="Une commande appartient toujours à un client : c'est sa fiche qui porte les mesures."
+        titre={mots.formulaires.aucunClient}
+        texte={mots.formulaires.aucunClientTexte}
         action={<LienBouton href="/clients/new">Créer un client</LienBouton>}
       />
     );
@@ -177,7 +179,7 @@ export function FormulaireCommande({
       {erreur &&
         (limite ? (
           <Message ton="attention" titre={erreur}>
-            <Link href="/#tarifs">Voir les offres</Link>
+            <Link href="/#tarifs">{mots.formulaires.voirLesOffres}</Link>
           </Message>
         ) : (
           <Message ton="probleme">{erreur}</Message>
@@ -186,12 +188,12 @@ export function FormulaireCommande({
       <Selecteur
         id="client_id"
         name="client_id"
-        libelle="Client"
+        libelle={mots.formulaires.client}
         required
         defaultValue={clientPreselectionne ?? ""}
       >
         <option value="" disabled>
-          Choisir un client
+          {mots.formulaires.choisirClient}
         </option>
         {tousLesClients.map((client) => (
           <option key={client.id} value={client.id}>
@@ -213,17 +215,17 @@ export function FormulaireCommande({
       <Selecteur
         id="nom_modele"
         name="nom_modele"
-        libelle="Modèle"
+        libelle={mots.formulaires.modele}
         value={modele}
         onChange={(evenement) => setModele(evenement.target.value)}
       >
-        <option value="">Sans modèle</option>
+        <option value="">{mots.sansModele}</option>
         {MODELES.map((nom) => (
           <option key={nom} value={nom}>
             {nom}
           </option>
         ))}
-        <option value={MODELE_AUTRE}>Autre…</option>
+        <option value={MODELE_AUTRE}>{mots.formulaires.autreModele}</option>
       </Selecteur>
 
       {modele === MODELE_AUTRE && (
@@ -231,16 +233,16 @@ export function FormulaireCommande({
           id="nom_modele_autre"
           name="nom_modele_autre"
           type="text"
-          libelle="Préciser le modèle"
-          placeholder="Boubou brodé, tenue de mariée..."
+          libelle={mots.formulaires.preciserModele}
+          placeholder={mots.formulaires.exempleModele}
           autoFocus
           required
         />
       )}
 
       <div className="grid grid-cols-2 gap-3">
-        <ChampPhoto id="photo_modele" libelle="Photo modèle" />
-        <ChampPhoto id="photo_tissu" libelle="Photo tissu" />
+        <ChampPhoto id="photo_modele" libelle={mots.formulaires.photoModele} />
+        <ChampPhoto id="photo_tissu" libelle={mots.formulaires.photoTissu} />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -248,7 +250,7 @@ export function FormulaireCommande({
           id="prix_total"
           name="prix_total"
           type="number"
-          libelle="Prix total (FCFA)"
+          libelle={mots.formulaires.prixTotal}
           min="0"
           step="1"
           inputMode="numeric"
@@ -258,7 +260,7 @@ export function FormulaireCommande({
           id="acompte"
           name="acompte"
           type="number"
-          libelle="Acompte versé"
+          libelle={mots.formulaires.acompteVerse}
           min="0"
           step="1"
           inputMode="numeric"
@@ -278,7 +280,7 @@ export function FormulaireCommande({
           nom="methode"
           valeur={methode}
           onChange={setMethode}
-          libelle="Acompte reçu en"
+          libelle={mots.formulaires.acompteRecuEn}
         />
       )}
 
@@ -287,13 +289,13 @@ export function FormulaireCommande({
           id="date_essayage"
           name="date_essayage"
           type="date"
-          libelle="Date d'essayage"
+          libelle={mots.formulaires.dateEssayage}
         />
         <Champ
           id="date_livraison"
           name="date_livraison"
           type="date"
-          libelle="Date de livraison"
+          libelle={mots.formulaires.dateLivraison}
         />
       </div>
 
@@ -304,10 +306,10 @@ export function FormulaireCommande({
         classe="mt-2 min-h-12"
       >
         {!pret
-          ? "Chargement..."
+          ? mots.formulaires.chargement
           : envoi
-            ? "Enregistrement..."
-            : "Enregistrer la commande"}
+            ? mots.formulaires.enregistrement
+            : mots.formulaires.enregistrerCommande}
       </Bouton>
     </form>
   );

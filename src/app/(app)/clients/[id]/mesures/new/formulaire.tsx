@@ -1,5 +1,6 @@
 "use client";
 
+import { useTraductions } from "@/lib/offline/use-traductions";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { enregistrer } from "@/lib/offline/enregistrer";
@@ -13,15 +14,21 @@ import { Champ } from "@/ui/champ";
  * la ligne, pour repeter sept fois la meme chose ; elle est dite une fois,
  * au-dessus de la grille.
  */
-const CHAMPS_STANDARDS: { cle: string; label: string }[] = [
-  { cle: "poitrine", label: "Poitrine" },
-  { cle: "taille", label: "Taille" },
-  { cle: "hanches", label: "Hanches" },
-  { cle: "longueur_bras", label: "Longueur bras" },
-  { cle: "longueur_jambe", label: "Longueur jambe" },
-  { cle: "col", label: "Col" },
-  { cle: "epaule", label: "Épaule" },
-];
+/*
+ * Les cles seulement : les libelles vivent dans le dictionnaire, ou la
+ * fiche client les lit aussi. Deux endroits qui nomment la meme mesure
+ * finiraient par la nommer differemment.
+ */
+const CHAMPS_STANDARDS = [
+  "poitrine",
+  "taille",
+  "hanches",
+  "longueur_bras",
+  "longueur_jambe",
+  "col",
+  "epaule",
+] as const;
+
 
 export function FormulaireMesure({
   clientId,
@@ -30,6 +37,7 @@ export function FormulaireMesure({
   clientId: string;
   utilisateurId: string;
 }) {
+  const mots = useTraductions();
   const router = useRouter();
   const pret = useHydratation();
   const [envoi, setEnvoi] = useState(false);
@@ -41,10 +49,10 @@ export function FormulaireMesure({
     const formulaire = new FormData(evenement.currentTarget);
     const valeurs: Record<string, number | string> = {};
 
-    for (const champ of CHAMPS_STANDARDS) {
-      const valeur = formulaire.get(champ.cle);
+    for (const cle of CHAMPS_STANDARDS) {
+      const valeur = formulaire.get(cle);
       if (valeur && String(valeur).trim() !== "") {
-        valeurs[champ.cle] = Number(valeur);
+        valeurs[cle] = Number(valeur);
       }
     }
 
@@ -58,7 +66,9 @@ export function FormulaireMesure({
       id: crypto.randomUUID(),
       created_at: new Date().toISOString(),
       client_id: clientId,
-      libelle: String(formulaire.get("libelle") ?? "Mesures").trim() || "Mesures",
+      libelle:
+        String(formulaire.get("libelle") ?? "").trim() ||
+        mots.formulaires.mesuresDefaut,
       valeurs,
       pris_par: utilisateurId,
     });
@@ -73,28 +83,27 @@ export function FormulaireMesure({
         id="libelle"
         name="libelle"
         type="text"
-        libelle="Libellé"
-        aide="Pour retrouver ces mesures plus tard : « Boubou », « Costume »…"
-        defaultValue="Mesures"
+        libelle={mots.formulaires.libelleMesure}
+        aide={mots.formulaires.aideLibelleMesure}
+        defaultValue={mots.formulaires.mesuresDefaut}
       />
 
       <fieldset>
         <legend className="text-sm font-medium text-encre">
-          Mesures standard
+          {mots.formulaires.mesuresStandard}
         </legend>
         <p className="mt-1 text-xs text-gris">
-          Toutes les valeurs en centimètres. Laissez vide ce que vous ne prenez
-          pas.
+          {mots.formulaires.aideCentimetres}
         </p>
 
         <div className="mt-3 grid grid-cols-2 gap-3">
-          {CHAMPS_STANDARDS.map((champ) => (
+          {CHAMPS_STANDARDS.map((cle) => (
             <Champ
-              key={champ.cle}
-              id={champ.cle}
-              name={champ.cle}
+              key={cle}
+              id={cle}
+              name={cle}
               type="number"
-              libelle={champ.label}
+              libelle={mots.mesuresChamps[cle]}
               step="0.5"
               min="0"
               inputMode="decimal"
@@ -110,11 +119,10 @@ export function FormulaireMesure({
        */}
       <fieldset className="rounded-carte border border-dashed border-bordure p-4">
         <legend className="px-1 text-sm font-medium text-encre">
-          Champ personnalisé
+          {mots.formulaires.champPersonnalise}
         </legend>
         <p className="text-xs text-gris">
-          Pour une mesure propre à votre pratique. Les deux cases doivent être
-          remplies pour être enregistrées.
+          {mots.formulaires.aideChampPersonnalise}
         </p>
 
         <div className="mt-3 grid grid-cols-2 gap-3">
@@ -122,14 +130,14 @@ export function FormulaireMesure({
             id="champ_custom_nom"
             name="champ_custom_nom"
             type="text"
-            libelle="Nom"
-            placeholder="Tour de cuisse"
+            libelle={mots.formulaires.nom}
+            placeholder={mots.formulaires.exempleNomMesure}
           />
           <Champ
             id="champ_custom_valeur"
             name="champ_custom_valeur"
             type="text"
-            libelle="Valeur"
+            libelle={mots.formulaires.valeur}
             placeholder="58"
           />
         </div>
@@ -141,7 +149,11 @@ export function FormulaireMesure({
         pleineLargeur
         classe="mt-2 min-h-12"
       >
-        {!pret ? "Chargement..." : envoi ? "Enregistrement..." : "Enregistrer"}
+        {!pret
+          ? mots.formulaires.chargement
+          : envoi
+            ? mots.formulaires.enregistrement
+            : mots.formulaires.enregistrer}
       </Bouton>
     </form>
   );
