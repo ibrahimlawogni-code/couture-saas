@@ -139,6 +139,45 @@ export type Traductions = {
     passeA: (statut: string) => string;
     chargement: string;
   };
+  /** Les deux ecrans clients : le carnet et la fiche. */
+  clientsEcran: {
+    aucun: string;
+    aucunTexte: string;
+    creerPremier: string;
+    chercher: string;
+    chercherAria: string;
+    effacer: string;
+    aucunResultat: string;
+    trouves: (n: number) => string;
+    aucuneCorrespondance: (terme: string) => string;
+    voirTous: string;
+    pasDeTelephone: string;
+    introuvable: string;
+    introuvableTexte: string;
+    doit: string;
+    enCoursVignette: string;
+    clientDepuis: string;
+    boutonMesure: string;
+    boutonCommande: string;
+    dernieresMesures: string;
+    aucuneMesure: string;
+    historiqueMesures: string;
+    commandes: string;
+    aucuneCommande: string;
+    enAttenteEnvoi: string;
+    chargement: string;
+    /* Les mesures : ce sont des parties du corps, pas du jargon. */
+    champs: Record<
+      | "poitrine"
+      | "taille"
+      | "hanches"
+      | "longueur_bras"
+      | "longueur_jambe"
+      | "col"
+      | "epaule",
+      string
+    >;
+  };
 };
 
 const FR: Traductions = {
@@ -256,6 +295,45 @@ const FR: Traductions = {
     sansDate: "Sans date",
     passeA: (statut) => `Passé à ${statut} · envoyé`,
     chargement: "Chargement des commandes",
+  },
+  clientsEcran: {
+    aucun: "Aucun client",
+    aucunTexte:
+      "Créez une fiche client pour enregistrer ses mesures et lui ouvrir des commandes.",
+    creerPremier: "Créer le premier client",
+    chercher: "Chercher un nom ou un numéro...",
+    chercherAria: "Chercher un client",
+    effacer: "Effacer la recherche",
+    aucunResultat: "Aucun résultat",
+    trouves: (n) => `${n} client${n > 1 ? "s" : ""} trouvé${n > 1 ? "s" : ""}`,
+    aucuneCorrespondance: (terme) => `Aucun client ne correspond à « ${terme} ».`,
+    voirTous: "Voir tous les clients",
+    pasDeTelephone: "Pas de téléphone",
+    introuvable: "Client introuvable",
+    introuvableTexte:
+      "Cette fiche n'est pas dans les données enregistrées sur cet appareil. Si elle a été créée ailleurs, elle apparaîtra au prochain passage en ligne.",
+    doit: "Doit",
+    enCoursVignette: "En cours",
+    clientDepuis: "Client depuis",
+    boutonMesure: "Mesure",
+    boutonCommande: "Commande",
+    dernieresMesures: "Dernières mesures",
+    aucuneMesure:
+      "Aucune mesure enregistrée. Prenez-les une fois, elles serviront à toutes les commandes suivantes.",
+    historiqueMesures: "Historique des mesures",
+    commandes: "Commandes",
+    aucuneCommande: "Aucune commande pour ce client.",
+    enAttenteEnvoi: "En attente d'envoi",
+    chargement: "Chargement de la fiche",
+    champs: {
+      poitrine: "Poitrine",
+      taille: "Taille",
+      hanches: "Hanches",
+      longueur_bras: "Longueur bras",
+      longueur_jambe: "Longueur jambe",
+      col: "Col",
+      epaule: "Épaule",
+    },
   },
 };
 
@@ -380,6 +458,45 @@ const EN: Traductions = {
     sansDate: "No date",
     passeA: (statut) => `Moved to ${statut} · sent`,
     chargement: "Loading orders",
+  },
+  clientsEcran: {
+    aucun: "No clients yet",
+    aucunTexte:
+      "Create a client file to record their measurements and open orders for them.",
+    creerPremier: "Create the first client",
+    chercher: "Search a name or a number...",
+    chercherAria: "Search a client",
+    effacer: "Clear the search",
+    aucunResultat: "No result",
+    trouves: (n) => `${n} client${n === 1 ? "" : "s"} found`,
+    aucuneCorrespondance: (terme) => `No client matches “${terme}”.`,
+    voirTous: "See all clients",
+    pasDeTelephone: "No phone number",
+    introuvable: "Client not found",
+    introuvableTexte:
+      "This file is not among the data saved on this device. If it was created elsewhere, it will appear the next time you are online.",
+    doit: "Owes",
+    enCoursVignette: "In progress",
+    clientDepuis: "Client since",
+    boutonMesure: "Measurement",
+    boutonCommande: "Order",
+    dernieresMesures: "Latest measurements",
+    aucuneMesure:
+      "No measurements yet. Take them once and they will serve every order that follows.",
+    historiqueMesures: "Measurement history",
+    commandes: "Orders",
+    aucuneCommande: "No order for this client yet.",
+    enAttenteEnvoi: "Waiting to be sent",
+    chargement: "Loading the client file",
+    champs: {
+      poitrine: "Chest",
+      taille: "Waist",
+      hanches: "Hips",
+      longueur_bras: "Arm length",
+      longueur_jambe: "Leg length",
+      col: "Neck",
+      epaule: "Shoulder",
+    },
   },
 };
 

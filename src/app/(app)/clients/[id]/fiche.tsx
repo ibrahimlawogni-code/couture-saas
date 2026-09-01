@@ -15,6 +15,7 @@ import {
   versesParCommande,
   type Statut,
 } from "@/lib/commandes";
+import { formateurNombre, type Traductions } from "@/lib/i18n";
 import { useDonnees } from "@/lib/offline/use-donnees";
 import { useTraductions } from "@/lib/offline/use-traductions";
 import { normaliserNumero } from "@/lib/whatsapp";
@@ -25,18 +26,6 @@ import { EnTeteSection } from "@/ui/page";
 import { Squelette, SqueletteLigne } from "@/ui/squelette";
 import { Vignette } from "@/ui/vignette";
 
-const nombre = new Intl.NumberFormat("fr-FR");
-
-const CHAMPS_LABELS: Record<string, string> = {
-  poitrine: "Poitrine",
-  taille: "Taille",
-  hanches: "Hanches",
-  longueur_bras: "Longueur bras",
-  longueur_jambe: "Longueur jambe",
-  col: "Col",
-  epaule: "Épaule",
-};
-
 export function FicheClient() {
   // Lu dans l'adresse du navigateur : hors ligne, la page vient d'un cache
   // partage entre toutes les fiches, et les donnees de navigation de Next
@@ -45,6 +34,7 @@ export function FicheClient() {
 
   const { clients, mesures, commandes, paiements, chargee } = useDonnees();
   const mots = useTraductions();
+  const nombre = formateurNombre(mots.locale);
 
   const client = clients.find((candidat) => candidat.id === clientId);
 
@@ -101,16 +91,16 @@ export function FicheClient() {
     return { restes, du, enCours };
   }, [commandesClient, paiements]);
 
-  if (!chargee) return <SqueletteFiche />;
+  if (!chargee) return <SqueletteFiche mots={mots} />;
 
   if (!client) {
     return (
       <Carte classe="mt-6 p-5">
-        <p className="text-sm font-medium text-encre">Client introuvable</p>
+        <p className="text-sm font-medium text-encre">
+          {mots.clientsEcran.introuvable}
+        </p>
         <p className="mt-1 text-sm text-gris">
-          Cette fiche n&apos;est pas dans les données enregistrées sur cet
-          appareil. Si elle a été créée ailleurs, elle apparaîtra au prochain
-          passage en ligne.
+          {mots.clientsEcran.introuvableTexte}
         </p>
       </Carte>
     );
@@ -143,7 +133,7 @@ export function FicheClient() {
               <span className="chiffres">{client.telephone}</span>
             </a>
           ) : (
-            <span className="text-sm text-gris">Pas de téléphone</span>
+            <span className="text-sm text-gris">{mots.clientsEcran.pasDeTelephone}</span>
           )}
 
           {whatsapp && (
@@ -175,15 +165,18 @@ export function FicheClient() {
        */}
       <div className="mt-5 grid grid-cols-3 gap-2">
         <Vignette
-          libelle="Doit"
+          libelle={mots.clientsEcran.doit}
           valeur={suivi.du > 0 ? nombre.format(suivi.du) : "0"}
           unite="FCFA"
           alerte={suivi.du > 0}
         />
-        <Vignette libelle="En cours" valeur={String(suivi.enCours)} />
         <Vignette
-          libelle="Client depuis"
-          valeur={new Date(client.created_at).toLocaleDateString("fr-FR", {
+          libelle={mots.clientsEcran.enCoursVignette}
+          valeur={String(suivi.enCours)}
+        />
+        <Vignette
+          libelle={mots.clientsEcran.clientDepuis}
+          valeur={new Date(client.created_at).toLocaleDateString(mots.locale, {
             month: "short",
             year: "2-digit",
           })}
@@ -198,25 +191,25 @@ export function FicheClient() {
           pleineLargeur
         >
           <Ruler size={15} />
-          Mesure
+          {mots.clientsEcran.boutonMesure}
         </LienBouton>
         <LienBouton href={`/commandes/new?client=${client.id}`} pleineLargeur>
           <Plus size={15} weight="bold" />
-          Commande
+          {mots.clientsEcran.boutonCommande}
         </LienBouton>
       </div>
 
       <section className="mt-6">
-        <EnTeteSection titre="Dernières mesures" />
+        <EnTeteSection titre={mots.clientsEcran.dernieresMesures} />
 
         {derniere ? (
           <Carte classe="mt-2 p-4">
             <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gris">
-              <span>{new Date(derniere.created_at).toLocaleDateString("fr-FR")}</span>
+              <span>{new Date(derniere.created_at).toLocaleDateString(mots.locale)}</span>
               <span aria-hidden>·</span>
               <span className="font-medium text-encre">{derniere.libelle}</span>
               {derniere.enAttente && (
-                <Etiquette ton="systeme">En attente d&apos;envoi</Etiquette>
+                <Etiquette ton="systeme">{mots.clientsEcran.enAttenteEnvoi}</Etiquette>
               )}
             </p>
 
@@ -238,7 +231,7 @@ export function FicheClient() {
                   className="flex items-baseline justify-between gap-2 border-b border-bordure py-2"
                 >
                   <dt className="truncate text-xs text-gris">
-                    {CHAMPS_LABELS[cle] ?? cle}
+                    {mots.clientsEcran.champs[cle as keyof typeof mots.clientsEcran.champs] ?? cle}
                   </dt>
                   {/*
                    * La mesure pesait autant que son libelle. C'est
@@ -255,8 +248,7 @@ export function FicheClient() {
         ) : (
           <Carte classe="mt-2 px-4 py-4">
             <p className="text-sm text-gris">
-              Aucune mesure enregistrée. Prenez-les une fois, elles serviront à
-              toutes les commandes suivantes.
+              {mots.clientsEcran.aucuneMesure}
             </p>
           </Carte>
         )}
@@ -264,7 +256,7 @@ export function FicheClient() {
 
       {historique.length > 0 && (
         <section className="mt-6">
-          <EnTeteSection titre="Historique des mesures" />
+          <EnTeteSection titre={mots.clientsEcran.historiqueMesures} />
           <ul className="mt-2 flex flex-col gap-2">
             {historique.map((mesure) => (
               <li key={mesure.id}>
@@ -273,7 +265,7 @@ export function FicheClient() {
                     {mesure.libelle}
                   </span>
                   <span className="chiffres shrink-0 text-xs text-gris">
-                    {new Date(mesure.created_at).toLocaleDateString("fr-FR")}
+                    {new Date(mesure.created_at).toLocaleDateString(mots.locale)}
                   </span>
                 </Carte>
               </li>
@@ -283,7 +275,7 @@ export function FicheClient() {
       )}
 
       <section className="mt-6">
-        <EnTeteSection titre="Commandes" />
+        <EnTeteSection titre={mots.clientsEcran.commandes} />
 
         {commandesClient.length > 0 ? (
           <ul className="mt-2 flex flex-col gap-2">
@@ -296,14 +288,14 @@ export function FicheClient() {
                 >
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-medium text-encre">
-                      {commande.nom_modele ?? "Sans modèle"}
+                      {commande.nom_modele ?? mots.sansModele}
                     </span>
                     <span className="block truncate text-xs text-gris">
                       {commande.enAttente
-                        ? "En attente d'envoi"
+                        ? mots.clientsEcran.enAttenteEnvoi
                         : mots.statuts[commande.statut as Statut]}
                       {commande.date_livraison
-                        ? ` · ${new Date(commande.date_livraison).toLocaleDateString("fr-FR")}`
+                        ? ` · ${new Date(commande.date_livraison).toLocaleDateString(mots.locale)}`
                         : ""}
                     </span>
                   </span>
@@ -320,7 +312,7 @@ export function FicheClient() {
                           reste > 0 ? "text-rouge" : "text-vert"
                         }`}
                       >
-                        {reste > 0 ? formaterMontant(reste) : "soldé"}
+                        {reste > 0 ? formaterMontant(reste, mots.locale) : mots.solde}
                       </span>
                     );
                   })()}
@@ -335,7 +327,7 @@ export function FicheClient() {
               className="shrink-0 text-gris"
               aria-hidden
             />
-            <p className="text-sm text-gris">Aucune commande pour ce client.</p>
+            <p className="text-sm text-gris">{mots.clientsEcran.aucuneCommande}</p>
           </Carte>
         )}
       </section>
@@ -343,9 +335,9 @@ export function FicheClient() {
   );
 }
 
-function SqueletteFiche() {
+function SqueletteFiche({ mots }: { mots: Traductions }) {
   return (
-    <div role="status" aria-label="Chargement de la fiche">
+    <div role="status" aria-label={mots.clientsEcran.chargement}>
       <Squelette classe="mt-2 h-7 w-2/5" />
       <Squelette rayon="rond" classe="mt-3 h-9 w-40" />
 

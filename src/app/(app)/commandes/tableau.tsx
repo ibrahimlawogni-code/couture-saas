@@ -250,7 +250,7 @@ export function TableauCommandes() {
                       }`}
                     >
                       {commande.reste > 0
-                        ? mots.reste(formaterMontant(commande.reste))
+                        ? mots.reste(formaterMontant(commande.reste, mots.locale))
                         : mots.solde}
                     </span>
                   ) : null;

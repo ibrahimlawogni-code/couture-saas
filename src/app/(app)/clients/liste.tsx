@@ -8,6 +8,7 @@ import {
 } from "@phosphor-icons/react/dist/ssr";
 import { formaterMontant, resteAPayer, versesParCommande } from "@/lib/commandes";
 import { useDonnees } from "@/lib/offline/use-donnees";
+import { useTraductions } from "@/lib/offline/use-traductions";
 import { LienBouton } from "@/ui/bouton";
 import { CarteLien } from "@/ui/carte";
 import { Etiquette } from "@/ui/etiquette";
@@ -16,6 +17,7 @@ import { SqueletteListe } from "@/ui/squelette";
 
 export function ListeClients() {
   const { clients, commandes, paiements, chargee } = useDonnees();
+  const mots = useTraductions();
   const [recherche, setRecherche] = useState("");
 
   /*
@@ -73,9 +75,13 @@ export function ListeClients() {
       <EtatVide
         classe="mt-6"
         icone={Users}
-        titre="Aucun client"
-        texte="Créez une fiche client pour enregistrer ses mesures et lui ouvrir des commandes."
-        action={<LienBouton href="/clients/new">Créer le premier client</LienBouton>}
+        titre={mots.clientsEcran.aucun}
+        texte={mots.clientsEcran.aucunTexte}
+        action={
+          <LienBouton href="/clients/new">
+            {mots.clientsEcran.creerPremier}
+          </LienBouton>
+        }
       />
     );
   }
@@ -92,8 +98,8 @@ export function ListeClients() {
           type="search"
           value={recherche}
           onChange={(evenement) => setRecherche(evenement.target.value)}
-          placeholder="Chercher un nom ou un numéro..."
-          aria-label="Chercher un client"
+          placeholder={mots.clientsEcran.chercher}
+          aria-label={mots.clientsEcran.chercherAria}
           /*
            * appearance-none retire la croix native de Safari et Chrome,
            * qui se posait par-dessus la notre et donnait deux boutons
@@ -105,7 +111,7 @@ export function ListeClients() {
           <button
             type="button"
             onClick={() => setRecherche("")}
-            aria-label="Effacer la recherche"
+            aria-label={mots.clientsEcran.effacer}
             className="absolute top-1/2 right-2 flex size-8 -translate-y-1/2 items-center justify-center rounded-full text-gris transition-colors hover:bg-papier hover:text-encre"
           >
             <X size={14} weight="bold" />
@@ -116,10 +122,8 @@ export function ListeClients() {
       {recherche && (
         <p aria-live="polite" className="mt-3 text-sm text-gris">
           {resultats.length === 0
-            ? "Aucun résultat"
-            : `${resultats.length} client${resultats.length > 1 ? "s" : ""} trouvé${
-                resultats.length > 1 ? "s" : ""
-              }`}
+            ? mots.clientsEcran.aucunResultat
+            : mots.clientsEcran.trouves(resultats.length)}
         </p>
       )}
 
@@ -141,14 +145,14 @@ export function ListeClients() {
                   </span>
 
                   {client.enEchec ? (
-                    <Etiquette ton="probleme">Refusé</Etiquette>
+                    <Etiquette ton="probleme">{mots.refuse}</Etiquette>
                   ) : client.enAttente ? (
-                    <Etiquette ton="systeme">En attente</Etiquette>
+                    <Etiquette ton="systeme">{mots.enAttente}</Etiquette>
                   ) : (
                     suivi &&
                     suivi.reste > 0 && (
                       <span className="chiffres shrink-0 text-sm font-semibold text-rouge">
-                        {formaterMontant(suivi.reste)}
+                        {formaterMontant(suivi.reste, mots.locale)}
                       </span>
                     )
                   )}
@@ -157,11 +161,11 @@ export function ListeClients() {
                 {!provisoire && (
                   <span className="mt-0.5 flex items-baseline justify-between gap-3 text-xs text-gris">
                     <span className="chiffres truncate">
-                      {client.telephone ?? "Pas de téléphone"}
+                      {client.telephone ?? mots.clientsEcran.pasDeTelephone}
                     </span>
                     {suivi && suivi.enCours > 0 && (
                       <span className="shrink-0">
-                        {suivi.enCours} en cours
+                        {mots.commandes.enCours(suivi.enCours)}
                       </span>
                     )}
                   </span>
@@ -180,13 +184,13 @@ export function ListeClients() {
        */}
       {resultats.length === 0 && (
         <p className="mt-8 text-center text-sm text-gris">
-          Aucun client ne correspond à «&nbsp;{recherche.trim()}&nbsp;».{" "}
+          {mots.clientsEcran.aucuneCorrespondance(recherche.trim())}{" "}
           <button
             type="button"
             onClick={() => setRecherche("")}
             className="font-medium text-vert underline underline-offset-2"
           >
-            Voir tous les clients
+            {mots.clientsEcran.voirTous}
           </button>
         </p>
       )}

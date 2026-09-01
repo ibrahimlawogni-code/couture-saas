@@ -160,23 +160,44 @@ export function groupeEcheance(
 }
 
 /*
- * Un seul formateur pour toute l'application.
+ * Un formateur par langue, garde en memoire.
  *
  * Il etait construit a chaque appel, ce qui coute environ cent fois plus
  * que le formatage lui-meme. Sur un Kanban de deux cents commandes, avec
  * le prix et le reste du sur chaque carte, cela faisait quatre cents
  * constructions par rendu - sur le telephone d'entree de gamme qui est la
- * cible du produit.
+ * cible du produit. Rendre le formatage dependant de la langue ne devait
+ * pas ressusciter ce probleme : la carte n'en garde qu'un par langue.
  */
-const NOMBRE = new Intl.NumberFormat("fr-FR");
+const NOMBRES = new Map<string, Intl.NumberFormat>();
 
-/** Le nombre seul, quand la devise est posee a cote en plus petit. */
-export function formaterNombre(montant: number) {
-  return NOMBRE.format(montant);
+const LOCALE_PAR_DEFAUT = "fr-FR";
+
+function formateur(locale: string) {
+  let trouve = NOMBRES.get(locale);
+  if (!trouve) {
+    trouve = new Intl.NumberFormat(locale);
+    NOMBRES.set(locale, trouve);
+  }
+  return trouve;
 }
 
-export function formaterMontant(montant: number) {
-  return `${formaterNombre(montant)} FCFA`;
+/** Le nombre seul, quand la devise est posee a cote en plus petit. */
+export function formaterNombre(montant: number, locale = LOCALE_PAR_DEFAUT) {
+  return formateur(locale).format(montant);
+}
+
+/*
+ * La locale est facultative, et c'est volontaire : les ecrans encore en
+ * francais continuent d'appeler sans elle pendant que la traduction avance.
+ * Un montant a groupement francais sous une interface anglaise se voyait a
+ * l'oeil - « 1,396,000 » a cote de « 166 000 » sur le meme ecran - et c'est
+ * exactement ce qu'un typage ne peut pas attraper.
+ *
+ * FCFA ne se traduit pas : c'est le nom de la monnaie, pas un mot.
+ */
+export function formaterMontant(montant: number, locale = LOCALE_PAR_DEFAUT) {
+  return `${formaterNombre(montant, locale)} FCFA`;
 }
 
 /*
