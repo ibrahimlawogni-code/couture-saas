@@ -1,7 +1,12 @@
+import { traduire } from "@/lib/i18n";
+import { langueVisiteur } from "@/lib/langue-visiteur";
+import { SelecteurLangue } from "../selecteur-langue";
 import Link from "next/link";
 import { renvoyerConfirmation } from "./actions";
 
-export default function RenvoyerConfirmationPage() {
+export default async function RenvoyerConfirmationPage() {
+  const langue = await langueVisiteur();
+  const mots = traduire(langue);
   return (
     <div className="flex flex-1 items-center justify-center bg-papier px-5 py-6">
       <div className="w-full max-w-xs">
@@ -10,10 +15,10 @@ export default function RenvoyerConfirmationPage() {
         </Link>
 
         <h1 className="mt-6 text-2xl font-semibold tracking-tight text-encre">
-          Renvoyer le lien
+          {mots.acces.renvoyerTitre}
         </h1>
         <p className="mt-1.5 text-sm text-gris">
-          Le lien de confirmation expire vite. Indiquez votre adresse et nous
+          {mots.acces.renvoyerTexte}
           vous en envoyons un nouveau.
         </p>
 
@@ -35,9 +40,13 @@ export default function RenvoyerConfirmationPage() {
             type="submit"
             className="mt-2 rounded-controle bg-vert px-4 py-3.5 text-base font-medium text-white transition-colors hover:bg-foret active:translate-y-px"
           >
-            Envoyer un nouveau lien
+            {mots.acces.envoyerNouveauLien}
           </button>
         </form>
+
+        <div className="mt-6">
+          <SelecteurLangue langue={langue} />
+        </div>
       </div>
     </div>
   );

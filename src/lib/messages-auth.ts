@@ -1,33 +1,31 @@
+import { traduire } from "./i18n";
+
 /**
  * Supabase renvoie ses erreurs en anglais et dans son propre vocabulaire.
  * Un tailleur n'a pas a lire "Error sending confirmation email" : il a
  * besoin de savoir ce qui s'est passe et quoi faire ensuite.
+ *
+ * Ce fichier garde les motifs qui reconnaissent chaque cas ; les phrases
+ * vivent dans le dictionnaire, ou elles existent en deux langues. Une
+ * expression reguliere ne se traduit pas - elle lit l'anglais de Supabase,
+ * qui ne change pas - mais la phrase qu'elle declenche, si.
  */
-const TRADUCTIONS: { motif: RegExp; message: string }[] = [
-  {
-    motif: /code_invitation_invalide/i,
-    message:
-      "Ce code d'invitation est invalide ou a expiré. Demandez-en un nouveau au propriétaire de l'atelier.",
-  },
-  {
-    motif: /atelier_complet/i,
-    message:
-      "Cet atelier a atteint son nombre maximum de comptes. Le propriétaire doit libérer une place ou changer de formule.",
-  },
+type CleErreur = keyof ReturnType<typeof traduire>["acces"]["erreurs"];
+
+const MOTIFS: { motif: RegExp; cle: CleErreur }[] = [
+  { motif: /code_invitation_invalide/i, cle: "code_invitation" },
+  { motif: /atelier_complet/i, cle: "atelier_complet" },
   {
     motif: /error sending confirmation email|error sending email/i,
-    message:
-      "L'email de confirmation n'a pas pu partir. Contactez-nous et nous activerons votre atelier à la main.",
+    cle: "envoi_email",
   },
   {
     motif: /email rate limit exceeded|over_email_send_rate_limit/i,
-    message:
-      "Trop de tentatives d'envoi. Patientez une heure, ou contactez-nous pour que nous activions votre atelier.",
+    cle: "trop_de_tentatives",
   },
   {
     motif: /user already registered|already been registered/i,
-    message:
-      "Un compte existe déjà avec cet email. Connectez-vous ou utilisez une autre adresse.",
+    cle: "deja_inscrit",
   },
   {
     /*
@@ -37,30 +35,23 @@ const TRADUCTIONS: { motif: RegExp; message: string }[] = [
      * mot de passe est faux alors qu'il est bon.
      */
     motif: /invalid login credentials|invalid_credentials/i,
-    message:
-      "Email ou mot de passe incorrect. Si vous venez de créer votre atelier, ouvrez d'abord le lien de confirmation reçu par email.",
+    cle: "identifiants",
   },
-  {
-    motif: /password should be at least/i,
-    message: "Le mot de passe doit contenir au moins 6 caractères.",
-  },
-  {
-    motif: /invalid format|email address.*invalid/i,
-    message: "Cette adresse email n'est pas valide.",
-  },
-  {
-    motif: /email not confirmed/i,
-    message:
-      "Votre adresse n'est pas encore confirmée. Ouvrez le lien reçu par email, ou contactez-nous.",
-  },
+  { motif: /password should be at least/i, cle: "mot_de_passe_court" },
+  { motif: /invalid format|email address.*invalid/i, cle: "email_invalide" },
+  { motif: /email not confirmed/i, cle: "email_non_confirme" },
 ];
 
-export function messageAuth(brut: string): string {
-  const trouve = TRADUCTIONS.find((t) => t.motif.test(brut));
-  return (
-    trouve?.message ??
-    "L'opération n'a pas abouti. Réessayez, et contactez-nous si cela persiste."
-  );
+/**
+ * Le message a montrer, dans la langue demandee.
+ *
+ * La langue est facultative : plusieurs actions serveur composent ce
+ * message avant de rediriger, et toutes n'ont pas encore de langue sous la
+ * main. Sans elle, le francais - qui est le comportement d'avant.
+ */
+export function messageAuth(brut: string, langue?: unknown): string {
+  const trouve = MOTIFS.find((entree) => entree.motif.test(brut));
+  return traduire(langue).acces.erreurs[trouve?.cle ?? "inconnue"];
 }
 
 /**
@@ -69,7 +60,8 @@ export function messageAuth(brut: string): string {
  * A tester sur l'erreur brute de Supabase, jamais sur le message traduit.
  * La page de connexion cherchait « confirmation » dans le texte francais,
  * qui dit « confirmée » : le lien de secours ne s'affichait donc jamais
- * pour le cas meme qui l'avait fait ecrire.
+ * pour le cas meme qui l'avait fait ecrire. Depuis que le message existe en
+ * deux langues, s'appuyer sur son texte serait doublement faux.
  *
  * Les identifiants invalides en font partie : Supabase repond la meme
  * chose pour un mot de passe faux et pour une adresse jamais confirmee.

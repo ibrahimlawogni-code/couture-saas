@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { langueVisiteur } from "@/lib/langue-visiteur";
 import { meriteRenvoiConfirmation, messageAuth } from "@/lib/messages-auth";
 
 export async function login(formData: FormData) {
@@ -18,7 +19,7 @@ export async function login(formData: FormData) {
      * « confirmation » dans le message traduit, qui dit « confirmée » :
      * le recours ne s'affichait donc jamais.
      */
-    const parametres = new URLSearchParams({ error: messageAuth(error.message) });
+    const parametres = new URLSearchParams({ error: messageAuth(error.message, await langueVisiteur()) });
     if (meriteRenvoiConfirmation(error.message)) {
       parametres.set("aide", "confirmation");
     }

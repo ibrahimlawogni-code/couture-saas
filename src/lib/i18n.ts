@@ -254,6 +254,37 @@ export type Traductions = {
     ouvertureGoogle: string;
     echecGoogle: string;
     ou: string;
+    motDePasseOublieTitre: string;
+    motDePasseOublieTexte: string;
+    envoyerLien: string;
+    retourConnexion: string;
+    renvoyerTitre: string;
+    renvoyerTexte: string;
+    envoyerNouveauLien: string;
+    choisirMotDePasse: string;
+    choisirMotDePasseTexte: string;
+    verifiezEmails: string;
+    verifiezEmailsTexte: string;
+    lienCourteDuree: string;
+    lienExpire: string;
+    /*
+     * Les erreurs d'authentification. Les motifs qui les reconnaissent
+     * restent dans messages-auth.ts : une expression reguliere ne se
+     * traduit pas, la phrase qu'elle declenche si.
+     */
+    erreurs: Record<
+      | "code_invitation"
+      | "atelier_complet"
+      | "envoi_email"
+      | "trop_de_tentatives"
+      | "deja_inscrit"
+      | "identifiants"
+      | "mot_de_passe_court"
+      | "email_invalide"
+      | "email_non_confirme"
+      | "inconnue",
+      string
+    >;
   };
   /** Les reglages : atelier, equipe, abonnement, compte. */
   reglagesEcran: {
@@ -598,6 +629,44 @@ const FR: Traductions = {
     echecGoogle:
       "La connexion avec Google n'a pas pu s'ouvrir. Réessayez, ou utilisez votre email et votre mot de passe.",
     ou: "ou",
+    motDePasseOublieTitre: "Mot de passe oublié",
+    motDePasseOublieTexte:
+      "Nous vous envoyons un lien pour en choisir un nouveau",
+    envoyerLien: "Envoyer le lien",
+    retourConnexion: "Retour à la connexion",
+    renvoyerTitre: "Renvoyer le lien",
+    renvoyerTexte:
+      "Le lien de confirmation expire vite. Indiquez votre adresse et nous vous en envoyons un nouveau.",
+    envoyerNouveauLien: "Envoyer un nouveau lien",
+    choisirMotDePasse: "Choisissez un mot de passe",
+    choisirMotDePasseTexte:
+      "Vous êtes connecté. Ce mot de passe remplacera l'ancien.",
+    verifiezEmails: "Vérifiez vos emails",
+    verifiezEmailsTexte:
+      "Votre compte est enregistré. Cliquez sur le lien de confirmation qui vient de vous être envoyé.",
+    lienCourteDuree:
+      "Le lien n'est valable que quelques minutes, et la connexion ne marchera pas avant que vous l'ayez ouvert.",
+    lienExpire: "Le lien a expiré, en recevoir un autre",
+    erreurs: {
+      code_invitation:
+        "Ce code d'invitation est invalide ou a expiré. Demandez-en un nouveau au propriétaire de l'atelier.",
+      atelier_complet:
+        "Cet atelier a atteint son nombre maximum de comptes. Le propriétaire doit libérer une place ou changer de formule.",
+      envoi_email:
+        "L'email de confirmation n'a pas pu partir. Contactez-nous et nous activerons votre atelier à la main.",
+      trop_de_tentatives:
+        "Trop de tentatives d'envoi. Patientez une heure, ou contactez-nous pour que nous activions votre atelier.",
+      deja_inscrit:
+        "Un compte existe déjà avec cet email. Connectez-vous ou utilisez une autre adresse.",
+      identifiants:
+        "Email ou mot de passe incorrect. Si vous venez de créer votre atelier, ouvrez d'abord le lien de confirmation reçu par email.",
+      mot_de_passe_court: "Le mot de passe doit contenir au moins 6 caractères.",
+      email_invalide: "Cette adresse email n'est pas valide.",
+      email_non_confirme:
+        "Votre adresse n'est pas encore confirmée. Ouvrez le lien reçu par email, ou contactez-nous.",
+      inconnue:
+        "L'opération n'a pas abouti. Réessayez, et contactez-nous si cela persiste.",
+    },
   },
   reglagesEcran: {
     nomAtelier: "Nom de l'atelier",
@@ -981,6 +1050,43 @@ const EN: Traductions = {
     echecGoogle:
       "The Google sign-in could not open. Try again, or use your email and password.",
     ou: "or",
+    motDePasseOublieTitre: "Forgotten password",
+    motDePasseOublieTexte: "We will send you a link to choose a new one",
+    envoyerLien: "Send the link",
+    retourConnexion: "Back to sign in",
+    renvoyerTitre: "Send the link again",
+    renvoyerTexte:
+      "The confirmation link expires quickly. Give us your address and we will send a new one.",
+    envoyerNouveauLien: "Send a new link",
+    choisirMotDePasse: "Choose a password",
+    choisirMotDePasseTexte:
+      "You are signed in. This password will replace the old one.",
+    verifiezEmails: "Check your email",
+    verifiezEmailsTexte:
+      "Your account is registered. Click the confirmation link that has just been sent to you.",
+    lienCourteDuree:
+      "The link is only valid for a few minutes, and signing in will not work until you have opened it.",
+    lienExpire: "The link expired, get another one",
+    erreurs: {
+      code_invitation:
+        "This invitation code is invalid or has expired. Ask the workshop owner for a new one.",
+      atelier_complet:
+        "This workshop has reached its maximum number of accounts. The owner must free a seat or change plan.",
+      envoi_email:
+        "The confirmation email could not be sent. Contact us and we will activate your workshop by hand.",
+      trop_de_tentatives:
+        "Too many attempts. Wait an hour, or contact us so we can activate your workshop.",
+      deja_inscrit:
+        "An account already exists with this email. Sign in, or use another address.",
+      identifiants:
+        "Wrong email or password. If you have just created your workshop, open the confirmation link sent to you by email first.",
+      mot_de_passe_court: "The password must be at least 6 characters long.",
+      email_invalide: "This email address is not valid.",
+      email_non_confirme:
+        "Your address is not confirmed yet. Open the link sent to you by email, or contact us.",
+      inconnue:
+        "That did not go through. Try again, and contact us if it keeps happening.",
+    },
   },
   reglagesEcran: {
     nomAtelier: "Workshop name",

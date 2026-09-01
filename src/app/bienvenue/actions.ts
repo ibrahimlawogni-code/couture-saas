@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { langueVisiteur } from "@/lib/langue-visiteur";
 import { messageAuth } from "@/lib/messages-auth";
 
 /*
@@ -28,7 +29,7 @@ export async function terminerInscription(formData: FormData) {
   });
 
   if (error) {
-    redirect(`/bienvenue?error=${encodeURIComponent(messageAuth(error.message))}`);
+    redirect(`/bienvenue?error=${encodeURIComponent(messageAuth(error.message, await langueVisiteur()))}`);
   }
 
   redirect("/tableau-de-bord");

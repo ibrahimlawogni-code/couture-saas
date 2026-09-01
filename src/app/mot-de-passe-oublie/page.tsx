@@ -1,9 +1,14 @@
+import { traduire } from "@/lib/i18n";
+import { langueVisiteur } from "@/lib/langue-visiteur";
+import { SelecteurLangue } from "../selecteur-langue";
 import Link from "next/link";
 import { EnvelopeSimple } from "@phosphor-icons/react/dist/ssr";
 import { Marque } from "../marque";
 import { demanderReinitialisation } from "./actions";
 
-export default function MotDePasseOubliePage() {
+export default async function MotDePasseOubliePage() {
+  const langue = await langueVisiteur();
+  const mots = traduire(langue);
   return (
     <div className="flex flex-1 items-center justify-center bg-papier px-5 py-10">
       <div className="w-full max-w-sm">
@@ -15,10 +20,10 @@ export default function MotDePasseOubliePage() {
           </div>
 
           <p className="mt-5 text-center text-lg font-semibold tracking-tight">
-            Mot de passe oublié
+            {mots.acces.motDePasseOublieTitre}
           </p>
           <p className="mt-1 text-center text-sm text-vert-pale">
-            Nous vous envoyons un lien pour en choisir un nouveau
+            {mots.acces.motDePasseOublieTexte}
           </p>
 
           <form action={demanderReinitialisation} className="mt-8 flex flex-col gap-6">
@@ -34,7 +39,7 @@ export default function MotDePasseOubliePage() {
                   type="email"
                   autoComplete="email"
                   required
-                  placeholder="Adresse email"
+                  placeholder={mots.acces.adresseEmail}
                   className="w-full border-0 bg-transparent p-0 text-base text-white placeholder:text-vert-pale focus:outline-none"
                 />
               </div>
@@ -44,16 +49,20 @@ export default function MotDePasseOubliePage() {
               type="submit"
               className="mt-2 rounded-controle bg-white px-4 py-4 text-base font-semibold tracking-wide text-foret transition-transform hover:bg-vert-clair active:translate-y-px"
             >
-              Envoyer le lien
+              {mots.acces.envoyerLien}
             </button>
           </form>
         </div>
 
         <p className="mt-6 text-center text-sm text-gris">
           <Link href="/login" className="font-medium text-encre underline">
-            Retour à la connexion
+            {mots.acces.retourConnexion}
           </Link>
         </p>
+
+        <div className="mt-4">
+          <SelecteurLangue langue={langue} />
+        </div>
       </div>
     </div>
   );

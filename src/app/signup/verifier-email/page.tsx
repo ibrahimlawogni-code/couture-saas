@@ -1,6 +1,10 @@
+import { traduire } from "@/lib/i18n";
+import { langueVisiteur } from "@/lib/langue-visiteur";
 import Link from "next/link";
 
-export default function VerifierEmailPage() {
+export default async function VerifierEmailPage() {
+  const langue = await langueVisiteur();
+  const mots = traduire(langue);
   return (
     <div className="flex flex-1 items-center justify-center bg-papier px-4">
       <div className="w-full max-w-sm rounded-panneau border border-bordure bg-white p-8 text-center shadow-carte">
@@ -13,10 +17,11 @@ export default function VerifierEmailPage() {
          * Pour ce dernier aucun atelier n'a ete cree, il a ete rattache a
          * celui de son patron.
          */}
-        <h1 className="text-2xl font-semibold text-encre">Vérifiez vos emails</h1>
+        <h1 className="text-2xl font-semibold text-encre">
+          {mots.acces.verifiezEmails}
+        </h1>
         <p className="mt-3 text-sm leading-relaxed text-gris">
-          Votre compte est enregistré. Cliquez sur le lien de confirmation qui
-          vient de vous être envoyé pour l&apos;activer.
+          {mots.acces.verifiezEmailsTexte}
         </p>
 
         {/*
@@ -27,16 +32,15 @@ export default function VerifierEmailPage() {
           a un mot de passe faux.
         */}
         <p className="mt-4 rounded-carte bg-ambre-clair px-4 py-3 text-sm leading-relaxed text-ambre">
-          Le lien n&apos;est valable que quelques minutes, et la connexion ne
-          fonctionnera qu&apos;une fois le compte confirmé.
+          {mots.acces.lienCourteDuree}
         </p>
 
         <div className="mt-6 flex flex-col gap-2 text-sm">
           <Link href="/login" className="font-medium text-encre underline">
-            Retour à la connexion
+            {mots.acces.retourConnexion}
           </Link>
           <Link href="/renvoyer-confirmation" className="text-gris underline">
-            Le lien a expiré, en recevoir un autre
+            {mots.acces.lienExpire}
           </Link>
         </div>
       </div>

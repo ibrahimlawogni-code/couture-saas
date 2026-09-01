@@ -3,6 +3,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { langueVisiteur } from "@/lib/langue-visiteur";
 import { messageAuth } from "@/lib/messages-auth";
 
 export async function signup(formData: FormData) {
@@ -31,7 +32,7 @@ export async function signup(formData: FormData) {
   });
 
   if (error) {
-    redirect(`/signup?error=${encodeURIComponent(messageAuth(error.message))}`);
+    redirect(`/signup?error=${encodeURIComponent(messageAuth(error.message, await langueVisiteur()))}`);
   }
 
   // Face a une adresse deja inscrite, Supabase repond comme a une inscription
@@ -40,7 +41,7 @@ export async function signup(formData: FormData) {
   // indefiniment un mail qui ne partira jamais.
   if (data.user && data.user.identities?.length === 0) {
     redirect(
-      `/login?error=${encodeURIComponent(messageAuth("user already registered"))}`
+      `/login?error=${encodeURIComponent(messageAuth("user already registered", await langueVisiteur()))}`
     );
   }
 
