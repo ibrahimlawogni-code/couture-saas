@@ -25,6 +25,7 @@
  */
 import { groupeEcheance, ponctualite } from "./commandes.ts";
 import { repartitionParMethode } from "./paiements.ts";
+import { sessionRetrouvee } from "./offline/session.ts";
 
 let total = 0;
 let rates = 0;
@@ -250,6 +251,63 @@ verifier(
     { methode: "especes", montant: 1500, part: 75 },
     { methode: "virement", montant: 500, part: 25 },
   ]
+);
+
+// =========================================================================
+console.log("\nReprise apres une session retrouvee\n");
+// =========================================================================
+
+/*
+ * Ce predicat a mange une saisie en silence. Il ne retenait que SIGNED_IN
+ * et TOKEN_REFRESHED, alors que la bibliotheque emet INITIAL_SESSION quand
+ * elle restaure au chargement de la page une session deja ouverte. Une
+ * saisie refusee pour session expiree conseillait donc de se reconnecter,
+ * et revenir avec une session valable n'emettait rien qui la relance.
+ */
+const jeton = { access_token: "jeton" };
+
+verifier(
+  "session restauree au chargement : on rejoue",
+  sessionRetrouvee("INITIAL_SESSION", jeton),
+  true
+);
+verifier(
+  "reconnexion manuelle : on rejoue",
+  sessionRetrouvee("SIGNED_IN", jeton),
+  true
+);
+verifier(
+  "jeton rafraichi : on rejoue",
+  sessionRetrouvee("TOKEN_REFRESHED", jeton),
+  true
+);
+
+// Sans session, rejouer ferait echouer les operations une fois de plus et
+// consommerait pour rien les reprises que l'outbox leur compte.
+verifier(
+  "chargement sans personne de connecte : on ne rejoue pas",
+  sessionRetrouvee("INITIAL_SESSION", null),
+  false
+);
+verifier(
+  "deconnexion : on ne rejoue pas",
+  sessionRetrouvee("SIGNED_OUT", null),
+  false
+);
+verifier(
+  "deconnexion, meme avec un reste de session : on ne rejoue pas",
+  sessionRetrouvee("SIGNED_OUT", jeton),
+  false
+);
+verifier(
+  "profil modifie : rien a rejouer",
+  sessionRetrouvee("USER_UPDATED", jeton),
+  false
+);
+verifier(
+  "evenement inconnu d une version future : on s abstient",
+  sessionRetrouvee("QUELQUE_CHOSE_DE_NOUVEAU", jeton),
+  false
 );
 
 // =========================================================================

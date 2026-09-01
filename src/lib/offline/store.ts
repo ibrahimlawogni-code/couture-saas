@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { EVENEMENT_OUTBOX, listerFile, reprendreLesEchecs } from "./outbox";
+import { sessionRetrouvee } from "./session";
 import { synchroniser } from "./sync";
 import type { Operation } from "./db";
 
@@ -80,11 +81,19 @@ function initialiser() {
    * et n'avait plus qu'a la retaper, alors que sa reconnexion venait
    * precisement de lever l'obstacle.
    *
-   * SIGNED_IN couvre la reconnexion manuelle, TOKEN_REFRESHED le
-   * rafraichissement automatique du jeton.
+   * Les trois evenements comptent, et INITIAL_SESSION plus que les autres :
+   * c'est lui, et non SIGNED_IN, que la bibliotheque emet quand une session
+   * deja ouverte est restauree au chargement de la page. Il manquait ici, et
+   * le conseil affiche a la personne - « reconnectez-vous, la saisie
+   * repartira d'elle-meme » - ne pouvait donc jamais etre suivi : revenir
+   * avec une session valable n'emet rien d'autre qu'INITIAL_SESSION, et
+   * l'operation restait refusee a demeure.
+   *
+   * Le detail du choix vit dans sessionRetrouvee, isole pour etre eprouve
+   * au banc : c'est ce predicat qui avait mange la saisie.
    */
-  createClient().auth.onAuthStateChange((evenement) => {
-    if (evenement !== "SIGNED_IN" && evenement !== "TOKEN_REFRESHED") return;
+  createClient().auth.onAuthStateChange((evenement, session) => {
+    if (!sessionRetrouvee(evenement, session)) return;
 
     reprendreLesEchecs().then((reprises) => {
       if (reprises > 0) tenterSynchronisation();
