@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { formaterMontant } from "@/lib/commandes";
+import type { Traductions } from "@/lib/i18n";
 
 export type PointMensuel = { mois: string; libelle: string; montant: number };
 
@@ -21,9 +22,11 @@ export type PointMensuel = { mois: string; libelle: string; montant: number };
  */
 export function GraphiqueEncaissements({
   points,
+  mots,
   ton = "clair",
 }: {
   points: PointMensuel[];
+  mots: Traductions;
   /**
    * « sombre » quand le graphique est pose sur le panneau vert foret. Le
    * vert des barres y tomberait a un ecart insuffisant du fond : il faut
@@ -80,7 +83,7 @@ export function GraphiqueEncaissements({
               // comprise : viser une barre de deux pixels de haut serait
               // impossible au doigt.
               className="flex h-full flex-1 cursor-pointer flex-col justify-end gap-1"
-              aria-label={`${point.libelle} : ${formaterMontant(point.montant)}`}
+              aria-label={`${point.libelle} : ${formaterMontant(point.montant, mots.locale)}`}
             >
               {(etiquette || lu === index) && (
                 <span
@@ -139,7 +142,7 @@ export function GraphiqueEncaissements({
             <span className={`font-semibold ${principal}`}>
               {points[survole].libelle}
             </span>{" "}
-            <span className="chiffres">{formaterMontant(points[survole].montant)}</span>
+            <span className="chiffres">{formaterMontant(points[survole].montant, mots.locale)}</span>
           </>
         )}
       </p>

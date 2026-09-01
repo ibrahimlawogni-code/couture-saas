@@ -176,6 +176,9 @@ export type Traductions = {
     introuvable: string;
     introuvableTexte: string;
     chargement: string;
+    /* Le bouton, pas le document : le recu lui-meme reste en francais. */
+    partagerRecu: string;
+    preparationRecu: string;
   };
   /** L'ecran des finances. */
   finances: {
@@ -405,6 +408,8 @@ const FR: Traductions = {
     introuvableTexte:
       "Cette commande n'est pas dans les données enregistrées sur cet appareil. Si elle a été créée ailleurs, elle apparaîtra au prochain passage en ligne.",
     chargement: "Chargement de la commande",
+    partagerRecu: "Partager le reçu",
+    preparationRecu: "Préparation...",
   },
   clientsEcran: {
     aucun: "Aucun client",
@@ -624,6 +629,8 @@ const EN: Traductions = {
     introuvableTexte:
       "This order is not among the data saved on this device. If it was created elsewhere, it will appear the next time you are online.",
     chargement: "Loading the order",
+    partagerRecu: "Share the receipt",
+    preparationRecu: "Preparing...",
   },
   clientsEcran: {
     aucun: "No clients yet",

@@ -425,7 +425,7 @@ export function DetailCommande() {
                 </span>
                 {/* Colonne de montants : chasse fixe pour qu'ils s'alignent. */}
                 <span className="chiffres shrink-0 text-encre">
-                  {formaterMontant(Number(paiement.montant))}
+                  {formaterMontant(Number(paiement.montant), mots.locale)}
                 </span>
               </li>
             ))}
@@ -434,6 +434,7 @@ export function DetailCommande() {
 
         <div className="mt-3 border-t border-bordure pt-3">
           <BoutonRecu
+            mots={mots}
             donnees={{
               atelier: nomAtelier,
               telephone: atelier?.telephone ?? null,

@@ -244,7 +244,7 @@ export function BilanFinancier() {
                   </span>
                 </span>
                 <span className="chiffres shrink-0 text-encre">
-                  {formaterMontant(part.montant)}{" "}
+                  {formaterMontant(part.montant, mots.locale)}{" "}
                   <span className="text-gris">
                     ({Math.round(part.part)} %)
                   </span>

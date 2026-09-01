@@ -568,7 +568,7 @@ export function TableauDeBord() {
               {mots.bord.toucherBarre}
             </p>
             <div className="mt-4">
-              <GraphiqueEncaissements points={bilan.points} />
+              <GraphiqueEncaissements points={bilan.points} mots={mots} />
             </div>
           </Carte>
         </div>

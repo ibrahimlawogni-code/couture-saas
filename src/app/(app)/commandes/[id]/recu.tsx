@@ -2,10 +2,17 @@
 
 import { useState } from "react";
 import { Receipt } from "@phosphor-icons/react/dist/ssr";
+import type { Traductions } from "@/lib/i18n";
 import { genererRecu, type DonneesRecu } from "@/lib/recu";
 import { Bouton } from "@/ui/bouton";
 
-export function BoutonRecu({ donnees }: { donnees: DonneesRecu }) {
+export function BoutonRecu({
+  donnees,
+  mots,
+}: {
+  donnees: DonneesRecu;
+  mots: Traductions;
+}) {
   const [etat, setEtat] = useState<"pret" | "generation" | "erreur">("pret");
 
   async function partager() {
@@ -60,7 +67,9 @@ export function BoutonRecu({ donnees }: { donnees: DonneesRecu }) {
       disabled={etat === "generation"}
     >
       <Receipt size={16} />
-      {etat === "generation" ? "Préparation..." : "Partager le reçu"}
+      {etat === "generation"
+        ? mots.detail.preparationRecu
+        : mots.detail.partagerRecu}
     </Bouton>
   );
 }
