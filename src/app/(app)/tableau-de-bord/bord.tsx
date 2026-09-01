@@ -405,7 +405,7 @@ export function TableauDeBord() {
                        */}
                       <span className="mt-1 flex items-baseline justify-between gap-3">
                         <span className="truncate text-xs text-gris">
-                          {commande.nom_modele ?? mots.bord.sansModele} ·{" "}
+                          {commande.nom_modele ?? mots.sansModele} ·{" "}
                           {mots.statuts[commande.statut as Statut]}
                         </span>
                         <span
@@ -414,8 +414,8 @@ export function TableauDeBord() {
                           }`}
                         >
                           {commande.reste > 0
-                            ? mots.bord.reste(formaterMontant(commande.reste))
-                            : mots.bord.solde}
+                            ? mots.reste(formaterMontant(commande.reste))
+                            : mots.solde}
                         </span>
                       </span>
 

@@ -64,8 +64,19 @@ export type Traductions = {
   reglages: string;
   deconnexion: string;
   monAtelier: string;
-  /** Repli quand un identifiant client ne resout pas : partage par les ecrans. */
+  /*
+   * Replis et fragments partages par plusieurs ecrans. Ils vivaient dans la
+   * section du tableau de bord, ou l'ecran des commandes serait alle les
+   * chercher : deux ecrans qui lisent la meme phrase ne doivent pas la
+   * ranger chacun chez soi.
+   */
   clientInconnu: string;
+  sansModele: string;
+  reste: (montant: string) => string;
+  solde: string;
+  annuler: string;
+  enAttente: string;
+  refuse: string;
   /*
    * Le nom de l'offre n'est pas traduit : « Atelier Pro » est un nom
    * commercial, pas une description. Seul ce qui l'entoure change.
@@ -91,9 +102,6 @@ export type Traductions = {
     aTraiter: string;
     toutVoir: string;
     rienUrgent: string;
-    sansModele: string;
-    reste: (montant: string) => string;
-    solde: string;
     creances: string;
     surCommandes: (n: number) => string;
     toutSolde: string;
@@ -117,6 +125,18 @@ export type Traductions = {
     satisfactionVide: string;
     surCinq: string;
     surAvis: (n: number) => string;
+    chargement: string;
+  };
+  /** L'ecran des commandes, groupees par echeance. */
+  commandes: {
+    aucune: string;
+    aucuneTexte: string;
+    creerPremiere: string;
+    enCours: (n: number) => string;
+    horsLigne: string;
+    ouEnEst: string;
+    sansDate: string;
+    passeA: (statut: string) => string;
     chargement: string;
   };
 };
@@ -170,6 +190,12 @@ const FR: Traductions = {
   deconnexion: "Déconnexion",
   monAtelier: "Mon atelier",
   clientInconnu: "Client inconnu",
+  sansModele: "Sans modèle",
+  reste: (montant) => `reste ${montant}`,
+  solde: "soldé",
+  annuler: "Annuler",
+  enAttente: "En attente",
+  refuse: "Refusé",
   offre: (nom) => `Offre ${nom}`,
   bord: {
     motifs: {
@@ -190,9 +216,6 @@ const FR: Traductions = {
     toutVoir: "Tout voir",
     rienUrgent:
       "Rien d'urgent aujourd'hui. Aucun retard, aucune livraison prévue, aucune commande en attente de retrait.",
-    sansModele: "Sans modèle",
-    reste: (montant) => `reste ${montant}`,
-    solde: "soldé",
     creances: "Créances",
     surCommandes: (n) => `sur ${n} commande${n > 1 ? "s" : ""}`,
     toutSolde: "tout est soldé",
@@ -220,6 +243,19 @@ const FR: Traductions = {
     surCinq: "sur 5",
     surAvis: (n) => `sur ${n} avis`,
     chargement: "Chargement du tableau de bord",
+  },
+  commandes: {
+    aucune: "Aucune commande",
+    aucuneTexte:
+      "Chaque commande suit son avancement ici, de la réception à la livraison.",
+    creerPremiere: "Créer la première commande",
+    enCours: (n) => `${n} en cours`,
+    horsLigne:
+      "Hors connexion : l'avancement des commandes reprendra au retour du réseau.",
+    ouEnEst: "Où en est l'atelier",
+    sansDate: "Sans date",
+    passeA: (statut) => `Passé à ${statut} · envoyé`,
+    chargement: "Chargement des commandes",
   },
 };
 
@@ -277,6 +313,12 @@ const EN: Traductions = {
   deconnexion: "Sign out",
   monAtelier: "My workshop",
   clientInconnu: "Unknown client",
+  sansModele: "No model",
+  reste: (montant) => `${montant} left`,
+  solde: "paid",
+  annuler: "Undo",
+  enAttente: "Pending",
+  refuse: "Rejected",
   offre: (nom) => `${nom} plan`,
   bord: {
     motifs: {
@@ -297,9 +339,6 @@ const EN: Traductions = {
     toutVoir: "See all",
     rienUrgent:
       "Nothing urgent today. Nothing overdue, no delivery due, no order waiting for pickup.",
-    sansModele: "No model",
-    reste: (montant) => `${montant} left`,
-    solde: "paid",
     creances: "Owed to you",
     surCommandes: (n) => `across ${n} order${n === 1 ? "" : "s"}`,
     toutSolde: "everything is paid",
@@ -328,6 +367,19 @@ const EN: Traductions = {
     surCinq: "out of 5",
     surAvis: (n) => `from ${n} review${n === 1 ? "" : "s"}`,
     chargement: "Loading the dashboard",
+  },
+  commandes: {
+    aucune: "No orders yet",
+    aucuneTexte:
+      "Every order follows its progress here, from intake to delivery.",
+    creerPremiere: "Create the first order",
+    enCours: (n) => `${n} in progress`,
+    horsLigne:
+      "Offline: moving orders forward will resume when the network is back.",
+    ouEnEst: "Where the workshop stands",
+    sansDate: "No date",
+    passeA: (statut) => `Moved to ${statut} · sent`,
+    chargement: "Loading orders",
   },
 };
 

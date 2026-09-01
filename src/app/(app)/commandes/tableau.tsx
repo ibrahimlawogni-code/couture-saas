@@ -16,6 +16,7 @@ import {
   type GroupeEcheance,
   type Statut,
 } from "@/lib/commandes";
+import type { Traductions } from "@/lib/i18n";
 import { rafraichirMiroir } from "@/lib/offline/miroir";
 import { useDonnees } from "@/lib/offline/use-donnees";
 import { useTraductions } from "@/lib/offline/use-traductions";
@@ -81,7 +82,7 @@ export function TableauCommandes() {
       return {
         ...commande,
         statut,
-        client: nomsClients.get(commande.client_id) ?? "Client inconnu",
+        client: nomsClients.get(commande.client_id) ?? mots.clientInconnu,
         groupe: groupeEcheance(commande.date_livraison, statut),
         suivant: statutSuivant(statut),
         reste: resteAPayer(
@@ -116,7 +117,7 @@ export function TableauCommandes() {
       parEtape,
       enCours: lignes.filter((ligne) => ligne.statut !== "livre").length,
     };
-  }, [commandes, nomsClients, verseParCommande]);
+  }, [commandes, nomsClients, verseParCommande, mots.clientInconnu]);
 
   /**
    * L'avancement passe par le reseau : c'est une modification, pas une
@@ -155,17 +156,17 @@ export function TableauCommandes() {
     await changerStatut(retour.id, retour.avant);
   }
 
-  if (!chargee) return <SqueletteTableau />;
+  if (!chargee) return <SqueletteTableau mots={mots} />;
 
   if (commandes.length === 0) {
     return (
       <EtatVide
         icone={ClipboardText}
-        titre="Aucune commande"
-        texte="Chaque commande suit son avancement ici, de la réception à la livraison."
+        titre={mots.commandes.aucune}
+        texte={mots.commandes.aucuneTexte}
         action={
           <LienBouton href="/commandes/new">
-            Créer la première commande
+            {mots.commandes.creerPremiere}
           </LienBouton>
         }
       />
@@ -174,12 +175,11 @@ export function TableauCommandes() {
 
   return (
     <>
-      <p className="text-sm text-gris">{enCours} en cours</p>
+      <p className="text-sm text-gris">{mots.commandes.enCours(enCours)}</p>
 
       {horsLigne && (
         <p className="mt-1 text-xs text-gris">
-          Hors connexion : l&apos;avancement des commandes reprendra au retour
-          du réseau.
+          {mots.commandes.horsLigne}
         </p>
       )}
 
@@ -191,7 +191,7 @@ export function TableauCommandes() {
        */}
       <Carte classe="mt-4 p-4">
         <h2 className="text-[10px] font-medium tracking-[0.1em] text-gris uppercase">
-          Où en est l&apos;atelier
+          {mots.commandes.ouEnEst}
         </h2>
         <div className="mt-2.5">
           <Repartition parEtape={parEtape} mots={mots} />
@@ -228,17 +228,17 @@ export function TableauCommandes() {
                  * grand ecran.
                  */
                 const etiquetteDate = commande.enEchec ? (
-                  <Etiquette ton="probleme">Refusé</Etiquette>
+                  <Etiquette ton="probleme">{mots.refuse}</Etiquette>
                 ) : commande.enAttente ? (
-                  <Etiquette ton="systeme">En attente</Etiquette>
+                  <Etiquette ton="systeme">{mots.enAttente}</Etiquette>
                 ) : (
                   <Etiquette ton={TON_GROUPE[groupe]}>
                     {commande.date_livraison
                       ? new Date(commande.date_livraison).toLocaleDateString(
-                          "fr-FR",
+                          mots.locale,
                           { day: "2-digit", month: "2-digit" }
                         )
-                      : "Sans date"}
+                      : mots.commandes.sansDate}
                   </Etiquette>
                 );
 
@@ -250,8 +250,8 @@ export function TableauCommandes() {
                       }`}
                     >
                       {commande.reste > 0
-                        ? `reste ${formaterMontant(commande.reste)}`
-                        : "soldé"}
+                        ? mots.reste(formaterMontant(commande.reste))
+                        : mots.solde}
                     </span>
                   ) : null;
 
@@ -271,7 +271,7 @@ export function TableauCommandes() {
                               {commande.client}
                             </span>
                             <span className="block truncate text-xs text-gris">
-                              {commande.nom_modele ?? "Sans modèle"}
+                              {commande.nom_modele ?? mots.sansModele}
                             </span>
                           </Link>
 
@@ -343,7 +343,7 @@ export function TableauCommandes() {
               {annulation.client}
             </span>
             <span className="block truncate text-xs text-vert-pale">
-              Passé à {mots.statuts[annulation.apres]} · envoyé
+              {mots.commandes.passeA(mots.statuts[annulation.apres])}
             </span>
           </span>
           <button
@@ -351,7 +351,7 @@ export function TableauCommandes() {
             onClick={annuler}
             className="min-h-11 shrink-0 rounded-controle border border-white/25 px-3.5 text-sm font-medium transition-colors duration-150 ease-doux hover:bg-white/10"
           >
-            Annuler
+            {mots.annuler}
           </button>
         </div>
       )}
@@ -359,9 +359,9 @@ export function TableauCommandes() {
   );
 }
 
-function SqueletteTableau() {
+function SqueletteTableau({ mots }: { mots: Traductions }) {
   return (
-    <div role="status" aria-label="Chargement des commandes">
+    <div role="status" aria-label={mots.commandes.chargement}>
       <Squelette classe="h-4 w-24" />
       <Squelette rayon="carte" classe="mt-4 h-24" />
 
