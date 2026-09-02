@@ -1,14 +1,6 @@
 import { formaterMontant, resteAPayer, type Statut } from "@/lib/commandes";
-import { traduire } from "@/lib/i18n";
+import type { Traductions } from "@/lib/i18n";
 import { methodeConnue } from "@/lib/paiements";
-
-/*
- * Le recu reste en francais tant qu'il ne l'est pas en entier. Traduire
- * ici le seul libelle de statut ou de moyen donnerait un document francais
- * portant un mot anglais au milieu - et c'est le seul objet du produit qui
- * sorte de l'atelier, remis en main propre a un client.
- */
-const MOTS_FR = traduire("fr");
 
 const LARGEUR = 800;
 const MARGE = 56;
@@ -59,16 +51,16 @@ export type DonneesRecu = {
 };
 
 /*
- * Le type de versement vient de la base en minuscules et sans accent.
- * Il etait imprime tel quel sur un document destine au client.
+ * Le recu suit la langue de l'atelier.
+ *
+ * C'est le seul objet du produit qui sorte de l'atelier, remis en main
+ * propre a un client : il ne doit pas melanger deux langues, et il ne doit
+ * pas changer de langue selon l'apprenti qui l'imprime.
  */
-const TYPES: Record<string, string> = {
-  acompte: "Acompte",
-  complement: "Complément",
-};
-
-function formaterDate(valeur: string | null) {
-  return valeur ? new Date(valeur).toLocaleDateString("fr-FR") : "à définir";
+function formaterDate(valeur: string | null, mots: Traductions) {
+  return valeur
+    ? new Date(valeur).toLocaleDateString(mots.locale)
+    : mots.documents.aDefinir;
 }
 
 /**
@@ -92,17 +84,20 @@ function reference(commandeId: string) {
  * client - sur le seul document du produit qui puisse etre produit deux
  * fois, et le seul qui serve de preuve.
  */
-function dateRecu(donnees: DonneesRecu) {
-  return formaterDate(donnees.versements.at(-1)?.date ?? donnees.dateCommande);
+function dateRecu(donnees: DonneesRecu, mots: Traductions) {
+  return formaterDate(
+    donnees.versements.at(-1)?.date ?? donnees.dateCommande,
+    mots
+  );
 }
 
 /** Coordonnees de l'atelier, sans repeter deux fois le meme numero. */
-function coordonnees(donnees: DonneesRecu) {
+function coordonnees(donnees: DonneesRecu, mots: Traductions) {
   const numeros = [
-    donnees.telephone && `Tél. ${donnees.telephone}`,
+    donnees.telephone && mots.documents.recuTel(donnees.telephone),
     donnees.whatsapp &&
       donnees.whatsapp !== donnees.telephone &&
-      `WhatsApp ${donnees.whatsapp}`,
+      mots.documents.recuWhatsapp(donnees.whatsapp),
   ].filter(Boolean);
 
   return numeros.join("   ·   ");
@@ -135,7 +130,10 @@ function tronquer(
  * Dessine le recu ligne a ligne. Canvas evite toute dependance externe et
  * fonctionne hors connexion, ce qui compte pour un usage en atelier.
  */
-export async function genererRecu(donnees: DonneesRecu): Promise<Blob> {
+export async function genererRecu(
+  donnees: DonneesRecu,
+  mots: Traductions
+): Promise<Blob> {
   /*
    * La police de l'application plutot que le sans-serif du systeme. Le
    * recu s'ecrivait dans la fonte par defaut de l'appareil, differente sur
@@ -152,7 +150,7 @@ export async function genererRecu(donnees: DonneesRecu): Promise<Blob> {
   const hauteurEntete = 150;
   const hauteurLigne = 46;
   const nbVersements = donnees.versements.length;
-  const contact = coordonnees(donnees);
+  const contact = coordonnees(donnees, mots);
 
   // Positions calculees d'avance : la hauteur du canvas doit etre connue
   // avant le trace, et la deduire d'une formule approchee laissait une
@@ -194,7 +192,10 @@ export async function genererRecu(donnees: DonneesRecu): Promise<Blob> {
   ctx.fillText(
     tronquer(
       ctx,
-      `Reçu N° ${reference(donnees.commandeId)} · ${dateRecu(donnees)}`,
+      mots.documents.recuNumero(
+        reference(donnees.commandeId),
+        dateRecu(donnees, mots)
+      ),
       largeurUtile
     ),
     MARGE,
@@ -234,16 +235,23 @@ export async function genererRecu(donnees: DonneesRecu): Promise<Blob> {
     ctx.stroke();
   };
 
-  ligne("Client", donnees.client, true);
-  ligne("Modèle", donnees.modele ?? "Non précisé");
+  ligne(mots.documents.recuClient, donnees.client, true);
+  ligne(mots.documents.recuModele, donnees.modele ?? mots.documents.recuNonPrecise);
   // Le recu annoncait la date de livraison sans jamais dire ou en etait la
   // piece, alors que c'est la question posee au comptoir.
-  ligne("État", MOTS_FR.statuts[donnees.statut] ?? donnees.statut);
-  ligne("Livraison prévue", formaterDate(donnees.dateLivraison));
+  ligne(mots.documents.recuEtat, mots.statuts[donnees.statut] ?? donnees.statut);
+  ligne(
+    mots.documents.recuLivraisonPrevue,
+    formaterDate(donnees.dateLivraison, mots)
+  );
 
   separateur(yPrix - 28);
   y = yPrix;
-  ligne("Prix total", formaterMontant(donnees.prixTotal), true);
+  ligne(
+    mots.documents.recuPrixTotal,
+    formaterMontant(donnees.prixTotal, mots.locale),
+    true
+  );
 
   // Detail des versements, en retrait sous le prix.
   ctx.font = `400 22px ${police}`;
@@ -252,14 +260,20 @@ export async function genererRecu(donnees: DonneesRecu): Promise<Blob> {
     ctx.fillStyle = GRIS;
     ctx.textAlign = "left";
     ctx.fillText(
-      `${new Date(versement.date).toLocaleDateString("fr-FR")} · ${
-        TYPES[versement.type] ?? versement.type
-      } · ${MOTS_FR.methodes[methodeConnue(versement.methode)]}`,
+      `${new Date(versement.date).toLocaleDateString(mots.locale)} · ${
+        mots.documents.typesVersement[
+          versement.type as keyof typeof mots.documents.typesVersement
+        ] ?? versement.type
+      } · ${mots.methodes[methodeConnue(versement.methode)]}`,
       MARGE + 16,
       y
     );
     ctx.textAlign = "right";
-    ctx.fillText(formaterMontant(versement.montant), LARGEUR - MARGE, y);
+    ctx.fillText(
+      formaterMontant(versement.montant, mots.locale),
+      LARGEUR - MARGE,
+      y
+    );
     ctx.textAlign = "left";
     y += 34;
   }
@@ -276,19 +290,19 @@ export async function genererRecu(donnees: DonneesRecu): Promise<Blob> {
   const reste = resteAPayer(donnees.prixTotal, totalVerse);
 
   y = yDejaVerse;
-  ligne("Déjà versé", formaterMontant(totalVerse));
+  ligne(mots.documents.recuDejaVerse, formaterMontant(totalVerse, mots.locale));
 
   separateur(yReste - 28);
 
   ctx.font = `600 30px ${police}`;
   ctx.fillStyle = GRIS;
-  ctx.fillText("Reste à payer", MARGE, yReste);
+  ctx.fillText(mots.documents.recuResteAPayer, MARGE, yReste);
 
   ctx.font = `700 34px ${police}`;
   ctx.fillStyle = reste > 0 ? ROUGE : VERT;
   ctx.textAlign = "right";
   ctx.fillText(
-    reste > 0 ? formaterMontant(reste) : "Soldé",
+    reste > 0 ? formaterMontant(reste, mots.locale) : mots.documents.recuSolde,
     LARGEUR - MARGE,
     yReste
   );
@@ -296,7 +310,7 @@ export async function genererRecu(donnees: DonneesRecu): Promise<Blob> {
 
   ctx.font = `400 22px ${police}`;
   ctx.fillStyle = GRIS;
-  ctx.fillText("Merci de votre confiance.", MARGE, yPied);
+  ctx.fillText(mots.documents.merci, MARGE, yPied);
 
   if (contact) {
     ctx.fillText(tronquer(ctx, contact, largeurUtile), MARGE, yContact);

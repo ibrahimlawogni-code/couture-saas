@@ -1,29 +1,22 @@
 import { formaterMontant, type Statut } from "@/lib/commandes";
-import { traduire } from "@/lib/i18n";
-
-/*
- * Les messages restent en francais tant qu'ils ne sont pas traduits en
- * entier. Reprendre ici le seul libelle de statut donnerait un message
- * francais ou l'etat de la commande serait en anglais - pire que pas de
- * traduction du tout, et adresse au client, pas au tailleur.
- */
-const MOTS_FR = traduire("fr");
+import type { Traductions } from "@/lib/i18n";
 
 const INDICATIF_BENIN = "229";
 
 /**
  * wa.me attend un numero international sans "+" ni separateur.
- * Un numero saisi localement (01 97 63 63 01) est prefixe de l'indicatif.
+ *
+ * Un numero beninois se saisit couramment sans indicatif : on le complete
+ * plutot que de refuser un numero que le tailleur juge, lui, tout a fait
+ * normal.
  */
 export function normaliserNumero(numero: string | null): string | null {
   if (!numero) return null;
 
   const chiffres = numero.replace(/\D/g, "");
-  if (!chiffres) return null;
+  if (chiffres.length < 8) return null;
 
-  return chiffres.startsWith(INDICATIF_BENIN)
-    ? chiffres
-    : `${INDICATIF_BENIN}${chiffres}`;
+  return chiffres.length === 8 ? `${INDICATIF_BENIN}${chiffres}` : chiffres;
 }
 
 export function lienWhatsApp(numero: string | null, message: string): string | null {
@@ -33,8 +26,17 @@ export function lienWhatsApp(numero: string | null, message: string): string | n
   return `https://wa.me/${destinataire}?text=${encodeURIComponent(message)}`;
 }
 
-function formaterDate(date: string | null) {
-  return date ? new Date(date).toLocaleDateString("fr-FR") : "à définir";
+/*
+ * Les messages suivent la langue de l'atelier, comme le recu.
+ *
+ * Ils sont adresses au client du tailleur, et non au tailleur : un atelier
+ * et sa clientele partagent le meme marche, et c'est donc la langue de
+ * l'atelier qui vaut, pas celle de l'apprenti qui appuie sur le bouton.
+ */
+function formaterDate(date: string | null, mots: Traductions) {
+  return date
+    ? new Date(date).toLocaleDateString(mots.locale)
+    : mots.documents.aDefinir;
 }
 
 type Commande = {
@@ -49,36 +51,40 @@ export function messageRecapitulatif(
   atelier: string,
   client: string,
   commande: Commande,
-  resteAPayer: number
+  resteAPayer: number,
+  mots: Traductions
 ) {
+  const d = mots.documents;
+
   return [
-    `Bonjour ${client},`,
+    d.bonjour(client),
     "",
-    `Voici le récapitulatif de votre commande chez ${atelier} :`,
-    `Modèle : ${commande.nom_modele ?? "à préciser"}`,
-    `Prix total : ${formaterMontant(commande.prix_total)}`,
-    `Reste à payer : ${formaterMontant(resteAPayer)}`,
-    `Essayage : ${formaterDate(commande.date_essayage)}`,
-    `Livraison : ${formaterDate(commande.date_livraison)}`,
-    `État : ${MOTS_FR.statuts[commande.statut]}`,
+    d.recapitulatifIntro(atelier),
+    d.ligneModele(commande.nom_modele ?? d.aPreciser),
+    d.lignePrixTotal(formaterMontant(commande.prix_total, mots.locale)),
+    d.ligneResteAPayer(formaterMontant(resteAPayer, mots.locale)),
+    d.ligneEssayage(formaterDate(commande.date_essayage, mots)),
+    d.ligneLivraison(formaterDate(commande.date_livraison, mots)),
+    d.ligneEtat(mots.statuts[commande.statut]),
     "",
-    "Merci de votre confiance.",
+    d.merci,
   ].join("\n");
 }
 
 export function messageRappelEssayage(
   atelier: string,
   client: string,
-  commande: Commande
+  commande: Commande,
+  mots: Traductions
 ) {
+  const d = mots.documents;
+
   return [
-    `Bonjour ${client},`,
+    d.bonjour(client),
     "",
-    `Petit rappel : votre essayage chez ${atelier} est prévu le ${formaterDate(
-      commande.date_essayage
-    )}.`,
+    d.rappelEssayage(atelier, formaterDate(commande.date_essayage, mots)),
     "",
-    "À bientôt.",
+    d.aBientot,
   ].join("\n");
 }
 
@@ -93,17 +99,20 @@ export function messageAvis(
   atelier: string,
   client: string,
   commande: Commande,
-  lienNotation: string
+  lienNotation: string,
+  mots: Traductions
 ) {
+  const d = mots.documents;
+
   return [
-    `Bonjour ${client},`,
+    d.bonjour(client),
     "",
-    `J'espère que votre ${commande.nom_modele ?? "vêtement"} vous plaît.`,
+    d.avisIntro(commande.nom_modele ?? d.vetement),
     "",
-    `Si vous avez un instant, dites-moi comment ça s'est passé — cela m'aide beaucoup :`,
+    d.avisDemande,
     lienNotation,
     "",
-    `Merci de votre confiance.`,
+    d.merci,
     atelier,
   ].join("\n");
 }
@@ -112,18 +121,21 @@ export function messagePret(
   atelier: string,
   client: string,
   commande: Commande,
-  resteAPayer: number
+  resteAPayer: number,
+  mots: Traductions
 ) {
+  const d = mots.documents;
+
   const lignes = [
-    `Bonjour ${client},`,
+    d.bonjour(client),
     "",
-    `Votre ${commande.nom_modele ?? "vêtement"} est prêt chez ${atelier}, vous pouvez venir le retirer.`,
+    d.pretIntro(commande.nom_modele ?? d.vetement, atelier),
   ];
 
   if (resteAPayer > 0) {
-    lignes.push(`Reste à payer : ${formaterMontant(resteAPayer)}.`);
+    lignes.push(d.pretReste(formaterMontant(resteAPayer, mots.locale)));
   }
 
-  lignes.push("", "À bientôt.");
+  lignes.push("", d.aBientot);
   return lignes.join("\n");
 }

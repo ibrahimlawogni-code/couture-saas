@@ -286,6 +286,47 @@ export type Traductions = {
       string
     >;
   };
+  /*
+   * Ce qui sort de l'atelier : le recu remis en main propre et les messages
+   * envoyes au client. Ils suivent la langue de l'atelier et non celle de
+   * l'apprenti qui les produit - un client qui recoit un recu en francais un
+   * jour et en anglais le lendemain ne saurait plus a qui il a affaire.
+   */
+  documents: {
+    aDefinir: string;
+    bonjour: (client: string) => string;
+    merci: string;
+    aBientot: string;
+    vetement: string;
+    /* --- Messages WhatsApp --- */
+    recapitulatifIntro: (atelier: string) => string;
+    ligneModele: (modele: string) => string;
+    lignePrixTotal: (montant: string) => string;
+    ligneResteAPayer: (montant: string) => string;
+    ligneEssayage: (date: string) => string;
+    ligneLivraison: (date: string) => string;
+    ligneEtat: (etat: string) => string;
+    aPreciser: string;
+    rappelEssayage: (atelier: string, date: string) => string;
+    avisIntro: (vetement: string) => string;
+    avisDemande: string;
+    pretIntro: (vetement: string, atelier: string) => string;
+    pretReste: (montant: string) => string;
+    /* --- Recu --- */
+    recuNumero: (reference: string, date: string) => string;
+    recuClient: string;
+    recuModele: string;
+    recuNonPrecise: string;
+    recuEtat: string;
+    recuLivraisonPrevue: string;
+    recuPrixTotal: string;
+    recuDejaVerse: string;
+    recuResteAPayer: string;
+    recuSolde: string;
+    recuTel: (numero: string) => string;
+    recuWhatsapp: (numero: string) => string;
+    typesVersement: Record<"acompte" | "solde" | "complement", string>;
+  };
   /** Les reglages : atelier, equipe, abonnement, compte. */
   reglagesEcran: {
     nomAtelier: string;
@@ -666,6 +707,47 @@ const FR: Traductions = {
         "Votre adresse n'est pas encore confirmée. Ouvrez le lien reçu par email, ou contactez-nous.",
       inconnue:
         "L'opération n'a pas abouti. Réessayez, et contactez-nous si cela persiste.",
+    },
+  },
+  documents: {
+    aDefinir: "à définir",
+    bonjour: (client) => `Bonjour ${client},`,
+    merci: "Merci de votre confiance.",
+    aBientot: "À bientôt.",
+    vetement: "vêtement",
+    recapitulatifIntro: (atelier) =>
+      `Voici le récapitulatif de votre commande chez ${atelier} :`,
+    ligneModele: (modele) => `Modèle : ${modele}`,
+    lignePrixTotal: (montant) => `Prix total : ${montant}`,
+    ligneResteAPayer: (montant) => `Reste à payer : ${montant}`,
+    ligneEssayage: (date) => `Essayage : ${date}`,
+    ligneLivraison: (date) => `Livraison : ${date}`,
+    ligneEtat: (etat) => `État : ${etat}`,
+    aPreciser: "à préciser",
+    rappelEssayage: (atelier, date) =>
+      `Petit rappel : votre essayage chez ${atelier} est prévu le ${date}.`,
+    avisIntro: (vetement) => `J'espère que votre ${vetement} vous plaît.`,
+    avisDemande:
+      "Si vous avez un instant, dites-moi comment ça s'est passé — cela m'aide beaucoup :",
+    pretIntro: (vetement, atelier) =>
+      `Votre ${vetement} est prêt chez ${atelier}, vous pouvez venir le retirer.`,
+    pretReste: (montant) => `Reste à payer : ${montant}.`,
+    recuNumero: (reference, date) => `Reçu N° ${reference} · ${date}`,
+    recuClient: "Client",
+    recuModele: "Modèle",
+    recuNonPrecise: "Non précisé",
+    recuEtat: "État",
+    recuLivraisonPrevue: "Livraison prévue",
+    recuPrixTotal: "Prix total",
+    recuDejaVerse: "Déjà versé",
+    recuResteAPayer: "Reste à payer",
+    recuSolde: "Soldé",
+    recuTel: (numero) => `Tél. ${numero}`,
+    recuWhatsapp: (numero) => `WhatsApp ${numero}`,
+    typesVersement: {
+      acompte: "Acompte",
+      solde: "Solde",
+      complement: "Complément",
     },
   },
   reglagesEcran: {
@@ -1086,6 +1168,47 @@ const EN: Traductions = {
         "Your address is not confirmed yet. Open the link sent to you by email, or contact us.",
       inconnue:
         "That did not go through. Try again, and contact us if it keeps happening.",
+    },
+  },
+  documents: {
+    aDefinir: "to be set",
+    bonjour: (client) => `Hello ${client},`,
+    merci: "Thank you for your trust.",
+    aBientot: "See you soon.",
+    vetement: "garment",
+    recapitulatifIntro: (atelier) =>
+      `Here is the summary of your order at ${atelier}:`,
+    ligneModele: (modele) => `Model: ${modele}`,
+    lignePrixTotal: (montant) => `Total price: ${montant}`,
+    ligneResteAPayer: (montant) => `Left to pay: ${montant}`,
+    ligneEssayage: (date) => `Fitting: ${date}`,
+    ligneLivraison: (date) => `Delivery: ${date}`,
+    ligneEtat: (etat) => `Status: ${etat}`,
+    aPreciser: "to be described",
+    rappelEssayage: (atelier, date) =>
+      `A quick reminder: your fitting at ${atelier} is set for ${date}.`,
+    avisIntro: (vetement) => `I hope you are happy with your ${vetement}.`,
+    avisDemande:
+      "If you have a moment, tell me how it went — it helps me a lot:",
+    pretIntro: (vetement, atelier) =>
+      `Your ${vetement} is ready at ${atelier}, you can come and collect it.`,
+    pretReste: (montant) => `Left to pay: ${montant}.`,
+    recuNumero: (reference, date) => `Receipt No. ${reference} · ${date}`,
+    recuClient: "Client",
+    recuModele: "Model",
+    recuNonPrecise: "Not specified",
+    recuEtat: "Status",
+    recuLivraisonPrevue: "Delivery due",
+    recuPrixTotal: "Total price",
+    recuDejaVerse: "Already paid",
+    recuResteAPayer: "Left to pay",
+    recuSolde: "Paid",
+    recuTel: (numero) => `Tel. ${numero}`,
+    recuWhatsapp: (numero) => `WhatsApp ${numero}`,
+    typesVersement: {
+      acompte: "Deposit",
+      solde: "Balance",
+      complement: "Part payment",
     },
   },
   reglagesEcran: {

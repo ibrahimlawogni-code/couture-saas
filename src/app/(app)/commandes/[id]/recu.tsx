@@ -19,7 +19,7 @@ export function BoutonRecu({
     setEtat("generation");
 
     try {
-      const blob = await genererRecu(donnees);
+      const blob = await genererRecu(donnees, mots);
       const nom = `recu-${donnees.client.replace(/\s+/g, "-").toLowerCase()}.jpg`;
       const fichier = new File([blob], nom, { type: "image/jpeg" });
 

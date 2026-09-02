@@ -189,19 +189,25 @@ export function DetailCommande() {
     {
       cle: "recapitulatif",
       label: mots.detail.messageRecapitulatif,
-      texte: messageRecapitulatif(nomAtelier, nomClient, donneesMessage, reste),
+      texte: messageRecapitulatif(
+        nomAtelier,
+        nomClient,
+        donneesMessage,
+        reste,
+        mots
+      ),
       visible: true,
     },
     {
       cle: "essayage",
       label: mots.detail.messageEssayage,
-      texte: messageRappelEssayage(nomAtelier, nomClient, donneesMessage),
+      texte: messageRappelEssayage(nomAtelier, nomClient, donneesMessage, mots),
       visible: Boolean(commande.date_essayage) && statut !== "livre",
     },
     {
       cle: "pret",
       label: mots.detail.messagePret,
-      texte: messagePret(nomAtelier, nomClient, donneesMessage, reste),
+      texte: messagePret(nomAtelier, nomClient, donneesMessage, reste, mots),
       visible: statut === "pret",
     },
     /*
@@ -220,7 +226,8 @@ export function DetailCommande() {
             nomAtelier,
             nomClient,
             donneesMessage,
-            `${window.location.origin}/avis/${commande.jeton_avis}`
+            `${window.location.origin}/avis/${commande.jeton_avis}`,
+            mots
           )
         : "",
       visible:
