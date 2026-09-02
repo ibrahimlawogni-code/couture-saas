@@ -327,6 +327,34 @@ export type Traductions = {
     recuWhatsapp: (numero: string) => string;
     typesVersement: Record<"acompte" | "solde" | "complement", string>;
   };
+  /*
+   * La page de notation, ouverte par le client depuis son lien WhatsApp.
+   * Elle suit la langue de l'atelier : le message qui y mene la suit deja,
+   * et un lien anglais menant a un ecran francais serait pire que rien.
+   */
+  avis: {
+    titrePage: string;
+    lienInvalide: string;
+    lienInvalideTexte: string;
+    dejaFait: string;
+    dejaFaitTexte: string;
+    anonyme: string;
+    question: string;
+    intro: (piece: string, atelier: string) => string;
+    commande: string;
+    mots: Record<1 | 2 | 3 | 4 | 5, string>;
+    unMot: string;
+    facultatif: string;
+    exempleCommentaire: string;
+    envoyer: string;
+    envoiEnCours: string;
+    merci: string;
+    merciTexte: (atelier: string) => string;
+    erreurs: Record<
+      "deja_note" | "commande_introuvable" | "note_invalide" | "envoi",
+      string
+    >;
+  };
   /** Les reglages : atelier, equipe, abonnement, compte. */
   reglagesEcran: {
     nomAtelier: string;
@@ -707,6 +735,40 @@ const FR: Traductions = {
         "Votre adresse n'est pas encore confirmée. Ouvrez le lien reçu par email, ou contactez-nous.",
       inconnue:
         "L'opération n'a pas abouti. Réessayez, et contactez-nous si cela persiste.",
+    },
+  },
+  avis: {
+    titrePage: "Votre avis",
+    lienInvalide: "Ce lien n'est plus valable",
+    lienInvalideTexte:
+      "Il a peut-être expiré, ou la commande n'a pas encore été remise. Vous pouvez fermer cette page.",
+    dejaFait: "Merci, c'est déjà fait",
+    dejaFaitTexte:
+      "Votre avis a bien été enregistré. Il ne peut être donné qu'une fois par commande.",
+    anonyme: "Votre nom n'apparaît pas. Seul l'atelier voit cet avis.",
+    question: "Comment s'est passée votre commande ?",
+    intro: (piece, atelier) => `Votre ${piece} chez ${atelier}`,
+    commande: "commande",
+    mots: {
+      1: "Très déçu",
+      2: "Déçu",
+      3: "Correct",
+      4: "Content",
+      5: "Très content",
+    },
+    unMot: "Un mot pour l'atelier",
+    facultatif: "Facultatif",
+    exempleCommentaire: "Ce qui vous a plu, ou ce qui pourrait être mieux...",
+    envoyer: "Envoyer mon avis",
+    envoiEnCours: "Envoi...",
+    merci: "Merci !",
+    merciTexte: (atelier) =>
+      `Votre avis est arrivé chez ${atelier}. Vous pouvez fermer cette page.`,
+    erreurs: {
+      deja_note: "Un avis a déjà été donné pour cette commande.",
+      commande_introuvable: "Ce lien n'est plus valable.",
+      note_invalide: "Choisissez une note entre 1 et 5.",
+      envoi: "L'envoi n'a pas abouti. Vérifiez votre connexion et réessayez.",
     },
   },
   documents: {
@@ -1168,6 +1230,40 @@ const EN: Traductions = {
         "Your address is not confirmed yet. Open the link sent to you by email, or contact us.",
       inconnue:
         "That did not go through. Try again, and contact us if it keeps happening.",
+    },
+  },
+  avis: {
+    titrePage: "Your review",
+    lienInvalide: "This link is no longer valid",
+    lienInvalideTexte:
+      "It may have expired, or the order has not been handed over yet. You can close this page.",
+    dejaFait: "Thank you, it is already done",
+    dejaFaitTexte:
+      "Your review has been recorded. It can only be given once per order.",
+    anonyme: "Your name does not appear. Only the workshop sees this review.",
+    question: "How did your order go?",
+    intro: (piece, atelier) => `Your ${piece} at ${atelier}`,
+    commande: "order",
+    mots: {
+      1: "Very disappointed",
+      2: "Disappointed",
+      3: "Fine",
+      4: "Happy",
+      5: "Very happy",
+    },
+    unMot: "A word for the workshop",
+    facultatif: "Optional",
+    exempleCommentaire: "What you liked, or what could be better...",
+    envoyer: "Send my review",
+    envoiEnCours: "Sending...",
+    merci: "Thank you!",
+    merciTexte: (atelier) =>
+      `Your review reached ${atelier}. You can close this page.`,
+    erreurs: {
+      deja_note: "A review has already been given for this order.",
+      commande_introuvable: "This link is no longer valid.",
+      note_invalide: "Choose a rating between 1 and 5.",
+      envoi: "Sending did not go through. Check your connection and try again.",
     },
   },
   documents: {

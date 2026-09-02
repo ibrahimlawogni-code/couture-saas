@@ -531,6 +531,10 @@ verifier("E2 le jeton donne l atelier et le modele", vue, {
   atelier: "Atelier Kossi",
   modele: "Boubou brode",
   deja_note: false,
+  // 0015 : la page de notation n'a pas de session et ne connait de
+  // l'atelier que ce que cette fonction lui en dit. Sans la langue, le
+  // message WhatsApp partait en anglais vers un ecran francais.
+  langue: "fr",
 });
 
 // E3 : on ne note pas un vetement qu'on n'a pas recu.
@@ -615,14 +619,29 @@ verifier("E10c la table avis est sous RLS", droitsAvis.rls_avis, true);
 verifier("E10d aucune politique d ecriture sur avis", Number(droitsAvis.ecritures_avis), 0);
 verifier("E10e les commandes restent sous RLS", droitsAvis.rls_commandes, true);
 
-// E11 : la migration sera collee dans le SQL editor, peut-etre deux fois.
+/*
+ * E11 : 0011 n'est plus rejouable seule, et c'est voulu.
+ *
+ * 0015 a change le type de retour de commande_a_noter pour y ajouter la
+ * langue ; Postgres refuse alors de la remplacer par l'ancienne version.
+ * Le refus protege : recoller 0011 par megarde ferait disparaitre la langue
+ * de la page de notation sans que rien ne le signale, et un message
+ * WhatsApp anglais renverrait a un ecran francais.
+ *
+ * Rejouer le dossier entier dans l'ordre reste possible : 0011 passe avant
+ * 0015, qui la corrige ensuite.
+ */
 let rejeuAvis = null;
 try {
   await db.exec(await readFile(resolve(MIGRATIONS, "0011_avis.sql"), "utf8"));
 } catch (erreur) {
   rejeuAvis = erreur.message;
 }
-verifier("E11 migration rejouable sans erreur", rejeuAvis, null);
+verifier(
+  "E11 rejouer 0011 apres 0015 est refuse, ce qui protege la langue",
+  /cannot change return type/.test(rejeuAvis ?? ""),
+  true
+);
 
 verifier(
   "E11b les jetons survivent au rejeu",
@@ -1045,6 +1064,58 @@ verifier(
     atelierAbonne,
   ]),
   3
+);
+
+// =========================================================================
+console.log("\nI. La page de notation suit la langue de l'atelier\n");
+// =========================================================================
+
+await db.query(`update ateliers set langue = 'en' where id = $1`, [atelierKossi]);
+verifier(
+  "I1 l atelier passe a l anglais, la page suit",
+  (await db.query(`select langue from commande_a_noter($1)`, [livree.jeton_avis]))
+    .rows[0].langue,
+  "en"
+);
+await db.query(`update ateliers set langue = 'fr' where id = $1`, [atelierKossi]);
+verifier(
+  "I1 et revient au francais",
+  (await db.query(`select langue from commande_a_noter($1)`, [livree.jeton_avis]))
+    .rows[0].langue,
+  "fr"
+);
+
+/*
+ * Les droits n'ont pas bouge. anon en a besoin, c'est tout l'objet de cette
+ * page - un client qui note son tailleur n'a pas de compte - mais 0015
+ * supprime la fonction avant de la recreer, ce qui emporte ses droits.
+ */
+const droitsAvisLangue = (
+  await db.query(`
+    select
+      has_function_privilege('anon', 'commande_a_noter(uuid)', 'execute') as anon,
+      has_function_privilege('authenticated', 'commande_a_noter(uuid)', 'execute') as auth
+  `)
+).rows[0];
+verifier("I2 anon peut toujours lire la commande a noter", droitsAvisLangue.anon, true);
+verifier("I2 authenticated aussi", droitsAvisLangue.auth, true);
+
+// I3 : 0015 sera collee dans le SQL editor, peut-etre deux fois.
+let rejeu0015 = null;
+try {
+  await db.exec(await readFile(resolve(MIGRATIONS, "0015_avis_langue.sql"), "utf8"));
+} catch (erreur) {
+  rejeu0015 = erreur.message;
+}
+verifier("I3 migration rejouable sans erreur", rejeu0015, null);
+verifier(
+  "I3 et les droits tiennent apres rejeu",
+  (
+    await db.query(
+      `select has_function_privilege('anon', 'commande_a_noter(uuid)', 'execute') as anon`
+    )
+  ).rows[0].anon,
+  true
 );
 
 // =========================================================================

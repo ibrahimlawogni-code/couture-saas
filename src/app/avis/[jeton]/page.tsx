@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { CheckCircle, LinkBreak } from "@phosphor-icons/react/dist/ssr";
+import { traduire } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/server";
 import { Marque } from "../../marque";
 import { FormulaireAvis } from "./formulaire";
@@ -17,7 +18,14 @@ export const metadata: Metadata = {
 /** Un jeton mal forme ferait echouer la fonction au lieu de rendre vide. */
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-type Commande = { atelier: string; modele: string | null; deja_note: boolean };
+type Commande = {
+  atelier: string;
+  modele: string | null;
+  deja_note: boolean;
+  /* La langue de l'atelier : la page n'a pas de session, elle ne connait
+     de lui que ce que la fonction SQL lui en dit. */
+  langue: string;
+};
 
 export default async function PageAvis({
   params,
@@ -34,6 +42,12 @@ export default async function PageAvis({
     commande = (Array.isArray(data) ? data[0] : null) ?? null;
   }
 
+  /*
+   * La langue de l'atelier, ou le francais quand le lien ne mene a rien :
+   * l'ecran d'erreur doit bien s'ecrire dans une langue.
+   */
+  const mots = traduire(commande?.langue);
+
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center bg-papier px-4 py-10">
       <div className="w-full max-w-md">
@@ -46,26 +60,27 @@ export default async function PageAvis({
           {!commande ? (
             <Etat
               icone={LinkBreak}
-              titre="Ce lien n'est plus valable"
-              texte="Il a peut-être expiré, ou la commande n'a pas encore été remise. Vous pouvez fermer cette page."
+              titre={mots.avis.lienInvalide}
+              texte={mots.avis.lienInvalideTexte}
             />
           ) : commande.deja_note ? (
             <Etat
               icone={CheckCircle}
-              titre="Merci, c'est déjà fait"
-              texte="Votre avis a bien été enregistré. Il ne peut être donné qu'une fois par commande."
+              titre={mots.avis.dejaFait}
+              texte={mots.avis.dejaFaitTexte}
             />
           ) : (
             <FormulaireAvis
               jeton={jeton}
               atelier={commande.atelier}
               modele={commande.modele}
+              langue={commande.langue}
             />
           )}
         </div>
 
         <p className="mt-6 text-center text-xs text-gris">
-          Votre nom n&apos;apparaît pas. Seul l&apos;atelier voit cet avis.
+          {mots.avis.anonyme}
         </p>
       </div>
     </main>
