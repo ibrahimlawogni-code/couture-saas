@@ -1,7 +1,7 @@
 "use server";
 
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { origineSite } from "@/lib/site";
 import { createClient } from "@/lib/supabase/server";
 import { langueVisiteur } from "@/lib/langue-visiteur";
 import { messageAuth } from "@/lib/messages-auth";
@@ -15,8 +15,7 @@ export async function signup(formData: FormData) {
   // au lieu d'en ouvrir un nouveau (voir migration 0007).
   const code = String(formData.get("code") ?? "").trim().toUpperCase();
 
-  const headerList = await headers();
-  const origin = headerList.get("origin") ?? "http://localhost:3000";
+  const origin = await origineSite();
 
   const supabase = await createClient();
 

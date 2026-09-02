@@ -1,9 +1,9 @@
 "use server";
 
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getAtelierId } from "@/lib/atelier";
 import { creerSessionCheckout } from "@/lib/saspay";
+import { origineSite } from "@/lib/site";
 import { createClient } from "@/lib/supabase/server";
 import { TARIFS, estOffrePayante } from "@/lib/tarifs";
 
@@ -49,7 +49,7 @@ export async function ouvrirPaiement(formulaire: FormData) {
     .eq("id", atelierId)
     .single();
 
-  const origine = (await headers()).get("origin") ?? "";
+  const origine = await origineSite();
   const tarif = TARIFS[offre];
 
   let adresse: string;

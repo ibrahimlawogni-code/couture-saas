@@ -1,14 +1,13 @@
 "use server";
 
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { origineSite } from "@/lib/site";
 import { createClient } from "@/lib/supabase/server";
 
 export async function renvoyerConfirmation(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();
 
-  const headerList = await headers();
-  const origin = headerList.get("origin") ?? "https://couture-saas.vercel.app";
+  const origin = await origineSite();
 
   const supabase = await createClient();
   await supabase.auth.resend({
