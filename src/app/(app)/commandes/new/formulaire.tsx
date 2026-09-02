@@ -1,15 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Users } from "@phosphor-icons/react/dist/ssr";
 import { createClient } from "@/lib/supabase/client";
-import { MODELES, MODELE_AUTRE } from "@/lib/commandes";
+import { MODELES } from "@/lib/commandes";
 import { METHODE_DEFAUT, type Methode } from "@/lib/paiements";
 import { enregistrer } from "@/lib/offline/enregistrer";
 import { estLimiteOffre, messageRefus } from "@/lib/offline/erreurs";
 import { cheminPhoto, compresserPhoto } from "@/lib/offline/photo";
+import { useDonnees } from "@/lib/offline/use-donnees";
 import { useFileAttente } from "@/lib/offline/use-file-attente";
 import { useHydratation } from "@/lib/hydratation";
 import { Bouton, LienBouton } from "@/ui/bouton";
@@ -34,13 +35,36 @@ export function FormulaireCommande({
   clientPreselectionne?: string;
 }) {
   const mots = useTraductions();
+  const { commandes } = useDonnees();
+
+  /*
+   * Ce que l'atelier a deja cousu, propose avant la liste generale.
+   *
+   * C'est la partie qui compte : la liste livree avec le produit ne connait
+   * ni « Boubou brode » ni « Tenue de bapteme », alors que ce sont peut-etre
+   * les deux pieces que cet atelier fait le plus. Lues dans la copie locale,
+   * donc disponibles hors reseau, comme le reste de l'ecran.
+   */
+  const suggestionsModeles = useMemo(() => {
+    const siennes = new Set<string>();
+    for (const commande of commandes) {
+      const nom = commande.nom_modele?.trim();
+      if (nom) siennes.add(nom);
+    }
+
+    // Les siennes d'abord, puis les courantes qu'elle n'a pas encore
+    // utilisees : un tailleur retrouve son vocabulaire avant le notre.
+    return [
+      ...[...siennes].sort((a, b) => a.localeCompare(b)),
+      ...MODELES.filter((nom) => !siennes.has(nom)),
+    ];
+  }, [commandes]);
   const router = useRouter();
   const { enAttente } = useFileAttente();
   const pret = useHydratation();
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [limite, setLimite] = useState(false);
-  const [modele, setModele] = useState("");
   const [acompte, setAcompte] = useState("");
   const [methode, setMethode] = useState<Methode>(METHODE_DEFAUT);
 
@@ -103,15 +127,15 @@ export function FormulaireCommande({
     const acompte = Number(formulaire.get("acompte") ?? 0);
 
     /*
-     * La sentinelle « Autre » ne doit jamais atteindre la base : c'est le
-     * champ libre qui porte alors le nom du modele.
+     * Les espaces de bout sont retires, et les espaces internes reduits a
+     * un seul. « Boubou  brode » et « Boubou brode » sont le meme vetement,
+     * et deux lignes qui n'en different que par une frappe apparaitraient
+     * comme deux modeles distincts dans les suggestions comme dans le recu.
      */
-    const choixModele = String(formulaire.get("nom_modele") ?? "");
     const nomModele =
-      (choixModele === MODELE_AUTRE
-        ? String(formulaire.get("nom_modele_autre") ?? "")
-        : choixModele
-      ).trim() || null;
+      String(formulaire.get("nom_modele") ?? "")
+        .trim()
+        .replace(/\s+/g, " ") || null;
 
     let enFile = false;
 
@@ -203,42 +227,37 @@ export function FormulaireCommande({
       </Selecteur>
 
       {/*
-       * Le modele se choisit dans une liste, et non plus a la main. C'est
-       * la meme dizaine de pieces qui revient, et les ecrire chaque fois
-       * produisait des libelles differents pour un meme vetement - ce qui
-       * se voit ensuite dans le recu remis au client.
+       * Un seul champ : on tape, ou on choisit dans les suggestions.
        *
-       * « Autre » ouvre un champ libre : un tailleur coud aussi des pieces
-       * qui ne sont dans aucune liste, et l'obliger a choisir lui ferait
-       * ranger une robe de mariee sous « Robe (Moderne) ».
+       * C'etait une liste fermee avec une entree « Autre » qui ouvrait un
+       * second champ. La liste existait pour une bonne raison - la meme
+       * dizaine de pieces revient, et les ecrire chaque fois produisait des
+       * libelles differents pour un meme vetement, ce qui se voit ensuite
+       * sur le recu remis au client. Mais elle obligeait a descendre
+       * jusqu'a « Autre » puis a remplir un champ de plus pour la robe de
+       * mariee que la liste ne prevoit pas.
+       *
+       * Les suggestions repondent aux deux besoins a la fois. Elles portent
+       * les modeles courants, et surtout ceux que cet atelier a deja
+       * cousus : un tailleur qui ecrit « Boubou brode » une fois se le voit
+       * proposer la suivante, et l'orthographe se fixe d'elle-meme au lieu
+       * de deriver. La liste ne contraint plus, elle propose.
        */}
-      <Selecteur
+      <Champ
         id="nom_modele"
         name="nom_modele"
+        type="text"
+        list="modeles-suggeres"
         libelle={mots.formulaires.modele}
-        value={modele}
-        onChange={(evenement) => setModele(evenement.target.value)}
-      >
-        <option value="">{mots.sansModele}</option>
-        {MODELES.map((nom) => (
-          <option key={nom} value={nom}>
-            {nom}
-          </option>
+        aide={mots.formulaires.aideModele}
+        placeholder={mots.formulaires.exempleModele}
+        autoComplete="off"
+      />
+      <datalist id="modeles-suggeres">
+        {suggestionsModeles.map((nom) => (
+          <option key={nom} value={nom} />
         ))}
-        <option value={MODELE_AUTRE}>{mots.formulaires.autreModele}</option>
-      </Selecteur>
-
-      {modele === MODELE_AUTRE && (
-        <Champ
-          id="nom_modele_autre"
-          name="nom_modele_autre"
-          type="text"
-          libelle={mots.formulaires.preciserModele}
-          placeholder={mots.formulaires.exempleModele}
-          autoFocus
-          required
-        />
-      )}
+      </datalist>
 
       <div className="grid grid-cols-2 gap-3">
         <ChampPhoto id="photo_modele" libelle={mots.formulaires.photoModele} />

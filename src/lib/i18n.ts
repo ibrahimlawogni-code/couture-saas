@@ -420,8 +420,7 @@ export type Traductions = {
     aucunClientTexte: string;
     creerUnClient: string;
     modele: string;
-    autreModele: string;
-    preciserModele: string;
+    aideModele: string;
     exempleModele: string;
     photoModele: string;
     photoTissu: string;
@@ -906,9 +905,9 @@ const FR: Traductions = {
       "Une commande appartient toujours à un client : c'est sa fiche qui porte les mesures.",
     creerUnClient: "Créer un client",
     modele: "Modèle",
-    autreModele: "Autre…",
-    preciserModele: "Préciser le modèle",
-    exempleModele: "Boubou brodé, tenue de mariée...",
+    aideModele:
+      "Choisissez dans la liste, ou écrivez le vôtre. Les modèles que vous avez déjà cousus vous seront proposés ensuite.",
+    exempleModele: "Chemise, Boubou brodé, tenue de mariée...",
     photoModele: "Photo modèle",
     photoTissu: "Photo tissu",
     prixTotal: "Prix total (FCFA)",
@@ -1398,9 +1397,9 @@ const EN: Traductions = {
       "An order always belongs to a client: their file is what holds the measurements.",
     creerUnClient: "Create a client",
     modele: "Model",
-    autreModele: "Other…",
-    preciserModele: "Describe the model",
-    exempleModele: "Embroidered boubou, wedding outfit...",
+    aideModele:
+      "Pick from the list, or write your own. The models you have already sewn will be suggested next time.",
+    exempleModele: "Shirt, embroidered boubou, wedding outfit...",
     photoModele: "Model photo",
     photoTissu: "Fabric photo",
     prixTotal: "Total price (FCFA)",

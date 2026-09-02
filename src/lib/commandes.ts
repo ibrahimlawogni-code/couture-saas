@@ -22,15 +22,18 @@ export function statutSuivant(statut: Statut): Statut | null {
 }
 
 /*
- * Les modeles courants de l'atelier, proposes a la saisie d'une commande.
+ * Les modeles courants, proposes en suggestion a la saisie d'une commande.
  *
- * La liste ferme le cas frequent sans fermer la porte : le formulaire offre
- * un choix « Autre » qui rend la saisie libre. Un tailleur coud aussi des
- * pieces qui ne sont dans aucune liste, et l'obliger a choisir entre neuf
- * cases lui ferait ranger une robe de mariee sous « Robe (Moderne) ».
+ * Ce ne sont que des suggestions : le champ accepte n'importe quel nom, et
+ * l'ecran y ajoute les modeles que l'atelier a deja cousus. Un tailleur qui
+ * fait surtout des tenues de bapteme ne trouvera pas son vocabulaire ici,
+ * mais il l'y retrouvera des la deuxieme commande.
  *
- * Le champ reste du texte libre en base : rien ici n'est une contrainte,
- * seulement un raccourci. Les commandes deja saisies gardent leur libelle.
+ * C'etait auparavant une liste fermee doublee d'un choix « Autre ». Elle
+ * evitait qu'un meme vetement s'ecrive de trois facons - ce qui se voit sur
+ * le recu remis au client - mais obligeait a deux gestes pour la robe de
+ * mariee qu'elle ne prevoit pas. Les suggestions tiennent les deux bouts :
+ * elles fixent l'orthographe sans contraindre le choix.
  */
 export const MODELES = [
   "3 Pièces (AGBADA)",
@@ -45,10 +48,10 @@ export const MODELES = [
 ] as const;
 
 /*
- * Valeur sentinelle du choix « Autre ». Volontairement impossible a
- * confondre avec un nom de modele reel.
+ * MODELE_AUTRE a disparu avec la liste fermee. Le champ accepte desormais
+ * n'importe quel nom, et MODELES ne sert plus qu'a peupler des suggestions
+ * aux cotes des modeles que l'atelier a deja cousus.
  */
-export const MODELE_AUTRE = "__autre__";
 
 export type Priorite = "en_retard" | "urgent" | "normal";
 
