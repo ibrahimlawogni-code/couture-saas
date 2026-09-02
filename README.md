@@ -193,6 +193,82 @@ Sans cela, tout compte Google aurait ouvert un atelier nomme « Mon atelier »,
 et surtout un apprenti invite serait devenu proprietaire d'un atelier vide au
 lieu de rejoindre celui de son patron - en silence.
 
+## Francais et anglais
+
+L'application existe en deux langues. Tous les ecrans sont traduits, ainsi
+que les documents qui sortent de l'atelier - recu, messages WhatsApp, page
+de notation. **La page de vente reste en francais** : c'est de la redaction
+et non de la traduction, et elle attend une decision.
+
+### Qui decide de la langue
+
+Deux cas, et ils ne se ressemblent pas.
+
+**Une fois connecte**, la langue est celle de **l'atelier**, portee par
+`ateliers.langue` et modifiable dans les Reglages. Elle vaut pour tout
+l'atelier, apprentis compris : les documents qui partent chez le client
+doivent suivre la meme langue quel que soit celui qui les produit. Un client
+qui recoit un recu en francais un jour et en anglais le lendemain ne sait
+plus a qui il a affaire.
+
+**Avant toute connexion** - ecrans d'acces, page de notation - il n'y a pas
+d'atelier dont lire la langue. `src/lib/langue-visiteur.ts` la cherche
+alors dans un cookie, puis a defaut dans l'en-tete du navigateur. Le choix
+explicite l'emporte toujours, et un selecteur discret le permet sur chaque
+ecran d'acces.
+
+L'en-tete du navigateur n'est qu'une premiere supposition. Elle se trompe
+souvent ici : un Android vendu au Benin est frequemment configure en anglais
+alors que son proprietaire travaille en francais.
+
+Le cookie plutot que le stockage local, parce que le serveur le lit : la
+page arrive deja traduite, au lieu de s'afficher en francais puis de changer
+sous les yeux du visiteur.
+
+### Ou vivent les mots
+
+Tout est dans `src/lib/i18n.ts`, et **le type `Traductions` est la garantie
+qui compte** : ajouter une entree en francais sans son equivalent anglais ne
+compile pas. Une table de traduction se degrade autrement au fil des ajouts,
+et le manque ne se decouvre qu'a l'ecran, dans la mauvaise langue.
+
+Chaque module garde ses **codes**, le dictionnaire garde les **mots**. Un
+statut reste `recu` en base, un versement reste `especes`, quelle que soit
+la langue. Les libelles ont donc quitte `commandes.ts`, `paiements.ts` et
+`messages-auth.ts` - ce dernier gardant les expressions regulieres qui
+reconnaissent les erreurs de Supabase, puisqu'une regex ne se traduit pas.
+
+Les phrases sont des **fonctions** et non des gabarits a trous, parce que
+les accords ne suivent pas la meme regle d'une langue a l'autre : le
+francais accorde a partir de deux, l'anglais des que ce n'est pas un.
+
+### Deux pieges deja rencontres
+
+**Le dictionnaire ne franchit pas la frontiere serveur vers client.** Il
+contient des fonctions, et une fonction ne se passe pas en prop a un
+composant client depuis un composant serveur. Ces composants recoivent donc
+le **code de langue** - une chaine - et appellent `traduire()` eux-memes.
+
+**Le typage ne voit pas tout.** Il garantit qu'aucune clef ne manque, jamais
+que deux nombres voisins s'ecrivent pareil. Deux fois, le rendu en anglais a
+montre un « 1,396,000 » a cote d'un « 166 000 » sur la meme carte, parce
+qu'un appel a `formaterMontant` n'avait pas recu la locale. **Regarder
+l'ecran dans les deux langues fait partie du travail**, pas seulement
+compiler.
+
+### Ajouter une chaine
+
+1. La declarer dans le type `Traductions`
+2. L'ecrire dans `FR` puis dans `EN` - l'oubli ne compile pas
+3. La lire avec `useTraductions()` cote client, `traduire(langue)` cote
+   serveur
+4. Pour un nombre ou une date, passer `mots.locale`
+
+Ce qui ne se traduit pas : les noms commerciaux (`Atelier Pro`,
+`Decouverte`), la monnaie (`FCFA`), les services (`Mobile Money`,
+`WhatsApp`), et les noms de modeles - qui sont stockes sur chaque commande,
+et dont la traduction ferait cohabiter deux langues dans un meme historique.
+
 ## Encaissement des abonnements
 
 Le tailleur paie son offre depuis **Reglages**, par Mobile Money ou carte,
