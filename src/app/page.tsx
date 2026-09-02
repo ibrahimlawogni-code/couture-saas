@@ -254,6 +254,60 @@ function Navigation() {
   );
 }
 
+/* Une ligne du recu : libelle a gauche, valeur a droite. */
+function Ligne({
+  libelle,
+  valeur,
+  fort = false,
+}: {
+  libelle: string;
+  valeur: string;
+  fort?: boolean;
+}) {
+  return (
+    <div className="flex items-baseline justify-between gap-3">
+      <span className="shrink-0 text-gris">{libelle}</span>
+      <span className={`truncate text-encre ${fort ? "font-semibold" : ""}`}>
+        {valeur}
+      </span>
+    </div>
+  );
+}
+
+/*
+ * Le boitier qui tient l'apercu, legerement penche.
+ *
+ * L'apercu etait un rectangle arrondi pose a plat : on y lisait une
+ * interface, pas un telephone. Le boitier le dit d'un coup d'oeil, et c'est
+ * ce qu'il faut dire ici - le produit s'utilise debout dans un atelier, pas
+ * devant un ordinateur.
+ *
+ * L'inclinaison reste faible, trois degres et demi. Au-dela, le texte de
+ * l'ecran devient penible a lire et l'apercu cesse de montrer ce qu'il est
+ * venu montrer.
+ *
+ * Le pivot est en bas a droite : l'ecran s'ecarte du texte au lieu de venir
+ * vers lui, et rien ne mord sur la colonne voisine.
+ *
+ * Separe de l'apercu, et non enroule autour de lui : l'un dessine une
+ * application, l'autre un objet. Les melanger ferait un composant qui change
+ * pour deux raisons.
+ */
+function Boitier({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="origin-bottom-right rotate-[-3.5deg]">
+      <div className="rounded-[2.25rem] bg-encre p-2.5 pt-3 shadow-[0_1.5rem_3.75rem_-1.25rem_rgb(0_0_0/0.55)] ring-1 ring-white/10">
+        {/* Le haut-parleur : deux pixels qui suffisent a faire un telephone. */}
+        <span
+          aria-hidden
+          className="mx-auto mb-2.5 block h-1 w-12 rounded-full bg-white/25"
+        />
+        {children}
+      </div>
+    </div>
+  );
+}
+
 /*
  * L'apercu du produit dans le hero.
  *
@@ -271,7 +325,7 @@ function ApercuTelephone() {
     <div
       role="img"
       aria-label="L'écran d'accueil de TailorHub sur un téléphone : trois pièces à livrer aujourd'hui, dont deux en retard, et la liste des commandes avec leur étape."
-      className="w-[18.75rem] max-w-full overflow-hidden rounded-[1.625rem] border border-white/15 bg-papier text-encre shadow-[0_1.5rem_3.75rem_-1.25rem_rgb(0_0_0/0.5)]"
+      className="w-[17.5rem] max-w-full overflow-hidden rounded-[1.5rem] bg-papier text-encre"
     >
       <div className="flex items-center justify-between border-b border-bordure bg-white px-3.5 py-2.5">
         <span className="flex items-center gap-2 text-foret">
@@ -382,7 +436,7 @@ function Hero() {
       <div className="sur-fond-sombre mx-auto grid max-w-6xl items-center gap-9 overflow-hidden rounded-[1.25rem] bg-foret px-5 py-8 text-white sm:rounded-[1.75rem] sm:px-7 sm:py-11 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14 lg:px-14 lg:py-16">
         <div>
           <span className="inline-flex items-center rounded-full bg-white/10 px-3 py-1.5 text-[0.78125rem] font-medium text-vert-pale">
-            Conçu à Porto-Novo pour les ateliers de couture
+            Conçu pour les ateliers de couture
           </span>
           <h1 className="mt-5 text-[2rem] leading-[1.02] font-semibold tracking-tight sm:text-[2.625rem] lg:text-[3.75rem]">
             Ce qu&apos;il faut livrer aujourd&apos;hui, dès l&apos;ouverture.
@@ -416,7 +470,9 @@ function Hero() {
         </div>
 
         <div className="flex justify-center">
-          <ApercuTelephone />
+          <Boitier>
+            <ApercuTelephone />
+          </Boitier>
         </div>
       </div>
     </section>
@@ -577,31 +633,63 @@ function Fonctions() {
             Montant versé, reste à payer, date de livraison. En image, dans la
             conversation, en deux gestes.
           </p>
-          <div className="mt-6 max-w-80 rounded-carte border border-bordure bg-white p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold tracking-[0.08em] text-gris uppercase">
-                Reçu nº 214
-              </span>
-              <span className="text-xs text-gris">25/08/2026</span>
+          {/*
+           * Le fac-simile du recu reel, et non une carte inventee.
+           *
+           * Il montrait un numero d'ordre, un prix et un reste. Le vrai
+           * document porte un en-tete vert foret au nom de l'atelier, une
+           * reference tiree de la commande, l'etape ou en est la piece, et le
+           * detail de chaque versement avec son moyen de paiement. Une
+           * vitrine qui promet moins que le produit se paie a la premiere
+           * commande passee.
+           */}
+          <div className="mt-6 max-w-80 overflow-hidden rounded-carte border border-bordure bg-white">
+            <div className="bg-foret px-4 py-3.5 text-white">
+              <div className="text-[0.9375rem] font-semibold tracking-tight">
+                Atelier Sossou
+              </div>
+              <div className="mt-0.5 text-[0.6875rem] text-vert-pale">
+                Reçu N° 8F3A21C0 · 25/08/2026
+              </div>
             </div>
-            <div className="my-3 h-px bg-bordure" />
-            <div className="font-semibold text-encre">Koffi Ahossi</div>
-            <div className="text-[0.8125rem] text-gris">Costume deux pièces</div>
-            {/* Montants empiles : chasse fixe, sinon les chiffres dansent
-                d'une ligne a l'autre. */}
-            <div className="chiffres mt-3 flex flex-col gap-1.5">
-              <div className="flex justify-between text-[0.84375rem]">
-                <span className="text-gris">Prix</span>
-                <span className="text-encre">78 000 FCFA</span>
+
+            <div className="p-4">
+              <div className="flex flex-col gap-1.5 text-[0.8125rem]">
+                <Ligne libelle="Client" valeur="Koffi Ahossi" fort />
+                <Ligne libelle="Modèle" valeur="Costume deux pièces" />
+                <Ligne libelle="État" valeur="Prêt à retirer" />
+                <Ligne libelle="Livraison prévue" valeur="25/08/2026" />
               </div>
-              <div className="flex justify-between text-[0.84375rem]">
-                <span className="text-gris">Versé</span>
-                <span className="text-encre">40 000 FCFA</span>
+
+              {/* Montants empiles : chasse fixe, sinon les chiffres dansent
+                  d'une ligne a l'autre. */}
+              <div className="chiffres mt-3 border-t border-bordure pt-3">
+                <Ligne libelle="Prix total" valeur="78 000 FCFA" fort />
+
+                {/* Le moyen figure sur le vrai recu : c'est la que le client
+                    verifie qu'un envoi Mobile Money a bien ete compte. */}
+                <div className="mt-1.5 flex justify-between gap-3 text-[0.6875rem] text-gris">
+                  <span className="truncate">
+                    12/08/2026 · Acompte · Mobile Money
+                  </span>
+                  <span className="shrink-0">40 000 FCFA</span>
+                </div>
+
+                <div className="mt-1.5">
+                  <Ligne libelle="Déjà versé" valeur="40 000 FCFA" />
+                </div>
               </div>
-              <div className="flex justify-between border-t border-bordure pt-2 font-semibold text-encre">
-                <span>Reste</span>
-                <span className="text-rouge">38 000 FCFA</span>
+
+              <div className="mt-3 flex items-baseline justify-between gap-3 border-t border-bordure pt-3">
+                <span className="font-semibold text-encre">Reste à payer</span>
+                <span className="chiffres font-semibold text-rouge">
+                  38 000 FCFA
+                </span>
               </div>
+
+              <p className="mt-3 text-[0.6875rem] text-gris">
+                Merci de votre confiance.
+              </p>
             </div>
           </div>
         </article>
@@ -874,7 +962,7 @@ function PiedDePage() {
           <Marque taille={20} />
           TailorHub
         </span>
-        <p>Conçu à Porto-Novo pour les ateliers de couture.</p>
+        <p>Conçu pour les ateliers de couture.</p>
         <a href={`mailto:${EMAIL}`} className="text-vert hover:text-foret">
           {EMAIL}
         </a>
