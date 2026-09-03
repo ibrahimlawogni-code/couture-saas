@@ -97,7 +97,7 @@ export default async function AppLayout({
             href="/reglages"
             className="-m-1.5 flex min-w-0 items-center gap-2.5 rounded-controle p-1.5 active:bg-papier"
           >
-            <span className="shrink-0 text-foret">
+            <span className="shrink-0 text-vert">
               <Marque taille={26} />
             </span>
             <span className="min-w-0">

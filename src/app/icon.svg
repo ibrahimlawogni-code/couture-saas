@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <!--
+    Icone d'onglet. En SVG plutot qu'en ICO : nette a toutes les tailles,
+    quelques centaines d'octets, et pas de conteneur binaire a fabriquer.
+
+    Elle porte son propre fond foret : un bouton sans fond disparaitrait
+    dans un onglet sombre.
+
+    Le trace est celui de src/app/marque.tsx. Les deux doivent bouger
+    ensemble, sinon l'onglet et l'interface montrent deux marques.
+  -->
+  <rect width="48" height="48" fill="#0c3b2e"/>
+  <path
+    fill="#ffffff"
+    fill-rule="evenodd"
+    clip-rule="evenodd"
+    transform="translate(24 24) scale(0.78) translate(-24 -24)"
+    d="M24 2.5a21.5 21.5 0 100 43 21.5 21.5 0 000-43zM18 14a4 4 0 100 8 4 4 0 000-8zM30 14a4 4 0 100 8 4 4 0 000-8zM18 26a4 4 0 100 8 4 4 0 000-8zM30 26a4 4 0 100 8 4 4 0 000-8z"
+  />
+</svg>

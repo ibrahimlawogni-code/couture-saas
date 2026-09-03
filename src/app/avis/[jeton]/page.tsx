@@ -51,8 +51,10 @@ export default async function PageAvis({
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center bg-papier px-4 py-10">
       <div className="w-full max-w-md">
-        <span className="mx-auto flex w-fit items-center gap-2 text-foret">
-          <Marque taille={26} />
+        <span className="mx-auto flex w-fit items-center gap-2 text-encre">
+          <span className="text-vert">
+            <Marque taille={26} />
+          </span>
           <span className="text-lg font-semibold tracking-tight">TailorHub</span>
         </span>
 

@@ -1,11 +1,19 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 160" fill="none" role="img" aria-label="TailorHub">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" role="img" aria-label="TailorHub">
   <!--
-    Icone : la meme silhouette, debarrassee du metre ruban et du pommeau.
-    Un buste de couture reste identifiable a 20 px ; le ruban enroule, non.
-    Destinee au favicon, a l'icone d'application et a la barre de navigation.
+    Marque TailorHub : un bouton de couture.
+
+    Le disque est plein et ses quatre trous sont evides par la regle
+    evenodd : le fond passe au travers. La marque herite de la couleur
+    courante, ce qui la rend juste sur clair comme sur fonce sans qu'il
+    faille en tenir deux versions.
+
+    Source de verite partagee avec src/app/marque.tsx. Modifier l'un sans
+    l'autre ferait diverger l'icone de l'interface.
   -->
   <path
-    d="M60 12 80 24c11 9 13 24 6.5 39-4.5 11-6.5 19.5-2 32.5 4.5 13 2 26-9 39L60 148l-15.5-13.5c-11-13-13.5-26-9-39 4.5-13 2.5-21.5-2-32.5C27 48 29 33 40 24L60 12z"
     fill="currentColor"
+    fill-rule="evenodd"
+    clip-rule="evenodd"
+    d="M24 2.5a21.5 21.5 0 100 43 21.5 21.5 0 000-43zM18 14a4 4 0 100 8 4 4 0 000-8zM30 14a4 4 0 100 8 4 4 0 000-8zM18 26a4 4 0 100 8 4 4 0 000-8zM30 26a4 4 0 100 8 4 4 0 000-8z"
   />
 </svg>

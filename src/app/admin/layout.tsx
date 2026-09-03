@@ -41,7 +41,7 @@ export default async function AdminLayout({
       <header className="border-b border-bordure bg-white">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <span className="flex items-center gap-2.5">
-            <span className="text-foret">
+            <span className="text-vert">
               <Marque taille={24} />
             </span>
             <span className="text-base font-semibold tracking-tight text-encre">

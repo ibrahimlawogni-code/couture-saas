@@ -208,7 +208,9 @@ function Navigation() {
           href="/"
           className="flex shrink-0 items-center gap-2 rounded-controle text-encre sm:gap-2.5"
         >
-          <Marque taille={26} />
+          <span className="text-vert">
+            <Marque taille={26} />
+          </span>
           <span className="text-base font-semibold tracking-tight sm:text-lg">
             TailorHub
           </span>
@@ -328,7 +330,7 @@ function ApercuTelephone() {
       className="w-[17.5rem] max-w-full overflow-hidden rounded-[1.5rem] bg-papier text-encre"
     >
       <div className="flex items-center justify-between border-b border-bordure bg-white px-3.5 py-2.5">
-        <span className="flex items-center gap-2 text-foret">
+        <span className="flex items-center gap-2 text-vert">
           <Marque taille={20} />
           <span className="text-[0.8125rem] font-semibold text-encre">
             Atelier Sossou
@@ -959,7 +961,9 @@ function PiedDePage() {
     <footer className="bg-white px-4 py-11 sm:px-5">
       <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 text-center text-sm text-gris sm:flex-row sm:text-left">
         <span className="flex items-center gap-2.5 font-semibold text-encre">
-          <Marque taille={20} />
+          <span className="text-vert">
+            <Marque taille={20} />
+          </span>
           TailorHub
         </span>
         <p>Conçu pour les ateliers de couture.</p>
